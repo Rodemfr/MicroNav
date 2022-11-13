@@ -24,57 +24,51 @@
  ***************************************************************************
  */
 
+#ifndef MICRONETMESSAGEFIFO_H_
+#define MICRONETMESSAGEFIFO_H_
+
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "BoardConfig.h"
-
+#include "Micronet.h"
 #include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <axp20x.h>
+#include <stdint.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                             Local types                                 */
-/***************************************************************************/
+#define MESSAGE_STORE_SIZE 16
 
 /***************************************************************************/
-/*                           Local prototypes                              */
+/*                                Types                                    */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                               Globals                                   */
-/***************************************************************************/
-
-AXP20X_Class pmu;
-
-/***************************************************************************/
-/*                              Functions                                  */
-/***************************************************************************/
-
-void setup()
+class MicronetMessageFifo
 {
-    Serial.begin(115200);
+public:
+	MicronetMessageFifo();
+	virtual ~MicronetMessageFifo();
 
-    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-    } else {
-        Serial.println("AXP192 Begin FAIL");
-    }
-}
+	bool Push(MicronetMessage_t const &message);
+	bool PushIsr(MicronetMessage_t const &message);
+	bool Pop(MicronetMessage_t *message);
+	MicronetMessage_t *Peek(int index);
+	MicronetMessage_t *Peek();
+	void DeleteMessage();
+	void ResetFifo();
+	int GetNbMessages();
 
-void loop()
-{
-    delay(1000);                       // wait for a second
-    Serial.println("Hello World");
-}
+private:
+	volatile int writeIndex;
+	volatile int readIndex;
+	volatile int nbMessages;
+	MicronetMessage_t store[MESSAGE_STORE_SIZE];
+};
+
+/***************************************************************************/
+/*                              Prototypes                                 */
+/***************************************************************************/
+
+#endif /* MICRONETMESSAGEFIFO_H_ */

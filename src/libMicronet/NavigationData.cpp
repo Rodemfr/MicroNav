@@ -28,15 +28,20 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "BoardConfig.h"
+#include "NavigationData.h"
 
 #include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <axp20x.h>
+#include <string.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
+/***************************************************************************/
+
+#define VALIDITY_TIME_FAST_MS 3000
+#define VALIDITY_TIME_SLOW_MS 10000
+
+/***************************************************************************/
+/*                                Macros                                   */
 /***************************************************************************/
 
 /***************************************************************************/
@@ -51,30 +56,96 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
-AXP20X_Class pmu;
-
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-void setup()
+NavigationData::NavigationData()
 {
-    Serial.begin(115200);
+	spd_kt.valid = false;
+	awa_deg.valid = false;
+	aws_kt.valid = false;
+	twa_deg.valid = false;
+	tws_kt.valid = false;
+	dpt_m.valid = false;
+	vcc_v.valid = false;
+	log_nm.valid = false;
+	trip_nm.valid = false;
+	stp_degc.valid = false;
+	time.valid = false;
+	date.valid = false;
+	latitude_deg.valid = false;
+	longitude_deg.valid = false;
+	cog_deg.valid = false;
+	sog_kt.valid = false;
+	xte_nm.valid = false;
+	dtw_nm.valid = false;
+	btw_deg.valid = false;
+	waypoint.valid = false;
+	vmgwp_kt.valid = false;
+	hdg_deg.valid = false;
 
-    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-    } else {
-        Serial.println("AXP192 Begin FAIL");
-    }
+	calibrationUpdated = false;
+	waterSpeedFactor_per = 0.0f;
+	waterTemperatureOffset_degc = 0.0f;
+	depthOffset_m = 0.0f;
+	windSpeedFactor_per = 0.0f;
+	windDirectionOffset_deg = 0.0f;
+	headingOffset_deg = 0.0f;
+	magneticVariation_deg = 0.0f;
+	windShift_min = 0.0f;
 }
 
-void loop()
+NavigationData::~NavigationData()
 {
-    delay(1000);                       // wait for a second
-    Serial.println("Hello World");
+}
+
+void NavigationData::UpdateValidity()
+{
+	uint32_t currentTime = millis();
+
+	if (currentTime - awa_deg.timeStamp > VALIDITY_TIME_FAST_MS)
+		awa_deg.valid = false;
+	if (currentTime - aws_kt.timeStamp > VALIDITY_TIME_FAST_MS)
+		aws_kt.valid = false;
+	if (currentTime - dpt_m.timeStamp > VALIDITY_TIME_FAST_MS)
+		dpt_m.valid = false;
+	if (currentTime - log_nm.timeStamp > VALIDITY_TIME_FAST_MS)
+		log_nm.valid = false;
+	if (currentTime - stp_degc.timeStamp > VALIDITY_TIME_FAST_MS)
+		stp_degc.valid = false;
+	if (currentTime - spd_kt.timeStamp > VALIDITY_TIME_FAST_MS)
+		spd_kt.valid = false;
+	if (currentTime - trip_nm.timeStamp > VALIDITY_TIME_FAST_MS)
+		trip_nm.valid = false;
+	if (currentTime - twa_deg.timeStamp > VALIDITY_TIME_FAST_MS)
+		twa_deg.valid = false;
+	if (currentTime - tws_kt.timeStamp > VALIDITY_TIME_FAST_MS)
+		tws_kt.valid = false;
+	if (currentTime - vcc_v.timeStamp > VALIDITY_TIME_FAST_MS)
+		vcc_v.valid = false;
+	if (currentTime - time.timeStamp > VALIDITY_TIME_SLOW_MS)
+		time.valid = false;
+	if (currentTime - date.timeStamp > VALIDITY_TIME_SLOW_MS)
+		date.valid = false;
+	if (currentTime - latitude_deg.timeStamp > VALIDITY_TIME_SLOW_MS)
+		latitude_deg.valid = false;
+	if (currentTime - longitude_deg.timeStamp > VALIDITY_TIME_SLOW_MS)
+		longitude_deg.valid = false;
+	if (currentTime - cog_deg.timeStamp > VALIDITY_TIME_SLOW_MS)
+		cog_deg.valid = false;
+	if (currentTime - sog_kt.timeStamp > VALIDITY_TIME_SLOW_MS)
+		sog_kt.valid = false;
+	if (currentTime - xte_nm.timeStamp > VALIDITY_TIME_SLOW_MS)
+		xte_nm.valid = false;
+	if (currentTime - dtw_nm.timeStamp > VALIDITY_TIME_SLOW_MS)
+		dtw_nm.valid = false;
+	if (currentTime - btw_deg.timeStamp > VALIDITY_TIME_SLOW_MS)
+		btw_deg.valid = false;
+	if (currentTime - waypoint.timeStamp > VALIDITY_TIME_SLOW_MS)
+		waypoint.valid = false;
+	if (currentTime - vmgwp_kt.timeStamp > VALIDITY_TIME_SLOW_MS)
+		vmgwp_kt.valid = false;
+	if (currentTime - hdg_deg.timeStamp > VALIDITY_TIME_FAST_MS)
+		hdg_deg.valid = false;
 }

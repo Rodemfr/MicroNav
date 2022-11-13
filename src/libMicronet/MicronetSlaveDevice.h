@@ -24,57 +24,56 @@
  ***************************************************************************
  */
 
+#ifndef MICRONETSLAVEDEVICE_H_
+#define MICRONETSLAVEDEVICE_H_
+
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "BoardConfig.h"
-
+#include "Micronet.h"
+#include "MicronetCodec.h"
+#include "MicronetMessageFifo.h"
 #include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <axp20x.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
+#define NUMBER_OF_VIRTUAL_SLAVES 3
+
 /***************************************************************************/
-/*                             Local types                                 */
+/*                                Types                                    */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                           Local prototypes                              */
+/*                               Classes                                   */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                               Globals                                   */
-/***************************************************************************/
-
-AXP20X_Class pmu;
-
-/***************************************************************************/
-/*                              Functions                                  */
-/***************************************************************************/
-
-void setup()
+class MicronetSlaveDevice
 {
-    Serial.begin(115200);
+public:
+	MicronetSlaveDevice(MicronetCodec *micronetCodec);
+	virtual ~MicronetSlaveDevice();
 
-    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-    } else {
-        Serial.println("AXP192 Begin FAIL");
-    }
-}
+	void SetDeviceId(uint32_t deviceId);
+	void SetNetworkId(uint32_t networkId);
+	void SetDataFields(uint32_t dataMask);
+	void AddDataFields(uint32_t dataMask);
+	NavigationData *GetNavigationData();
+	void ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
 
-void loop()
-{
-    delay(1000);                       // wait for a second
-    Serial.println("Hello World");
-}
+private:
+	MicronetCodec *micronetCodec;
+	MicronetCodec::NetworkMap networkMap;
+	uint32_t deviceId;
+	uint32_t networkId;
+	uint32_t dataFields;
+	uint32_t splitDataFields[NUMBER_OF_VIRTUAL_SLAVES];
+	uint8_t latestSignalStrength;
+
+	void SplitDataFields();
+	uint8_t GetShortestSlave();
+};
+
+#endif /* MICRONETSLAVEDEVICE_H_ */

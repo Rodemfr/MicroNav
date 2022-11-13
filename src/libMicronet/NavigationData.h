@@ -24,57 +24,103 @@
  ***************************************************************************
  */
 
+#ifndef NAVIGATIONDATA_H_
+#define NAVIGATIONDATA_H_
+
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "BoardConfig.h"
-
-#include <Arduino.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <axp20x.h>
+#include <stdint.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                             Local types                                 */
-/***************************************************************************/
+#define WAYPOINT_NAME_LENGTH  16
 
 /***************************************************************************/
-/*                           Local prototypes                              */
+/*                                Types                                    */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                               Globals                                   */
-/***************************************************************************/
-
-AXP20X_Class pmu;
-
-/***************************************************************************/
-/*                              Functions                                  */
-/***************************************************************************/
-
-void setup()
+typedef struct
 {
-    Serial.begin(115200);
+	bool valid;
+	float value;
+	uint32_t timeStamp;
+} FloatValue_t;
 
-    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-    } else {
-        Serial.println("AXP192 Begin FAIL");
-    }
-}
-
-void loop()
+typedef struct
 {
-    delay(1000);                       // wait for a second
-    Serial.println("Hello World");
-}
+	bool valid;
+	uint8_t hour;
+	uint8_t minute;
+	uint32_t timeStamp;
+} TimeValue_t;
+
+typedef struct
+{
+	bool valid;
+	uint8_t day;
+	uint8_t month;
+	uint8_t year;
+	uint32_t timeStamp;
+} DateValue_t;
+
+typedef struct
+{
+	bool valid;
+	uint8_t name[WAYPOINT_NAME_LENGTH];
+	uint8_t nameLength;
+	uint32_t timeStamp;
+} WaypointName_t;
+
+/***************************************************************************/
+/*                               Classes                                   */
+/***************************************************************************/
+
+class NavigationData
+{
+public:
+	NavigationData();
+	virtual ~NavigationData();
+
+	void UpdateValidity();
+
+	FloatValue_t spd_kt;
+	FloatValue_t awa_deg;
+	FloatValue_t aws_kt;
+	FloatValue_t twa_deg;
+	FloatValue_t tws_kt;
+	FloatValue_t dpt_m;
+	FloatValue_t vcc_v;
+	FloatValue_t log_nm;
+	FloatValue_t trip_nm;
+	FloatValue_t stp_degc;
+
+	TimeValue_t time;
+	DateValue_t date;
+	FloatValue_t latitude_deg;
+	FloatValue_t longitude_deg;
+	FloatValue_t cog_deg;
+	FloatValue_t sog_kt;
+	FloatValue_t xte_nm;
+	FloatValue_t dtw_nm;
+	FloatValue_t btw_deg;
+	WaypointName_t waypoint;
+	FloatValue_t vmgwp_kt;
+
+	FloatValue_t hdg_deg;
+
+	bool calibrationUpdated;
+	float waterSpeedFactor_per;
+	float waterTemperatureOffset_degc;
+	float depthOffset_m;
+	float windSpeedFactor_per;
+	float windDirectionOffset_deg;
+	float headingOffset_deg;
+	float magneticVariation_deg;
+	float windShift_min;
+};
+
+#endif /* NAVIGATIONDATA_H_ */
