@@ -1,11 +1,13 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Driver for SX1276                                             *
  * Author:   Ronan Demoment                                                *
+ *           heavily based on RadioLib driver by Jan Gromes                *
+ *           (https://github.com/jgromes/RadioLib)                         *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,28 +26,69 @@
  ***************************************************************************
  */
 
-#ifndef VERSION_H_
-#define VERSION_H_
+#ifndef SX1276MNETDRIVER_H_
+#define SX1276MNETDRIVER_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include <Arduino.h>
+#include <SPI.h>
+
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
-
-// MicroNav SW version
-#define MICRONAV_SW_MAJOR_VERSION 0
-#define MICRONAV_SW_MINOR_VERSION 1
-#define MICRONAV_SW_PATCH_VERSION 1
 
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                              Prototypes                                 */
+/*                               Classes                                   */
 /***************************************************************************/
 
-#endif /* VERSION_H_ */
+class SX1276MnetDriver
+{
+public:
+	SX1276MnetDriver();
+	~SX1276MnetDriver();
+
+	bool Init(void);
+	void SetFrequency(float freq_mhz);
+	void SetSyncMode(uint8_t mode);
+	void SetBw(float bw);
+	void SetBitrate(float br);
+	void SetDeviation(float d);
+	void SetTx(void);
+	void SetRx(void);
+	int GetRssi(void);
+	void SetSidle(void);
+	void LowPower();
+	void ActivePower();
+	void SetSyncWord(uint8_t sh, uint8_t sl);
+	void SetPQT(uint8_t pqt);
+	void SetLengthConfig(uint8_t v);
+	void SetPacketLength(uint8_t v);
+	int GetRxFifoLevel();
+	int GetTxFifoLevel();
+	void ReadRxFifo(uint8_t *buffer, int nbBytes);
+	void WriteTxFifo(uint8_t data);
+	void WriteArrayTxFifo(uint8_t const *buffer, int nbBytes);
+	void IrqOnTxFifoUnderflow();
+	void IrqOnTxFifoThreshold();
+	void IrqOnRxFifoThreshold();
+	void SetFifoThreshold(uint8_t fifoThreshold);
+	void FlushRxFifo();
+	void FlushTxFifo();
+	void UpdateFreqOffset();
+
+private:
+	SPISettings spiSettings;
+
+	void SPItransfer(uint8_t cmd, uint8_t reg, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes);
+	int16_t SPIgetRegValue(uint8_t reg, uint8_t msb, uint8_t lsb);
+	uint8_t SPIreadRegister(uint8_t reg);
+};
+
+#endif
