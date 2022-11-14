@@ -32,6 +32,7 @@
 #include "BoardConfig.h"
 #include "Globals.h"
 #include "Micronet.h"
+#include "SX1276MnetDriver.h"
 
 #include <Arduino.h>
 

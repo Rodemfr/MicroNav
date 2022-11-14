@@ -36,6 +36,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#include <RadioLib.h>
+
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
@@ -54,16 +56,16 @@ public:
 	SX1276MnetDriver();
 	~SX1276MnetDriver();
 
-	bool Init(void);
+	bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin);
 	void SetFrequency(float freq_mhz);
 	void SetSyncMode(uint8_t mode);
 	void SetBw(float bw);
 	void SetBitrate(float br);
 	void SetDeviation(float d);
-	void SetTx(void);
-	void SetRx(void);
+	void StartTx(void);
+	void StartRx(void);
 	int GetRssi(void);
-	void SetSidle(void);
+	void GoToIdle(void);
 	void LowPower();
 	void ActivePower();
 	void SetSyncWord(uint8_t sh, uint8_t sl);
@@ -85,10 +87,21 @@ public:
 
 private:
 	SPISettings spiSettings;
+	uint32_t sckPin;
+	uint32_t mosiPin;
+	uint32_t miso_Pin;
+	uint32_t csPin;
+	uint32_t dio0Pin;
+	uint32_t dio1Pin;
 
 	void SPItransfer(uint8_t cmd, uint8_t reg, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes);
 	int16_t SPIgetRegValue(uint8_t reg, uint8_t msb, uint8_t lsb);
 	uint8_t SPIreadRegister(uint8_t reg);
+
+	uint8_t SpiReadRegister(uint8_t addr);
+	void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
+	void SpiWriteRegister(uint8_t addr, uint8_t value);
+	void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 };
 
 #endif
