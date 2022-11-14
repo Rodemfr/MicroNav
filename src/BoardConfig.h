@@ -50,8 +50,8 @@
 #define RF_MISO_PIN 19
 #define RF_SCK_PIN  5
 #define RF_DIO0_PIN 26
-#define RF_RST_PIN  23
 #define RF_DIO1_PIN 33
+#define RF_RST_PIN  23
 #define RF_BUSY_PIN 32
 
 // NMEA GNSS UART pins

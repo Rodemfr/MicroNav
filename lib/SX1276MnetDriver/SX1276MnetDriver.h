@@ -50,58 +50,53 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class SX1276MnetDriver
-{
+class SX1276MnetDriver {
 public:
-	SX1276MnetDriver();
-	~SX1276MnetDriver();
+  SX1276MnetDriver();
+  ~SX1276MnetDriver();
 
-	bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin);
-	void SetFrequency(float freq_mhz);
-	void SetSyncMode(uint8_t mode);
-	void SetBw(float bw);
-	void SetBitrate(float br);
-	void SetDeviation(float d);
-	void StartTx(void);
-	void StartRx(void);
-	int GetRssi(void);
-	void GoToIdle(void);
-	void LowPower();
-	void ActivePower();
-	void SetSyncWord(uint8_t sh, uint8_t sl);
-	void SetPQT(uint8_t pqt);
-	void SetLengthConfig(uint8_t v);
-	void SetPacketLength(uint8_t v);
-	int GetRxFifoLevel();
-	int GetTxFifoLevel();
-	void ReadRxFifo(uint8_t *buffer, int nbBytes);
-	void WriteTxFifo(uint8_t data);
-	void WriteArrayTxFifo(uint8_t const *buffer, int nbBytes);
-	void IrqOnTxFifoUnderflow();
-	void IrqOnTxFifoThreshold();
-	void IrqOnRxFifoThreshold();
-	void SetFifoThreshold(uint8_t fifoThreshold);
-	void FlushRxFifo();
-	void FlushTxFifo();
-	void UpdateFreqOffset();
+  bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin,
+            uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin,
+            uint32_t rstPin);
+  void SetFrequency(float freq_mhz);
+  void SetSyncMode(uint8_t mode);
+  void SetBw(float bw);
+  void SetBitrate(float br);
+  void SetDeviation(float d);
+  void StartTx(void);
+  void StartRx(void);
+  int GetRssi(void);
+  void GoToIdle(void);
+  void LowPower();
+  void ActivePower();
+  void SetSyncWord(uint8_t sh, uint8_t sl);
+  void SetPQT(uint8_t pqt);
+  void SetLengthConfig(uint8_t v);
+  void SetPacketLength(uint8_t v);
+  int GetRxFifoLevel();
+  int GetTxFifoLevel();
+  void ReadRxFifo(uint8_t *buffer, int nbBytes);
+  void WriteTxFifo(uint8_t data);
+  void WriteArrayTxFifo(uint8_t const *buffer, int nbBytes);
+  void IrqOnTxFifoUnderflow();
+  void IrqOnTxFifoThreshold();
+  void IrqOnRxFifoThreshold();
+  void SetFifoThreshold(uint8_t fifoThreshold);
+  void FlushRxFifo();
+  void FlushTxFifo();
+  void UpdateFreqOffset();
 
 private:
-	SPISettings spiSettings;
-	uint32_t sckPin;
-	uint32_t mosiPin;
-	uint32_t miso_Pin;
-	uint32_t csPin;
-	uint32_t dio0Pin;
-	uint32_t dio1Pin;
+  SPISettings spiSettings;
+  uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin,
+      rstPin;
+	  
+  uint8_t SpiReadRegister(uint8_t addr);
+  void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
+  void SpiWriteRegister(uint8_t addr, uint8_t value);
+  void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
-	void SPItransfer(uint8_t cmd, uint8_t reg, uint8_t* dataOut, uint8_t* dataIn, uint8_t numBytes);
-	int16_t SPIgetRegValue(uint8_t reg, uint8_t msb, uint8_t lsb);
-	uint8_t SPIreadRegister(uint8_t reg);
-
-	uint8_t SpiReadRegister(uint8_t addr);
-	void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
-	void SpiWriteRegister(uint8_t addr, uint8_t value);
-	void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
+  void Reset();
 };
 
 #endif

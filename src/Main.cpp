@@ -145,18 +145,18 @@ void setup() {
   // Setup main menu
   gMenuManager.SetMenu(mainMenu);
 
-  CONSOLE.print("Initializing CC1101 ... ");
-  // // Check connection to CC1101
-  // if (!gRfReceiver.Init(&gRxMessageFifo,
-  //                       gConfiguration.rfFrequencyOffset_MHz)) {
+  CONSOLE.print("Initializing SX1276 ... ");
+  // Check connection to SX1276
+  if (!gRfReceiver.Init(&gRxMessageFifo,
+                        gConfiguration.rfFrequencyOffset_MHz)) {
 
-  //   while (1) {
-  //     CONSOLE.println("Failed");
-  //     CONSOLE.println("Aborting execution : Verify connection to CC1101 board");
-  //     CONSOLE.println("Halted");
-  //     delay(1000);
-  //   }
-  // }
+    while (1) {
+      CONSOLE.println("Failed");
+      CONSOLE.println("Aborting execution : Verify connection to CC1101 board");
+      CONSOLE.println("Halted");
+      delay(1000);
+    }
+  }
   CONSOLE.println("OK");
 
   CONSOLE.print("Initializing navigation compass ... ");

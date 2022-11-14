@@ -34,6 +34,7 @@
 #include "Micronet.h"
 #include "MicronetMessageFifo.h"
 #include "CC1101Driver.h"
+#include "SX1276MnetDriver.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -85,6 +86,7 @@ public:
 
 private:
 	CC1101Driver cc1101Driver;
+	SX1276MnetDriver sx1276Driver;
 	MicronetMessageFifo *messageFifo;
 	volatile RfDriverState_t rfState;
 	MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];

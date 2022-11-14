@@ -87,32 +87,42 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
 
   // timerInt.begin(TimerHandler);
 
-  if (!cc1101Driver.Init()) {
+  if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN,
+                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN)) {
     return false;
   }
-  cc1101Driver.SetFrequency(
-      MICRONET_RF_CENTER_FREQUENCY_MHZ +
-      frequencyOffset_mHz); // Here you can set your basic frequency. The lib
-                            // calculates the frequency automatically (default =
-                            // 433.92).The cc1101 can: 300-348 MHZ, 387-464MHZ
-                            // and 779-928MHZ. Read More info from datasheet.
-  cc1101Driver.SetDeviation(
-      MICRONET_RF_DEVIATION_KHZ); // Set the Frequency deviation in kHz. Value
-                                  // from 1.58 to 380.85. Default is 47.60 kHz.
-  cc1101Driver.SetBitrate(MICRONET_RF_BAUDRATE_BAUD / 1000.0f);
-  cc1101Driver.SetBw(250);
-  cc1101Driver.SetSyncWord(
-      0x55, 0x99); // Set sync word. Must be the same for the transmitter and
-                   // receiver. (Syncword high, Syncword low)
-  cc1101Driver.SetLengthConfig(
-      0); // 0 = Fixed packet length mode. 1 = Variable packet length mode. 2 =
-          // Infinite packet length mode. 3 = Reserved
-  cc1101Driver.SetPacketLength(
-      CC1101_FIFO_MAX_SIZE); // Indicates the packet length when fixed packet
-                             // length mode is enabled. If variable packet
-                             // length mode is used, this value indicates the
-                             // maximum packet length allowed.
-  cc1101Driver.SetPQT(4);
+
+  // if (!cc1101Driver.Init()) {
+  //   return false;
+  // }
+  // cc1101Driver.SetFrequency(
+  //     MICRONET_RF_CENTER_FREQUENCY_MHZ +
+  //     frequencyOffset_mHz); // Here you can set your basic frequency. The lib
+  //                           // calculates the frequency automatically
+  //                           (default =
+  //                           // 433.92).The cc1101 can: 300-348 MHZ,
+  //                           387-464MHZ
+  //                           // and 779-928MHZ. Read More info from datasheet.
+  // cc1101Driver.SetDeviation(
+  //     MICRONET_RF_DEVIATION_KHZ); // Set the Frequency deviation in kHz.
+  //     Value
+  //                                 // from 1.58 to 380.85. Default is 47.60
+  //                                 kHz.
+  // cc1101Driver.SetBitrate(MICRONET_RF_BAUDRATE_BAUD / 1000.0f);
+  // cc1101Driver.SetBw(250);
+  // cc1101Driver.SetSyncWord(
+  //     0x55, 0x99); // Set sync word. Must be the same for the transmitter and
+  //                  // receiver. (Syncword high, Syncword low)
+  // cc1101Driver.SetLengthConfig(
+  //     0); // 0 = Fixed packet length mode. 1 = Variable packet length mode. 2
+  //     =
+  //         // Infinite packet length mode. 3 = Reserved
+  // cc1101Driver.SetPacketLength(
+  //     CC1101_FIFO_MAX_SIZE); // Indicates the packet length when fixed packet
+  //                            // length mode is enabled. If variable packet
+  //                            // length mode is used, this value indicates the
+  //                            // maximum packet length allowed.
+  // cc1101Driver.SetPQT(4);
 
   return true;
 }

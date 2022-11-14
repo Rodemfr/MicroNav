@@ -71,14 +71,16 @@ SX1276MnetDriver::SX1276MnetDriver() {}
  */
 SX1276MnetDriver::~SX1276MnetDriver() {}
 
-bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin)
-{
+bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
+                            uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
+                            uint32_t dio1Pin, uint32_t rstPin) {
   this->sckPin = sckPin;
   this->mosiPin = mosiPin;
   this->miso_Pin = miso_Pin;
   this->csPin = csPin;
   this->dio0Pin = dio0Pin;
   this->dio1Pin = dio1Pin;
+  this->rstPin = rstPin;
 
   pinMode(sckPin, OUTPUT);
   pinMode(mosiPin, OUTPUT);
@@ -92,28 +94,27 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin
   digitalWrite(sckPin, HIGH);
   digitalWrite(mosiPin, LOW);
 
+  // Reset SX1276
+  Reset();
+
   // Start SPI driver
   SPI.begin(sckPin, miso_Pin, mosiPin, csPin);
-  // In  the context of MicronetToNMEA, only CC1101 driver is using SPI, so we
-  // can transaction once for all here and end the transaction in the destructor
-  // In case CC1101 would share the SPI bus with other ICs, beginTransaction
-  // should be moved into each SPI access member to avoid race conditions.
+  // In  the context of MicronetToNMEA, only SX1276 is alone on its SPI bus, so
+  // we can request SPI access here once for all here In case SX1276 would share
+  // the SPI bus with other ICs, beginTransaction and endTransaction should be
+  // moved into each SPI access member to avoid race conditions.
   SPI.beginTransaction(spiSettings);
 
-  if (SPIreadRegister(RADIOLIB_SX127X_REG_VERSION) != SX1276_CHIP_VERSION)
-  {
+  if (SpiReadRegister(RADIOLIB_SX127X_REG_VERSION) != SX1276_CHIP_VERSION) {
     return false;
   }
 
   return true;
 }
 
-uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
-{
+uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr) {
   uint8_t data;
 
-  // Request SPI usage
-  SPI.beginTransaction(spiSettings);
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Read register
@@ -121,16 +122,12 @@ uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
   data = SPI.transfer(0x00);
   // Release CS
   digitalWrite(csPin, LOW);
-  // Release SPI driver
-  SPI.endTransaction();
 
   return data;
 }
 
-void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length)
-{
-  // Request SPI usage
-  SPI.beginTransaction(spiSettings);
+void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data,
+                                            uint16_t length) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Read register
@@ -138,14 +135,9 @@ void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_
   SPI.transferBytes(nullptr, data, length);
   // Release CS
   digitalWrite(csPin, LOW);
-  // Release SPI driver
-  SPI.endTransaction();
 }
 
-void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value)
-{
-  // Request SPI usage
-  SPI.beginTransaction(spiSettings);
+void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Write register
@@ -153,14 +145,10 @@ void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value)
   SPI.transfer(value);
   // Release CS
   digitalWrite(csPin, LOW);
-  // Release SPI driver
-  SPI.endTransaction();
 }
 
-void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length)
-{
-    // Request SPI usage
-  SPI.beginTransaction(spiSettings);
+void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data,
+                                             uint16_t length) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Read register
@@ -168,6 +156,12 @@ void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16
   SPI.transferBytes(data, nullptr, length);
   // Release CS
   digitalWrite(csPin, LOW);
-  // Release SPI driver
-  SPI.endTransaction();
+}
+
+void SX1276MnetDriver::Reset() {
+  pinMode(rstPin, OUTPUT);
+  digitalWrite(rstPin, LOW);
+  delay(1);
+  digitalWrite(rstPin, HIGH);
+  delay(5);
 }
