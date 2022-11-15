@@ -88,15 +88,17 @@ public:
 
 private:
   SPISettings spiSettings;
-  uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin,
-      rstPin;
-	  
+  uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
+
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
   void SpiWriteRegister(uint8_t addr, uint8_t value);
   void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
   void Reset();
+  void SX1276MnetDriver::SetBaseConfiguration(float br, float freqDev,
+                                              float rxBw,
+                                              uint16_t preambleLength);
 };
 
 #endif

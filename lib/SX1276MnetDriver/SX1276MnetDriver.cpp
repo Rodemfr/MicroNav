@@ -161,7 +161,60 @@ void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data,
 void SX1276MnetDriver::Reset() {
   pinMode(rstPin, OUTPUT);
   digitalWrite(rstPin, LOW);
-  delay(1);
+  delay(1);r
   digitalWrite(rstPin, HIGH);
   delay(5);
+}
+
+void SX1276MnetDriver::SetBaseConfiguration(float br, float freqDev, float rxBw, uint16_t preambleLength) {
+  // set mode to standby
+  int16_t state = standby();
+
+  // check currently active modem
+  if(getActiveModem() != RADIOLIB_SX127X_FSK_OOK) {
+    // set FSK mode
+    setActiveModem(RADIOLIB_SX127X_FSK_OOK);
+  }
+  // enable/disable OOK
+  setOOK(false);
+
+  // set bit rate
+  setBitRate(br);
+
+  // set frequency deviation
+  setFrequencyDeviation(freqDev);
+
+  // set AFC bandwidth
+  setAFCBandwidth(rxBw);
+
+  // set AFC&AGC trigger to RSSI (both in OOK and FSK)
+  setAFCAGCTrigger(RADIOLIB_SX127X_RX_TRIGGER_RSSI_INTERRUPT);
+
+  // enable AFC
+  setAFC(false);
+
+  // set receiver bandwidth
+  setRxBandwidth(rxBw);
+
+  // set over current protection
+  setCurrentLimit(60);
+
+  // set preamble length
+  setPreambleLength(preambleLength);
+
+  // set default sync word
+  uint8_t syncWord[] = {0x99};
+  setSyncWord(syncWord, 1);
+
+  // disable address filtering
+  disableAddressFiltering();
+
+  // set default RSSI measurement config
+  setRSSIConfig(2);
+
+  // set default encoding
+  setEncoding(RADIOLIB_ENCODING_NRZ);
+
+  // set default packet length mode
+  variablePacketLengthMode();
 }
