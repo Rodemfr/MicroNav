@@ -231,6 +231,15 @@ void SX1276MnetDriver::SetSyncByte(uint8_t syncByte)
 }
 
 /*
+  Set packet length
+  @param length Packet length
+*/
+void SX1276MnetDriver::SetPacketLength(uint8_t length)
+{
+  SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, length);
+}
+
+/*
   Read one SX1276 register
   @param addr Register address
   @return Value of the register
@@ -332,11 +341,14 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, 0x99);
   // Fixed length packet : 60 bytes, no DC encoding, no adress filtering
   SpiWriteRegister(SX127X_REG_PACKET_CONFIG_1, 0);
+  SpiWriteRegister(SX127X_REG_PACKET_CONFIG_2, SX127X_DATA_MODE_PACKET);
   SpiWriteRegister(SX127X_REG_NODE_ADRS, 0x00);
   SpiWriteRegister(SX127X_REG_BROADCAST_ADRS, 0x00);
   SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, 60);
   // Minimum RSSI smoothing
   SpiWriteRegister(SX127X_REG_RSSI_CONFIG, 0);
+  // FIFO threshold set to 13 bytes and TX condition is !FifoEmpty
+  SpiWriteRegister(SX127X_REG_FIFO_THRESH, 0x8d);
 }
 
 /*

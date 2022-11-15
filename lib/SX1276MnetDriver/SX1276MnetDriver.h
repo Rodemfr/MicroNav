@@ -68,21 +68,16 @@ public:
   void GoToIdle(void);
   void LowPower();
   void ActivePower();
-  void SetSyncByte(uint8_t sycByte);
-  void SetLengthConfig(uint8_t v);
-  void SetPacketLength(uint8_t v);
-  int GetRxFifoLevel();
-  int GetTxFifoLevel();
-  void ReadRxFifo(uint8_t *buffer, int nbBytes);
-  void WriteTxFifo(uint8_t data);
-  void WriteArrayTxFifo(uint8_t const *buffer, int nbBytes);
+  void SetSyncByte(uint8_t syncByte);
+  void SetPacketLength(uint8_t length);
+  void ReadFifo(uint8_t *buffer, int nbBytes);
+  void WriteFifo(uint8_t data);
+  void WriteFifo(uint8_t const *buffer, int nbBytes);
   void IrqOnTxFifoUnderflow();
   void IrqOnTxFifoThreshold();
   void IrqOnRxFifoThreshold();
   void SetFifoThreshold(uint8_t fifoThreshold);
-  void FlushRxFifo();
-  void FlushTxFifo();
-  void UpdateFreqOffset();
+  void FlushFifo();
 
 private:
   SPISettings spiSettings;
