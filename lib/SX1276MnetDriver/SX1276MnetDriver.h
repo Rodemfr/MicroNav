@@ -36,11 +36,11 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include <RadioLib.h>
-
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
+
+#define SX1276_FIFO_MAX_SIZE 64
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -90,7 +90,11 @@ private:
 
   void Reset();
   void SetBaseConfiguration();
-  uint8_t CaulculateBandwidthRegister(float bandwidth);
+  uint8_t CalculateBandwidthRegister(float bandwidth);
+  void ExtendedPinMode(int pinNum, int pinDir);
+
+  static SX1276MnetDriver *driverObject;
+  static void RfIsr();
 };
 
 #endif

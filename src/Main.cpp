@@ -172,11 +172,6 @@ void setup() {
   // Start listening
   gRfReceiver.RestartReception();
 
-  // Attach callback to GDO0 pin
-  // According to CC1101 configuration this callback will be executed when
-  // CC1101 will have detected Micronet's sync word
-  // //  attachInterrupt(digitalPinToInterrupt(RF_DI00_PIN), RfIsr, HIGH);
-
   // Display serial menu
   gMenuManager.PrintMenu();
 

@@ -46,6 +46,7 @@
 #define SX127X_MAX_PACKET_LENGTH_FSK                  64
 #define SX127X_CRYSTAL_FREQ                           32.0
 #define SX127X_DIV_EXPONENT                           19
+#define SX127X_FIFO_MAX_SIZE                          64
 
 // SX127x series common LoRa registers
 #define SX127X_REG_FIFO                               0x00

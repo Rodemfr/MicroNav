@@ -53,8 +53,10 @@
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                           Static & Globals                              */
 /***************************************************************************/
+
+SX1276MnetDriver *SX1276MnetDriver::driverObject;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -64,7 +66,7 @@
  * Constructor of SX1276MnetDriver
  * Initialize class attributes, SPI HW and pins
  */
-SX1276MnetDriver::SX1276MnetDriver() {}
+SX1276MnetDriver::SX1276MnetDriver() { driverObject = this; }
 
 /*
  * Destructor of SX1276MnetDriver
@@ -85,8 +87,7 @@ SX1276MnetDriver::~SX1276MnetDriver() {}
 */
 bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
                             uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
-                            uint32_t dio1Pin, uint32_t rstPin)
-{
+                            uint32_t dio1Pin, uint32_t rstPin) {
   // Store pin configuration
   this->sckPin = sckPin;
   this->mosiPin = mosiPin;
@@ -97,12 +98,12 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   this->rstPin = rstPin;
 
   // Configure pin directions
-  pinMode(sckPin, OUTPUT);
-  pinMode(mosiPin, OUTPUT);
-  pinMode(miso_Pin, INPUT);
-  pinMode(csPin, OUTPUT);
-  pinMode(dio0Pin, INPUT);
-  pinMode(dio1Pin, INPUT);
+  ExtendedPinMode(sckPin, OUTPUT);
+  ExtendedPinMode(mosiPin, OUTPUT);
+  ExtendedPinMode(miso_Pin, INPUT);
+  ExtendedPinMode(csPin, OUTPUT);
+  ExtendedPinMode(dio0Pin, INPUT);
+  ExtendedPinMode(dio1Pin, INPUT);
 
   // Pin startup state
   digitalWrite(csPin, HIGH);
@@ -118,8 +119,7 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   SPI.beginTransaction(spiSettings);
 
   // Check presence of SX1276 on SPI bus
-  if (SpiReadRegister(SX127X_REG_VERSION) != SX1278_CHIP_VERSION)
-  {
+  if (SpiReadRegister(SX127X_REG_VERSION) != SX1278_CHIP_VERSION) {
     return false;
   }
 
@@ -129,6 +129,11 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   // Set base configuration for Micronet configuration
   SetBaseConfiguration();
 
+  // Attach callback to GDO0 pin
+  // According to CC1101 configuration this callback will be executed when
+  // CC1101 will have detected Micronet's sync word
+  attachInterrupt(digitalPinToInterrupt(dio1Pin), RfIsr, HIGH);
+
   return true;
 }
 
@@ -136,9 +141,9 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   Set down converter frequency
   @param frequency Frequency in MHz
 */
-void SX1276MnetDriver::SetFrequency(float frequency)
-{
-  uint32_t freqIndex = (frequency * (uint32_t(1) << SX127X_DIV_EXPONENT)) / SX127X_CRYSTAL_FREQ;
+void SX1276MnetDriver::SetFrequency(float frequency) {
+  uint32_t freqIndex =
+      (frequency * (uint32_t(1) << SX127X_DIV_EXPONENT)) / SX127X_CRYSTAL_FREQ;
 
   SpiWriteRegister(RADIOLIB_SX127X_REG_FRF_MSB, (freqIndex >> 16) & 0xff);
   SpiWriteRegister(RADIOLIB_SX127X_REG_FRF_MID, (freqIndex >> 8) & 0xff);
@@ -149,18 +154,17 @@ void SX1276MnetDriver::SetFrequency(float frequency)
   Set demodulator RX bandwidth
   @param bandwidth Bandwidth in kHz
 */
-void SX1276MnetDriver::SetBandwidth(float bandwidth)
-{
+void SX1276MnetDriver::SetBandwidth(float bandwidth) {
 
-  SpiWriteRegister(RADIOLIB_SX127X_REG_RX_BW, CaulculateBandwidthRegister(bandwidth));
+  SpiWriteRegister(RADIOLIB_SX127X_REG_RX_BW,
+                   CalculateBandwidthRegister(bandwidth));
 }
 
 /*
   Set demodulator bitrate
   @param bitrate Bitrate in bps
 */
-void SX1276MnetDriver::SetBitrate(float birate)
-{
+void SX1276MnetDriver::SetBitrate(float birate) {
   // TODO : is it possible to set fractonal part of bitrate ?
   uint16_t bitRate = roundf((SX127X_CRYSTAL_FREQ * 1000000.0) / birate);
   SpiWriteRegister(SX127X_REG_BITRATE_MSB, (bitRate >> 8) & 0xff);
@@ -171,8 +175,7 @@ void SX1276MnetDriver::SetBitrate(float birate)
   Set demodulator Frequency deviation in kHz
   @param freqDev Frequency deviation in kHz
 */
-void SX1276MnetDriver::SetDeviation(float deviation)
-{
+void SX1276MnetDriver::SetDeviation(float deviation) {
   uint32_t FDEV = roundf((deviation * (1 << 19)) / 32000.0);
   SpiWriteRegister(RADIOLIB_SX127X_REG_FDEV_MSB, (FDEV >> 8) & 0xff);
   SpiWriteRegister(RADIOLIB_SX127X_REG_FDEV_LSB, FDEV & 0xff);
@@ -181,52 +184,43 @@ void SX1276MnetDriver::SetDeviation(float deviation)
 /*
   Start RF transmission of FIFO data
 */
-void SX1276MnetDriver::StartTx(void)
-{
+void SX1276MnetDriver::StartTx(void) {
   SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_TX);
 }
 
 /*
   Start RF reception
 */
-void SX1276MnetDriver::StartRx(void)
-{
+void SX1276MnetDriver::StartRx(void) {
   SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
 }
 
-int32_t SX1276MnetDriver::GetRssi(void)
-{
+int32_t SX1276MnetDriver::GetRssi(void) {
   return SpiReadRegister(SX127X_REG_RSSI_VALUE_FSK);
 }
 
 /*
   Put SX1276 in idle (standby) mode
 */
-void SX1276MnetDriver::GoToIdle(void)
-{
+void SX1276MnetDriver::GoToIdle(void) {
   SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_STANDBY);
 }
 
 /*
   Put SX1276 in low power mode
 */
-void SX1276MnetDriver::LowPower()
-{
-}
+void SX1276MnetDriver::LowPower() {}
 
 /*
   Put SX1276 in active power mode
 */
-void SX1276MnetDriver::ActivePower()
-{
-}
+void SX1276MnetDriver::ActivePower() {}
 
 /*
   Set packet decoder sync byte
   @param syncByte Sync byte
 */
-void SX1276MnetDriver::SetSyncByte(uint8_t syncByte)
-{
+void SX1276MnetDriver::SetSyncByte(uint8_t syncByte) {
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, syncByte);
 }
 
@@ -234,18 +228,32 @@ void SX1276MnetDriver::SetSyncByte(uint8_t syncByte)
   Set packet length
   @param length Packet length
 */
-void SX1276MnetDriver::SetPacketLength(uint8_t length)
-{
+void SX1276MnetDriver::SetPacketLength(uint8_t length) {
   SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, length);
 }
+
+void SX1276MnetDriver::ReadFifo(uint8_t *buffer, int nbBytes) {}
+
+void SX1276MnetDriver::WriteFifo(uint8_t data) {}
+
+void SX1276MnetDriver::WriteFifo(uint8_t const *buffer, int nbBytes) {}
+
+void SX1276MnetDriver::IrqOnTxFifoUnderflow() {}
+
+void SX1276MnetDriver::IrqOnTxFifoThreshold() {}
+
+void SX1276MnetDriver::IrqOnRxFifoThreshold() {}
+
+void SX1276MnetDriver::SetFifoThreshold(uint8_t fifoThreshold) {}
+
+void SX1276MnetDriver::FlushFifo() {}
 
 /*
   Read one SX1276 register
   @param addr Register address
   @return Value of the register
 */
-uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
-{
+uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr) {
   uint8_t data;
 
   // Assert CS line
@@ -254,7 +262,7 @@ uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
   SPI.transfer(addr & 0x7f);
   data = SPI.transfer(0x00);
   // Release CS
-  digitalWrite(csPin, LOW);
+  digitalWrite(csPin, HIGH);
 
   return data;
 }
@@ -266,15 +274,14 @@ uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
   @param nbRegs Number of registers to read
 */
 void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data,
-                                            uint16_t nbRegs)
-{
+                                            uint16_t nbRegs) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Read register
   SPI.transfer(addr & 0x7f);
   SPI.transferBytes(nullptr, data, nbRegs);
   // Release CS
-  digitalWrite(csPin, LOW);
+  digitalWrite(csPin, HIGH);
 }
 
 /*
@@ -282,15 +289,14 @@ void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data,
   @param addr Register address
   @param value Value to be written
 */
-void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value)
-{
+void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Write register
   SPI.transfer(SPI_WRITE_COMMAND | addr);
   SPI.transfer(value);
   // Release CS
-  digitalWrite(csPin, LOW);
+  digitalWrite(csPin, HIGH);
 }
 
 /*
@@ -300,23 +306,21 @@ void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value)
   @param nbRegs Number of registers to write
 */
 void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data,
-                                             uint16_t nbRegs)
-{
+                                             uint16_t nbRegs) {
   // Assert CS line
   digitalWrite(csPin, LOW);
   // Read register
   SPI.transfer(SPI_WRITE_COMMAND | addr);
   SPI.transferBytes(data, nullptr, nbRegs);
   // Release CS
-  digitalWrite(csPin, LOW);
+  digitalWrite(csPin, HIGH);
 }
 
 /*
   Reset SX1276
 */
-void SX1276MnetDriver::Reset()
-{
-  pinMode(rstPin, OUTPUT);
+void SX1276MnetDriver::Reset() {
+  ExtendedPinMode(rstPin, OUTPUT);
   digitalWrite(rstPin, LOW);
   delay(1);
   digitalWrite(rstPin, HIGH);
@@ -326,8 +330,7 @@ void SX1276MnetDriver::Reset()
 /*
   Set SX1276 base configuration for Micronet operation
 */
-void SX1276MnetDriver::SetBaseConfiguration()
-{
+void SX1276MnetDriver::SetBaseConfiguration() {
   SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_SLEEP);
   SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_STANDBY);
   SetBitrate(76.8f);
@@ -337,7 +340,8 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 16);
   // Sync word detection ON, polarity of 0x55, 1 byte long, 0x99 value
-  SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON);
+  SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
+                   SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, 0x99);
   // Fixed length packet : 60 bytes, no DC encoding, no adress filtering
   SpiWriteRegister(SX127X_REG_PACKET_CONFIG_1, 0);
@@ -349,24 +353,52 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SpiWriteRegister(SX127X_REG_RSSI_CONFIG, 0);
   // FIFO threshold set to 13 bytes and TX condition is !FifoEmpty
   SpiWriteRegister(SX127X_REG_FIFO_THRESH, 0x8d);
+  // IRQ on PacketSend(TX) & FifoLevel (RX)
+  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, 0x00);
 }
 
 /*
   Caluclate bandwidth register value
   @param bandwidth Bandwidth in kHz
 */
-uint8_t SX1276MnetDriver::CaulculateBandwidthRegister(float bandwidth)
-{
-  for (uint8_t e = 7; e >= 1; e--)
-  {
-    for (int8_t m = 2; m >= 0; m--)
-    {
-      float point = (SX127X_CRYSTAL_FREQ * 1000000.0) / (((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
-      if (fabs(bandwidth - ((point / 1000.0) + 0.05)) <= 0.5)
-      {
+uint8_t SX1276MnetDriver::CalculateBandwidthRegister(float bandwidth) {
+  for (uint8_t e = 7; e >= 1; e--) {
+    for (int8_t m = 2; m >= 0; m--) {
+      float point = (SX127X_CRYSTAL_FREQ * 1000000.0) /
+                    (((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
+      if (fabs(bandwidth - ((point / 1000.0) + 0.05)) <= 0.5) {
         return ((m << 3) | e);
       }
     }
   }
   return 0;
+}
+
+void SX1276MnetDriver::ExtendedPinMode(int pinNum, int pinDir) {
+  // Enable GPIO32 or 33 as output.
+  if (pinNum == 32 || pinNum == 33) {
+    uint64_t gpioBitMask =
+        (pinNum == 32) ? 1ULL << GPIO_NUM_32 : 1ULL << GPIO_NUM_33;
+    gpio_mode_t gpioMode =
+        (pinDir == OUTPUT) ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT;
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = gpioMode;
+    io_conf.pin_bit_mask = gpioBitMask;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
+  } else
+    pinMode(pinNum, pinDir);
+}
+
+void SX1276MnetDriver::RfIsr() {
+  uint8_t message[64];
+  driverObject->SpiBurstReadRegister(SX127X_REG_FIFO, message, 14);
+  for (int i = 0; i < 14; i++)
+  {
+    Serial.print("0x");
+    Serial.println(message[i], HEX);
+  }
+  Serial.println("IRQ");
 }

@@ -42,8 +42,8 @@
 
 // Selects on which I2C bus is connected compass as per Wiring library definition
 #define NAVCOMPASS_I2C Wire1
-#define NAVCOMPASS_I2C_SDA 32
-#define NAVCOMPASS_I2C_SCL 33
+#define NAVCOMPASS_I2C_SDA 13
+#define NAVCOMPASS_I2C_SCL 14
 
 #define RF_CS0_PIN  18
 #define RF_MOSI_PIN 27
@@ -85,10 +85,10 @@
 #define PMU_IRQ     35
 
 // Defines with data comes from which link
-// LINK_NMEA_EXT -> data comes from external NMEA link (WIRED_NMEA)
+// LINK_NMEA_EXT  -> data comes from external NMEA link (WIRED_NMEA)
 // LINK_NMEA_GNSS -> data comes from GNSS NMEA link (GNSS_SERIAL)
-// LINK_MICRONET -> data comes from Micronet network
-// LINK_COMPASS -> data comes from LSM303 (NAVCOMPASS_I2C)
+// LINK_MICRONET  -> data comes from Micronet network
+// LINK_COMPASS   -> data comes from LSM303 (NAVCOMPASS_I2C)
 #define NAV_SOURCE_LINK     LINK_NMEA_EXT  // Navigation data (RMB)
 #define GNSS_SOURCE_LINK    LINK_NMEA_EXT // Positionning data (RMC, GGA, VTG)
 #define WIND_SOURCE_LINK    LINK_NMEA_EXT  // Wind data (MWV)
