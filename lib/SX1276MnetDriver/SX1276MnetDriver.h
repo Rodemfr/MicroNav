@@ -58,19 +58,17 @@ public:
   bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin,
             uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin,
             uint32_t rstPin);
-  void SetFrequency(float freq_mhz);
-  void SetSyncMode(uint8_t mode);
-  void SetBw(float bw);
-  void SetBitrate(float br);
-  void SetDeviation(float d);
+  void SetFrequency(float frequency);
+  void SetBandwidth(float bandwidth);
+  void SetBitrate(float bitrate);
+  void SetDeviation(float deviation);
   void StartTx(void);
   void StartRx(void);
-  int GetRssi(void);
+  int32_t GetRssi(void);
   void GoToIdle(void);
   void LowPower();
   void ActivePower();
-  void SetSyncWord(uint8_t sh, uint8_t sl);
-  void SetPQT(uint8_t pqt);
+  void SetSyncByte(uint8_t sycByte);
   void SetLengthConfig(uint8_t v);
   void SetPacketLength(uint8_t v);
   int GetRxFifoLevel();
@@ -96,9 +94,8 @@ private:
   void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
   void Reset();
-  void SX1276MnetDriver::SetBaseConfiguration(float br, float freqDev,
-                                              float rxBw,
-                                              uint16_t preambleLength);
+  void SetBaseConfiguration();
+  uint8_t CaulculateBandwidthRegister(float bandwidth);
 };
 
 #endif
