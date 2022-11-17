@@ -129,10 +129,11 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   // Set base configuration for Micronet configuration
   SetBaseConfiguration();
 
-  // Attach callback to GDO0 pin
-  // According to CC1101 configuration this callback will be executed when
-  // CC1101 will have detected Micronet's sync word
-  attachInterrupt(digitalPinToInterrupt(dio1Pin), RfIsr, HIGH);
+  xTaskCreate(DioTask, "DioTask", 1024, (void *)this,
+              (configMAX_PRIORITIES - 1), &DioTaskHandle);
+
+  // Attach callback to DIO1 pin
+  attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
 
   return true;
 }
@@ -392,13 +393,32 @@ void SX1276MnetDriver::ExtendedPinMode(int pinNum, int pinDir) {
     pinMode(pinNum, pinDir);
 }
 
-void SX1276MnetDriver::RfIsr() {
-  uint8_t message[64];
-  driverObject->SpiBurstReadRegister(SX127X_REG_FIFO, message, 14);
-  for (int i = 0; i < 14; i++)
-  {
-    Serial.print("0x");
-    Serial.println(message[i], HEX);
+void SX1276MnetDriver::StaticRfIsr() {
+  BaseType_t xHigherPriorityTaskWoken;
+  xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
+                         &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void SX1276MnetDriver::DioTask(void *parameter) {
+  ((SX1276MnetDriver *)parameter)->IsrProcessing();
+}
+
+void SX1276MnetDriver::IsrProcessing() {
+  BaseType_t xEvent;
+  const TickType_t xBlockTime = pdMS_TO_TICKS(500);
+  uint32_t ulNotifiedValue;
+
+  while (true) {
+    ulNotifiedValue = ulTaskNotifyTake(pdFALSE, xBlockTime);
+    if (ulNotifiedValue > 0) {
+      do {
+        Serial.println(SpiReadRegister(SX127X_REG_FIFO), HEX);
+      } while (SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & 0x40);
+
+      // detachInterrupt(digitalPinToInterrupt(dio1Pin));
+      // attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
+    }
   }
-  Serial.println("IRQ");
 }

@@ -82,6 +82,7 @@ public:
 private:
   SPISettings spiSettings;
   uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
+  TaskHandle_t DioTaskHandle;
 
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
@@ -94,7 +95,10 @@ private:
   void ExtendedPinMode(int pinNum, int pinDir);
 
   static SX1276MnetDriver *driverObject;
-  static void RfIsr();
+  static void StaticRfIsr();
+  static void DioTask(void *parameter);
+
+  void IsrProcessing();
 };
 
 #endif
