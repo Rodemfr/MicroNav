@@ -163,13 +163,20 @@ void SX1276MnetDriver::SetBandwidth(float bandwidth) {
 
 /*
   Set demodulator bitrate
-  @param bitrate Bitrate in bps
+  @param bitrate Bitrate in kbps
 */
 void SX1276MnetDriver::SetBitrate(float birate) {
-  // TODO : is it possible to set fractonal part of bitrate ?
-  uint16_t bitRate = roundf((SX127X_CRYSTAL_FREQ * 1000000.0) / birate);
-  SpiWriteRegister(SX127X_REG_BITRATE_MSB, (bitRate >> 8) & 0xff);
-  SpiWriteRegister(SX127X_REG_BITRATE_LSB, bitRate & 0xff);
+  uint16_t BrReg = floor((SX127X_CRYSTAL_FREQ * 1000.0) / birate);
+  uint16_t BrFrac = roundf(16 * (((SX127X_CRYSTAL_FREQ * 1000.0) / birate) - BrReg));
+  
+  if (BrFrac > 127)
+  {
+    BrFrac = 127;
+  }
+
+  SpiWriteRegister(SX127X_REG_BITRATE_MSB, (BrReg >> 8) & 0xff);
+  SpiWriteRegister(SX127X_REG_BITRATE_LSB, BrReg & 0xff);
+  SpiWriteRegister(SX127X_REG_BITRATE_FRAC, (uint8_t)BrFrac);
 }
 
 /*

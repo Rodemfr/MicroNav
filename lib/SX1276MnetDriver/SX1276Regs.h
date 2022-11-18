@@ -261,6 +261,7 @@
 #define SX127X_REG_LOW_BAT                            0x3D
 #define SX127X_REG_IRQ_FLAGS_1                        0x3E
 #define SX127X_REG_IRQ_FLAGS_2                        0x3F
+#define SX127X_REG_BITRATE_FRAC                       0x5D
 
 // SX127x common FSK modem settings
 // SX127X_REG_OP_MODE
