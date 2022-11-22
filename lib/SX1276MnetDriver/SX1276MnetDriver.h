@@ -33,6 +33,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "Micronet.h"
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -50,7 +51,14 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class SX1276MnetDriver {
+class SX1276MnetDriver
+{
+enum class RfState_t
+{
+  RX_HEADER_RECEIVE = 0,
+  RX_PAYLOAD_RECEIVE
+};
+
 public:
   SX1276MnetDriver();
   ~SX1276MnetDriver();
@@ -80,9 +88,12 @@ public:
   void FlushFifo();
 
 private:
+
   SPISettings spiSettings;
   uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
   TaskHandle_t DioTaskHandle;
+  RfState_t rfState;
+  MicronetMessage_t mnetMsg;
 
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
@@ -90,6 +101,7 @@ private:
   void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
   void Reset();
+  void ChangeOperatyingMode(uint8_t mode);
   void SetBaseConfiguration();
   uint8_t CalculateBandwidthRegister(float bandwidth);
   void ExtendedPinMode(int pinNum, int pinDir);

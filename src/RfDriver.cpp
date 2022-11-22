@@ -71,14 +71,16 @@ const uint8_t RfDriver::preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH] = {
 RfDriver::RfDriver()
     : messageFifo(nullptr), rfState(RF_STATE_RX_WAIT_SYNC),
       nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
-      freqTrackingNID(0) {
+      freqTrackingNID(0)
+{
   memset(transmitList, 0, sizeof(transmitList));
 }
 
 RfDriver::~RfDriver() {}
 
 bool RfDriver::Init(MicronetMessageFifo *messageFifo,
-                    float frequencyOffset_mHz) {
+                    float frequencyOffset_mHz)
+{
   this->frequencyOffset_MHz = frequencyOffset_mHz;
   this->messageFifo = messageFifo;
   rfDriver = this;
@@ -86,7 +88,8 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
   // timerInt.begin(TimerHandler);
 
   if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN,
-                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN)) {
+                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN))
+  {
     return false;
   }
 
@@ -101,16 +104,20 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
   return true;
 }
 
-void RfDriver::SetFrequencyOffset(float offset_MHz) {
+void RfDriver::SetFrequencyOffset(float offset_MHz)
+{
   frequencyOffset_MHz = offset_MHz;
 }
 
-void RfDriver::SetFrequency(float frequency_MHz) {
+void RfDriver::SetFrequency(float frequency_MHz)
+{
   sx1276Driver.SetFrequency(frequency_MHz + frequencyOffset_MHz);
 }
 
-void RfDriver::SetBandwidth(RfBandwidth_t bandwidth) {
-  switch (bandwidth) {
+void RfDriver::SetBandwidth(RfBandwidth_t bandwidth)
+{
+  switch (bandwidth)
+  {
   case RF_BANDWIDTH_LOW:
     sx1276Driver.SetBandwidth(95);
     break;
@@ -123,23 +130,30 @@ void RfDriver::SetBandwidth(RfBandwidth_t bandwidth) {
   }
 }
 
-void RfDriver::RfIsr() {
+void RfDriver::RfIsr()
+{
   if ((rfState == RF_STATE_TX_TRANSMIT) ||
-      (rfState == RF_STATE_TX_LAST_TRANSMIT)) {
+      (rfState == RF_STATE_TX_LAST_TRANSMIT))
+  {
     RfIsr_Tx();
-  } else {
+  }
+  else
+  {
     RfIsr_Rx();
   }
 }
 
-void RfDriver::RfIsr_Tx() {
-  if (rfState == RF_STATE_TX_TRANSMIT) {
+void RfDriver::RfIsr_Tx()
+{
+  if (rfState == RF_STATE_TX_TRANSMIT)
+  {
     int bytesInFifo;
     int bytesToLoad = transmitList[nextTransmitIndex].len - messageBytesSent;
 
     // FIXME : handle FIFO correctly
     bytesInFifo = 13;
-    if (bytesToLoad + bytesInFifo > SX1276_FIFO_MAX_SIZE) {
+    if (bytesToLoad + bytesInFifo > SX1276_FIFO_MAX_SIZE)
+    {
       bytesToLoad = SX1276_FIFO_MAX_SIZE - bytesInFifo;
     }
 
@@ -147,11 +161,14 @@ void RfDriver::RfIsr_Tx() {
         &transmitList[nextTransmitIndex].data[messageBytesSent], bytesToLoad);
     messageBytesSent += bytesToLoad;
 
-    if (messageBytesSent >= transmitList[nextTransmitIndex].len) {
+    if (messageBytesSent >= transmitList[nextTransmitIndex].len)
+    {
       rfState = RF_STATE_TX_LAST_TRANSMIT;
       sx1276Driver.IrqOnTxFifoUnderflow();
     }
-  } else {
+  }
+  else
+  {
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
@@ -160,14 +177,16 @@ void RfDriver::RfIsr_Tx() {
   }
 }
 
-void RfDriver::RfIsr_Rx() {
+void RfDriver::RfIsr_Rx()
+{
   static MicronetMessage_t message;
   static int dataOffset;
   static int packetLength;
   static uint32_t startTime_us;
   uint8_t nbBytes;
 
-  if (rfState == RF_STATE_RX_WAIT_SYNC) {
+  if (rfState == RF_STATE_RX_WAIT_SYNC)
+  {
     // When we reach this point, we know that a packet is under reception by
     // CC1101. We will not wait the end of this reception and will begin
     // collecting bytes right now. This way we will be able to receive packets
@@ -183,7 +202,8 @@ void RfDriver::RfIsr_Rx() {
     nbBytes = 13; // sx1276Driver.GetRxFifoLevel();
 
     // Check for FIFO overflow
-    if (nbBytes > 64) {
+    if (nbBytes > 64)
+    {
       // Yes : ignore current packet and restart CC1101 reception for the next
       // packet
       RestartReception();
@@ -191,27 +211,34 @@ void RfDriver::RfIsr_Rx() {
     }
 
     startTime_us -= nbBytes * BYTE_LENGTH_IN_US;
-  } else if ((rfState == RF_STATE_RX_HEADER) ||
-             (rfState == RF_STATE_RX_PAYLOAD)) {
+  }
+  else if ((rfState == RF_STATE_RX_HEADER) ||
+           (rfState == RF_STATE_RX_PAYLOAD))
+  {
     // FIXME : How many bytes ?
     nbBytes = 13; // sx1276Driver.GetRxFifoLevel();
 
     // Check for FIFO overflow
-    if (nbBytes > 64) {
+    if (nbBytes > 64)
+    {
       // Yes : ignore current packet and restart CC1101 reception for the next
       // packet
       RestartReception();
       return;
     }
-  } else {
+  }
+  else
+  {
     // GDO0 RX ISR is not supposed to be triggered in this state
     return;
   }
 
   // Are there new bytes in the FIFO ?
-  if ((nbBytes > 0) && ((dataOffset < packetLength) || (packetLength < 0))) {
+  if ((nbBytes > 0) && ((dataOffset < packetLength) || (packetLength < 0)))
+  {
     // Yes : read them
-    if (dataOffset + nbBytes > MICRONET_MAX_MESSAGE_LENGTH) {
+    if (dataOffset + nbBytes > MICRONET_MAX_MESSAGE_LENGTH)
+    {
       // Received data size exceeds max message size, something must have gone
       // wrong : restart listening
       RestartReception();
@@ -221,7 +248,8 @@ void RfDriver::RfIsr_Rx() {
     dataOffset += nbBytes;
     // Check if we have reached the packet length field
     if ((rfState == RF_STATE_RX_HEADER) &&
-        (dataOffset >= (MICRONET_LEN_OFFSET_1 + 2))) {
+        (dataOffset >= (MICRONET_LEN_OFFSET_1 + 2)))
+    {
       rfState = RF_STATE_RX_PAYLOAD;
       // Yes : check that this is a valid length
       if ((message.data[MICRONET_LEN_OFFSET_1] ==
@@ -229,11 +257,14 @@ void RfDriver::RfIsr_Rx() {
           (message.data[MICRONET_LEN_OFFSET_1] <
            MICRONET_MAX_MESSAGE_LENGTH - 3) &&
           ((message.data[MICRONET_LEN_OFFSET_1] + 2) >=
-           MICRONET_PAYLOAD_OFFSET)) {
+           MICRONET_PAYLOAD_OFFSET))
+      {
         packetLength = message.data[MICRONET_LEN_OFFSET_1] + 2;
         // Update CC1101's packet length register
         sx1276Driver.SetPacketLength(packetLength);
-      } else {
+      }
+      else
+      {
         // The packet length is not valid : ignore current packet and restart
         // CC1101 reception for the next packet
         RestartReception();
@@ -242,7 +273,8 @@ void RfDriver::RfIsr_Rx() {
     }
   }
 
-  if ((dataOffset < packetLength) || (packetLength < 0)) {
+  if ((dataOffset < packetLength) || (packetLength < 0))
+  {
     return;
   }
 
@@ -258,7 +290,8 @@ void RfDriver::RfIsr_Rx() {
   messageFifo->PushIsr(message);
 
   // Only perform frequency tracking if the feature has been explicitly enabled
-  if (freqTrackingNID != 0) {
+  if (freqTrackingNID != 0)
+  {
     unsigned int networkId = message.data[MICRONET_NUID_OFFSET];
     networkId = (networkId << 8) | message.data[MICRONET_NUID_OFFSET + 1];
     networkId = (networkId << 8) | message.data[MICRONET_NUID_OFFSET + 2];
@@ -267,40 +300,48 @@ void RfDriver::RfIsr_Rx() {
     // Only track if message is from the master of our network
     if ((message.data[MICRONET_MI_OFFSET] ==
          MICRONET_MESSAGE_ID_MASTER_REQUEST) &&
-        (networkId == freqTrackingNID)) {
+        (networkId == freqTrackingNID))
+    {
       // cc1101Driver.UpdateFreqOffset();
     }
   }
 }
 
-void RfDriver::RestartReception() {
+void RfDriver::RestartReception()
+{
   sx1276Driver.GoToIdle();
   sx1276Driver.SetFifoThreshold(13);
-  sx1276Driver.IrqOnRxFifoThreshold();
   sx1276Driver.SetPacketLength(SX1276_FIFO_MAX_SIZE);
   rfState = RF_STATE_RX_WAIT_SYNC;
   sx1276Driver.StartRx();
 }
 
-void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo) {
+void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
+{
   MicronetMessage_t *txMessage;
-  while ((txMessage = txMessageFifo->Peek()) != nullptr) {
+  while ((txMessage = txMessageFifo->Peek()) != nullptr)
+  {
     Transmit(txMessage);
     txMessageFifo->DeleteMessage();
   }
 }
 
-void RfDriver::Transmit(MicronetMessage_t *message) {
+void RfDriver::Transmit(MicronetMessage_t *message)
+{
   noInterrupts();
   int transmitIndex = GetFreeTransmitSlot();
 
-  if (transmitIndex >= 0) {
+  if (transmitIndex >= 0)
+  {
     transmitList[transmitIndex].action = message->action;
     transmitList[transmitIndex].startTime_us = message->startTime_us;
     transmitList[transmitIndex].len = message->len;
-    if ((message->len > 0) && (message->len <= MICRONET_MAX_MESSAGE_LENGTH)) {
+    if ((message->len > 0) && (message->len <= MICRONET_MAX_MESSAGE_LENGTH))
+    {
       memcpy(transmitList[transmitIndex].data, message->data, message->len);
-    } else {
+    }
+    else
+    {
       message->len = 0;
     }
   }
@@ -309,16 +350,20 @@ void RfDriver::Transmit(MicronetMessage_t *message) {
   interrupts();
 }
 
-void RfDriver::ScheduleTransmit() {
-  do {
+void RfDriver::ScheduleTransmit()
+{
+  do
+  {
     int transmitIndex = GetNextTransmitIndex();
-    if (transmitIndex < 0) {
+    if (transmitIndex < 0)
+    {
       // No transmit to schedule : stop timer and leave
       //			timerInt.stop();
       return;
     }
     int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
-    if ((transmitDelay <= 0) || (transmitDelay > 3000000)) {
+    if ((transmitDelay <= 0) || (transmitDelay > 3000000))
+    {
       // Transmit already in the past, or invalid : delete it and schedule the
       // next one
       transmitList[transmitIndex].startTime_us = 0;
@@ -333,13 +378,17 @@ void RfDriver::ScheduleTransmit() {
   } while (true);
 }
 
-int RfDriver::GetNextTransmitIndex() {
+int RfDriver::GetNextTransmitIndex()
+{
   uint32_t minTime = 0xffffffff;
   int minIndex = -1;
 
-  for (int i = 0; i < TRANSMIT_LIST_SIZE; i++) {
-    if (transmitList[i].startTime_us != 0) {
-      if (transmitList[i].startTime_us <= minTime) {
+  for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
+  {
+    if (transmitList[i].startTime_us != 0)
+    {
+      if (transmitList[i].startTime_us <= minTime)
+      {
         minTime = transmitList[i].startTime_us;
         minIndex = i;
       }
@@ -349,11 +398,14 @@ int RfDriver::GetNextTransmitIndex() {
   return minIndex;
 }
 
-int RfDriver::GetFreeTransmitSlot() {
+int RfDriver::GetFreeTransmitSlot()
+{
   int freeIndex = -1;
 
-  for (int i = 0; i < TRANSMIT_LIST_SIZE; i++) {
-    if (transmitList[i].startTime_us == 0) {
+  for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
+  {
+    if (transmitList[i].startTime_us == 0)
+    {
       freeIndex = i;
       break;
     }
@@ -364,8 +416,10 @@ int RfDriver::GetFreeTransmitSlot() {
 
 void RfDriver::TimerHandler() { rfDriver->TransmitCallback(); }
 
-void RfDriver::TransmitCallback() {
-  if (nextTransmitIndex < 0) {
+void RfDriver::TransmitCallback()
+{
+  if (nextTransmitIndex < 0)
+  {
     RestartReception();
     return;
   }
@@ -373,7 +427,8 @@ void RfDriver::TransmitCallback() {
   int32_t triggerDelay =
       micros() - transmitList[nextTransmitIndex].startTime_us;
 
-  if (triggerDelay < 0) {
+  if (triggerDelay < 0)
+  {
     // Depending on the Teensy version, timer may not be able to reach delay of
     // more than about 50ms. in that case we reprogram it until we reach the
     // specified amount of time
@@ -381,7 +436,8 @@ void RfDriver::TransmitCallback() {
     return;
   }
 
-  if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_LOW_POWER) {
+  if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_LOW_POWER)
+  {
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
@@ -389,8 +445,10 @@ void RfDriver::TransmitCallback() {
     rfState = RF_STATE_RX_WAIT_SYNC;
 
     ScheduleTransmit();
-  } else if (transmitList[nextTransmitIndex].action ==
-             MICRONET_ACTION_RF_ACTIVE_POWER) {
+  }
+  else if (transmitList[nextTransmitIndex].action ==
+           MICRONET_ACTION_RF_ACTIVE_POWER)
+  {
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
@@ -398,7 +456,9 @@ void RfDriver::TransmitCallback() {
     RestartReception();
 
     ScheduleTransmit();
-  } else if (rfState == RF_STATE_RX_WAIT_SYNC) {
+  }
+  else if (rfState == RF_STATE_RX_WAIT_SYNC)
+  {
     rfState = RF_STATE_TX_TRANSMIT;
 
     // Change CC1101 configuration for transmission
@@ -418,12 +478,15 @@ void RfDriver::TransmitCallback() {
                            sizeof(preambleAndSync));
 
     messageBytesSent = 0;
-  } else {
+  }
+  else
+  {
     ScheduleTransmit();
   }
 }
 
-void RfDriver::EnableFrequencyTracking(uint32_t networkId) {
+void RfDriver::EnableFrequencyTracking(uint32_t networkId)
+{
   freqTrackingNID = networkId;
 }
 
