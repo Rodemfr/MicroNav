@@ -44,7 +44,7 @@
 #endif
 // Note that the actual deviation on Micronet devices is around 38kHz and not 34
 // However, CC1101 produces 38 kHz deviation when requested 34 : problem of HW, Driver or measurement tools ?
-#define MICRONET_RF_DEVIATION_KHZ    34
+#define MICRONET_RF_DEVIATION_KHZ    38
 #define MICRONET_RF_BAUDRATE_BAUD    76800
 
 #define MICRONET_MAX_DEVICES_PER_NETWORK 32
@@ -126,6 +126,7 @@
 #define WINDOW_ROUNDING_TIME_US 244
 #define PREAMBLE_LENGTH_IN_US   1771
 #define HEADER_LENGTH_IN_US     1456
+#define HEADER_LENGTH_IN_BYTES  14
 #define GUARD_TIME_IN_US        1893
 #define ASYNC_WINDOW_OFFSET     7200
 #define ASYNC_WINDOW_LENGTH		7200

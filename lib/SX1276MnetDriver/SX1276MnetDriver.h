@@ -94,6 +94,7 @@ private:
   TaskHandle_t DioTaskHandle;
   RfState_t rfState;
   MicronetMessage_t mnetMsg;
+  uint32_t msgDataOffset;
 
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
