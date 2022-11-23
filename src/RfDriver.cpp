@@ -111,7 +111,9 @@ void RfDriver::SetFrequencyOffset(float offset_MHz)
 
 void RfDriver::SetFrequency(float frequency_MHz)
 {
+  sx1276Driver.GoToIdle();
   sx1276Driver.SetFrequency(frequency_MHz + frequencyOffset_MHz);
+  sx1276Driver.StartRx();
 }
 
 void RfDriver::SetBandwidth(RfBandwidth_t bandwidth)

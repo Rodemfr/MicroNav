@@ -90,13 +90,13 @@
 // LINK_MICRONET  -> data comes from Micronet network
 // LINK_COMPASS   -> data comes from LSM303 (NAVCOMPASS_I2C)
 #define NAV_SOURCE_LINK     LINK_NMEA_EXT  // Navigation data (RMB)
-#define GNSS_SOURCE_LINK    LINK_NMEA_EXT // Positionning data (RMC, GGA, VTG)
-#define WIND_SOURCE_LINK    LINK_NMEA_EXT  // Wind data (MWV)
-#define DEPTH_SOURCE_LINK   LINK_NMEA_EXT  // Depth data (DPT)
-#define SPEED_SOURCE_LINK   LINK_NMEA_EXT  // Speed data (SPD, LOG)
-#define VOLTAGE_SOURCE_LINK LINK_NMEA_EXT  // Battery voltage data (XDG)
-#define SEATEMP_SOURCE_LINK LINK_NMEA_EXT  // Temperature data (STP)
-#define COMPASS_SOURCE_LINK LINK_NMEA_EXT   // Heading data (HDG)
+#define GNSS_SOURCE_LINK    LINK_NMEA_GNSS // Positionning data (RMC, GGA, VTG)
+#define WIND_SOURCE_LINK    LINK_MICRONET  // Wind data (MWV)
+#define DEPTH_SOURCE_LINK   LINK_MICRONET  // Depth data (DPT)
+#define SPEED_SOURCE_LINK   LINK_MICRONET  // Speed data (SPD, LOG)
+#define VOLTAGE_SOURCE_LINK LINK_MICRONET  // Battery voltage data (XDG)
+#define SEATEMP_SOURCE_LINK LINK_MICRONET  // Temperature data (STP)
+#define COMPASS_SOURCE_LINK LINK_COMPASS   // Heading data (HDG)
 
 // Navigation softwares can send a wrong RMB sentence and invert "FROM" and "TO" fields
 // If you see your Micronet display showing the "FROM" waypoint name instead of the "TO"
