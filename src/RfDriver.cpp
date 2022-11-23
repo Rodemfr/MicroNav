@@ -88,7 +88,7 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
   // timerInt.begin(TimerHandler);
 
   if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN,
-                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN))
+                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN, messageFifo))
   {
     return false;
   }

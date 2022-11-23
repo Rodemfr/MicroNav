@@ -43,7 +43,7 @@
 /***************************************************************************/
 
 #define SPI_WRITE_COMMAND 0x80
-#define DEFAULT_PACKET_LENGTH 60
+#define DEFAULT_PACKET_LENGTH 255
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -67,7 +67,7 @@ SX1276MnetDriver *SX1276MnetDriver::driverObject;
  * Constructor of SX1276MnetDriver
  * Initialize class attributes, SPI HW and pins
  */
-SX1276MnetDriver::SX1276MnetDriver() : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)), msgDataOffset(0)
+SX1276MnetDriver::SX1276MnetDriver() : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)), msgDataOffset(0), messageFifo(nullptr)
 {
   driverObject = this;
 }
@@ -91,7 +91,7 @@ SX1276MnetDriver::~SX1276MnetDriver() {}
 */
 bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
                             uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
-                            uint32_t dio1Pin, uint32_t rstPin)
+                            uint32_t dio1Pin, uint32_t rstPin, MicronetMessageFifo *messageFifo)
 {
   // Store pin configuration
   this->sckPin = sckPin;
@@ -114,6 +114,8 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   digitalWrite(csPin, HIGH);
   digitalWrite(sckPin, HIGH);
   digitalWrite(mosiPin, LOW);
+
+  this->messageFifo = messageFifo;
 
   // Start SPI driver
   SPI.begin(sckPin, miso_Pin, mosiPin, csPin);
@@ -140,7 +142,7 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
 
   // Attach callback to DIO1 pin
   attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
-  attachInterrupt(digitalPinToInterrupt(dio0Pin), StaticRfIsr, RISING);
+  //  attachInterrupt(digitalPinToInterrupt(dio0Pin), StaticRfIsr, RISING);
 
   return true;
 }
@@ -249,7 +251,7 @@ void SX1276MnetDriver::ActivePower() {}
 */
 void SX1276MnetDriver::SetSyncByte(uint8_t syncByte)
 {
-  SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, syncByte);
+  //SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, syncByte);
 }
 
 /*
@@ -361,6 +363,21 @@ void SX1276MnetDriver::Reset()
   delay(5);
 }
 
+void SX1276MnetDriver::RestartRx()
+{
+  // Switch to header reception state
+  rfState = RfState_t::RX_HEADER_RECEIVE;
+  // Set FIFO threshold to header length
+  SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+  // Empty FIFO
+  while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
+  {
+    SpiReadRegister(SX127X_REG_FIFO);
+  }
+  // Restart RX
+  SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
+}
+
 void SX1276MnetDriver::ChangeOperatyingMode(uint8_t mode)
 {
   SpiWriteRegister(SX127X_REG_OP_MODE, mode);
@@ -393,13 +410,15 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SetDeviation(38.0f);
   SetBandwidth(250.0f);
   // Preamble of 16 bytes for TX operations
-  SpiWriteRegister(SX127X_REG_PREAMBLE_DETECT, 0xAA);
+  SpiWriteRegister(SX127X_REG_PREAMBLE_DETECT, 0xC0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 15);
   // Sync word detection ON, polarity of 0x55, 1 byte long
   SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
-                   SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON);
-  SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, 0x99);
+                   SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+  SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, 0x55);
+  SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, 0x55);
+  SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, 0x99);
   // Fixed length packet : 60 bytes, no DC encoding, no address filtering
   SpiWriteRegister(SX127X_REG_PACKET_CONFIG_1, 0);
   SpiWriteRegister(SX127X_REG_PACKET_CONFIG_2, SX127X_DATA_MODE_PACKET);
@@ -475,7 +494,6 @@ void SX1276MnetDriver::DioTask(void *parameter)
 
 void SX1276MnetDriver::IsrProcessing()
 {
-  uint32_t debugCount = 0;
   while (true)
   {
     uint32_t ulNotifiedValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -485,83 +503,65 @@ void SX1276MnetDriver::IsrProcessing()
     {
       uint8_t irqFlags2;
       irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
-      if (irqFlags2 & SX127X_FLAG_PAYLOAD_READY)
+      if (irqFlags2 & SX127X_FLAG_FIFO_LEVEL)
       {
-        if (rfState == RfState_t::RX_PAYLOAD_RECEIVE)
-        {
-          Serial.println("#1");
-          while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
-          {
-            mnetMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
-          }
-          if (mnetMsg.len <= msgDataOffset)
-          {
-            rfState = RfState_t::RX_HEADER_RECEIVE;
-            SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-            SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
-            Serial.print("MP (");
-            Serial.print(debugCount++);
-            Serial.print(") : ");
-            Serial.println(mnetMsg.len);
-          }
-        }
-        else
-        {
-          Serial.println("#2");
-        }
-      }
-      else if (irqFlags2 & SX127X_FLAG_FIFO_LEVEL)
-      {
-        Serial.println("FL");
         if (rfState == RfState_t::RX_HEADER_RECEIVE)
         {
           // When we reach this point, we know that a packet is under reception by SX1276 and than we received at least the complete header. We will begin processing it.
           SpiBurstReadRegister(SX127X_REG_FIFO, mnetMsg.data, HEADER_LENGTH_IN_BYTES);
           mnetMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
-          rfState = RfState_t::RX_PAYLOAD_RECEIVE;
           msgDataOffset = HEADER_LENGTH_IN_BYTES;
+          rfState = RfState_t::RX_PAYLOAD_RECEIVE;
           if ((mnetMsg.data[MICRONET_LEN_OFFSET_1] == mnetMsg.data[MICRONET_LEN_OFFSET_2]) &&
               (mnetMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
               ((mnetMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
           {
-            Serial.println("$1");
+            // TODO : Also verify the first checksum
             mnetMsg.len = mnetMsg.data[MICRONET_LEN_OFFSET_1] + 2;
+            mnetMsg.rssi = GetRssi();
             if (mnetMsg.len == HEADER_LENGTH_IN_BYTES)
             {
-              GoToIdle();
-              StartRx();
+              messageFifo->Push(mnetMsg);
+              RestartRx();
             }
             else
             {
-              // Update SX1276's packet length register
-              SetPacketLength(mnetMsg.len);
+              uint32_t remainingBytes = mnetMsg.len - HEADER_LENGTH_IN_BYTES;
+              if (remainingBytes > 60)
+              {
+                remainingBytes = 60;
+              }
+              SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (remainingBytes - 1));
             }
           }
           else
           {
-            Serial.println("$2");
+            Serial.println("INV1");
             // The packet length is not valid : ignore current packet and restart
             // SX1276 reception for the next packet
-            rfState = RfState_t::RX_HEADER_RECEIVE;
-            SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-            SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
+            RestartRx();
           }
         }
         else if (rfState == RfState_t::RX_PAYLOAD_RECEIVE)
         {
           while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
           {
+            // FIXME : verify overflow
             mnetMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
           }
           if (mnetMsg.len <= msgDataOffset)
           {
-            rfState = RfState_t::RX_HEADER_RECEIVE;
-            SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-            SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
-            Serial.print("ML (");
-            Serial.print(debugCount++);
-            Serial.print(") : ");
-            Serial.println(mnetMsg.len);
+            messageFifo->Push(mnetMsg);
+            RestartRx();
+          }
+          else
+          {
+            uint32_t remainingBytes = mnetMsg.len - HEADER_LENGTH_IN_BYTES;
+            if (remainingBytes > 60)
+            {
+              remainingBytes = 60;
+            }
+            SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (remainingBytes - 1));
           }
         }
       }

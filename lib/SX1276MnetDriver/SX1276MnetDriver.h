@@ -34,6 +34,7 @@
 /***************************************************************************/
 
 #include "Micronet.h"
+#include "MicronetMessageFifo.h"
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -65,7 +66,7 @@ public:
 
   bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin,
             uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin,
-            uint32_t rstPin);
+            uint32_t rstPin, MicronetMessageFifo *messageFifo);
   void SetFrequency(float frequency);
   void SetBandwidth(float bandwidth);
   void SetBitrate(float bitrate);
@@ -95,6 +96,7 @@ private:
   RfState_t rfState;
   MicronetMessage_t mnetMsg;
   uint32_t msgDataOffset;
+  MicronetMessageFifo *messageFifo;
 
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
@@ -102,6 +104,7 @@ private:
   void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
   void Reset();
+  void RestartRx();
   void ChangeOperatyingMode(uint8_t mode);
   void SetBaseConfiguration();
   uint8_t CalculateBandwidthRegister(float bandwidth);
