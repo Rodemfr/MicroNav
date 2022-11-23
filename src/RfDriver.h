@@ -99,7 +99,6 @@ private:
 	int GetNextTransmitIndex();
 	int GetFreeTransmitSlot();
 	void TransmitCallback();
-	void RfIsr_Rx();
 	void RfIsr_Tx();
 
 	static void TimerHandler();

@@ -48,10 +48,10 @@
 /***************************************************************************/
 
 #define MAX_SCANNED_NETWORKS 5
-#define WAIT_TIME_US(t)                                                        \
-  {                                                                            \
-    while (micros() < t)                                                       \
-      ;                                                                        \
+#define WAIT_TIME_US(t)  \
+  {                      \
+    while (micros() < t) \
+      ;                  \
   }
 
 /***************************************************************************/
@@ -104,16 +104,20 @@ MenuEntry_t mainMenu[] = {
 /*                              Functions                                  */
 /***************************************************************************/
 
-void setup() {
+void setup()
+{
   // Configure power supply
   Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-  if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
+  if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
+  {
     pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
     pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
-  } else {
+  }
+  else
+  {
     Serial.println("AXP192 Configuration failed");
   }
 
@@ -148,9 +152,11 @@ void setup() {
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
   if (!gRfReceiver.Init(&gRxMessageFifo,
-                        gConfiguration.rfFrequencyOffset_MHz)) {
+                        gConfiguration.rfFrequencyOffset_MHz))
+  {
 
-    while (1) {
+    while (1)
+    {
       CONSOLE.println("Failed");
       CONSOLE.println("Aborting execution : Verify connection to CC1101 board");
       CONSOLE.println("Halted");
@@ -160,10 +166,13 @@ void setup() {
   CONSOLE.println("OK");
 
   CONSOLE.print("Initializing navigation compass ... ");
-  if (!gNavCompass.Init()) {
+  if (!gNavCompass.Init())
+  {
     CONSOLE.println("NOT DETECTED");
     gConfiguration.navCompassAvailable = false;
-  } else {
+  }
+  else
+  {
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" Found");
     gConfiguration.navCompassAvailable = true;
@@ -179,16 +188,19 @@ void setup() {
   firstLoop = true;
 }
 
-void loop() {
+void loop()
+{
   // If this is the first loop, we verify if we are already attached to a
   // Micronet network. if yes, We directly jump to NMEA conversion mode.
-  if ((firstLoop) && (gConfiguration.networkId != 0)) {
+  if ((firstLoop) && (gConfiguration.networkId != 0))
+  {
     MenuConvertToNmea();
     gMenuManager.PrintMenu();
   }
 
   // Process console input
-  while (CONSOLE.available() > 0) {
+  while (CONSOLE.available() > 0)
+  {
     gMenuManager.PushChar(CONSOLE.read());
   }
 
@@ -197,14 +209,17 @@ void loop() {
 
 void RfIsr() { gRfReceiver.RfIsr(); }
 
-void PrintByte(uint8_t data) {
-  if (data < 16) {
+void PrintByte(uint8_t data)
+{
+  if (data < 16)
+  {
     CONSOLE.print("0");
   }
   CONSOLE.print(data, HEX);
 }
 
-void PrintInt(uint32_t data) {
+void PrintInt(uint32_t data)
+{
   PrintByte((data >> 24) & 0x0ff);
   PrintByte((data >> 16) & 0x0ff);
   PrintByte((data >> 8) & 0x0ff);
@@ -212,8 +227,10 @@ void PrintInt(uint32_t data) {
 }
 
 void PrintRawMessage(MicronetMessage_t *message,
-                     uint32_t lastMasterRequest_us) {
-  if (message->len < MICRONET_PAYLOAD_OFFSET) {
+                     uint32_t lastMasterRequest_us)
+{
+  if (message->len < MICRONET_PAYLOAD_OFFSET)
+  {
     CONSOLE.print("Invalid message (");
     CONSOLE.print((int)message->rssi);
     CONSOLE.print(", ");
@@ -221,24 +238,28 @@ void PrintRawMessage(MicronetMessage_t *message,
     CONSOLE.println(")");
   }
 
-  for (int j = 0; j < 4; j++) {
+  for (int j = 0; j < 4; j++)
+  {
     PrintByte(message->data[j]);
   }
   CONSOLE.print(" ");
 
-  for (int j = 4; j < 8; j++) {
+  for (int j = 4; j < 8; j++)
+  {
     PrintByte(message->data[j]);
   }
   CONSOLE.print(" ");
 
-  for (int j = 8; j < 14; j++) {
+  for (int j = 8; j < 14; j++)
+  {
     PrintByte(message->data[j]);
     CONSOLE.print(" ");
   }
 
   CONSOLE.print(" -- ");
 
-  for (int j = 14; j < message->len; j++) {
+  for (int j = 14; j < message->len; j++)
+  {
     PrintByte(message->data[j]);
     CONSOLE.print(" ");
   }
@@ -252,7 +273,8 @@ void PrintRawMessage(MicronetMessage_t *message,
   CONSOLE.println();
 }
 
-void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap) {
+void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap)
+{
   CONSOLE.print("Network ID : 0x");
   PrintInt(networkMap->networkId);
   CONSOLE.println("");
@@ -264,19 +286,23 @@ void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap) {
   PrintInt(networkMap->masterDevice);
   CONSOLE.println("");
 
-  for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++) {
+  for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++)
+  {
     CONSOLE.print("S");
     CONSOLE.print(i);
     CONSOLE.print(" : 0x");
     PrintInt(networkMap->syncSlot[i].deviceId);
     CONSOLE.print(" ");
-    if (networkMap->syncSlot[i].start_us > 0) {
+    if (networkMap->syncSlot[i].start_us > 0)
+    {
       CONSOLE.print(networkMap->syncSlot[i].payloadBytes);
       CONSOLE.print(" ");
       CONSOLE.print(networkMap->syncSlot[i].start_us - networkMap->firstSlot);
       CONSOLE.print(" ");
       CONSOLE.println(networkMap->syncSlot[i].length_us);
-    } else {
+    }
+    else
+    {
       CONSOLE.println("-");
     }
   }
@@ -289,7 +315,8 @@ void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap) {
   CONSOLE.print(" ");
   CONSOLE.println(networkMap->asyncSlot.length_us);
 
-  for (uint32_t i = 0; i < networkMap->nbAckSlots; i++) {
+  for (uint32_t i = 0; i < networkMap->nbAckSlots; i++)
+  {
     CONSOLE.print("A");
     CONSOLE.print(i);
     CONSOLE.print(" : 0x");
@@ -304,9 +331,12 @@ void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap) {
   CONSOLE.println("");
 }
 
-void PrintMessageFifo(MicronetMessageFifo &messageFifo) {
-  if (messageFifo.GetNbMessages() > 0) {
-    for (int i = 0; i < messageFifo.GetNbMessages(); i++) {
+void PrintMessageFifo(MicronetMessageFifo &messageFifo)
+{
+  if (messageFifo.GetNbMessages() > 0)
+  {
+    for (int i = 0; i < messageFifo.GetNbMessages(); i++)
+    {
       MicronetMessage_t *message = messageFifo.Peek(i);
       CONSOLE.print("MSG ");
       CONSOLE.print(i);
@@ -321,7 +351,8 @@ void PrintMessageFifo(MicronetMessageFifo &messageFifo) {
   }
 }
 
-void MenuAbout() {
+void MenuAbout()
+{
   CONSOLE.print("MicronetToNMEA, Version ");
   CONSOLE.print(MICRONAV_SW_MAJOR_VERSION, DEC);
   CONSOLE.print(".");
@@ -330,10 +361,13 @@ void MenuAbout() {
   CONSOLE.print("Device ID : ");
   CONSOLE.println(gConfiguration.deviceId, HEX);
 
-  if (gConfiguration.networkId != 0) {
+  if (gConfiguration.networkId != 0)
+  {
     CONSOLE.print("Attached to Micronet Network ");
     CONSOLE.println(gConfiguration.networkId, HEX);
-  } else {
+  }
+  else
+  {
     CONSOLE.println("No Micronet Network attached");
   }
 
@@ -351,10 +385,13 @@ void MenuAbout() {
   CONSOLE.println(gConfiguration.waterSpeedFactor_per);
   CONSOLE.print("Water temperature offset = ");
   CONSOLE.println((int)(gConfiguration.waterTemperatureOffset_C));
-  if (gConfiguration.navCompassAvailable == false) {
+  if (gConfiguration.navCompassAvailable == false)
+  {
     CONSOLE.println(
         "No navigation compass detected, disabling magnetic heading.");
-  } else {
+  }
+  else
+  {
     CONSOLE.print("Using ");
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" for magnetic heading");
@@ -367,7 +404,8 @@ void MenuAbout() {
   }
 }
 
-void MenuScanNetworks() {
+void MenuScanNetworks()
+{
   MicronetMessage_t *message;
   uint32_t nidArray[MAX_SCANNED_NETWORKS];
   int16_t rssiArray[MAX_SCANNED_NETWORKS];
@@ -381,29 +419,41 @@ void MenuScanNetworks() {
 
   gRxMessageFifo.ResetFifo();
   unsigned long startTime = millis();
-  do {
-    if ((message = gRxMessageFifo.Peek()) != nullptr) {
+  do
+  {
+    if ((message = gRxMessageFifo.Peek()) != nullptr)
+    {
       // Only consider messages with a valid CRC
-      if (micronetCodec.VerifyHeaderCrc(message)) {
+      if (micronetCodec.VerifyHeaderCrc(message))
+      {
         uint32_t nid = micronetCodec.GetNetworkId(message);
         int16_t rssi = message->rssi;
         // Store the network in the array by order of reception power
-        for (int i = 0; i < MAX_SCANNED_NETWORKS; i++) {
-          if (nidArray[i] == 0) {
+        for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
+        {
+          if (nidArray[i] == 0)
+          {
             // New network
             nidArray[i] = nid;
             rssiArray[i] = rssi;
             break;
-          } else if (nidArray[i] == nid) {
+          }
+          else if (nidArray[i] == nid)
+          {
             // Already scanned network : update RSSI if stronger
-            if (rssi > rssiArray[i]) {
+            if (rssi > rssiArray[i])
+            {
               rssiArray[i] = rssi;
             }
             break;
-          } else {
+          }
+          else
+          {
             // New network to be inserted in the list : shift the list down
-            if (rssi > rssiArray[i]) {
-              for (int j = (MAX_SCANNED_NETWORKS - 1); j > i; j++) {
+            if (rssi > rssiArray[i])
+            {
+              for (int j = (MAX_SCANNED_NETWORKS - 1); j > i; j++)
+              {
                 nidArray[j] = nidArray[j - 1];
                 rssiArray[j] = rssiArray[j - 1];
               }
@@ -422,11 +472,14 @@ void MenuScanNetworks() {
   CONSOLE.println("");
 
   // Print result
-  if (nidArray[0] != 0) {
+  if (nidArray[0] != 0)
+  {
     CONSOLE.println("List of scanned networks :");
     CONSOLE.println("");
-    for (int i = 0; i < MAX_SCANNED_NETWORKS; i++) {
-      if (nidArray[i] != 0) {
+    for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
+    {
+      if (nidArray[i] != 0)
+      {
         CONSOLE.print("Network ");
         CONSOLE.print(i);
         CONSOLE.print(" - ");
@@ -443,30 +496,40 @@ void MenuScanNetworks() {
         CONSOLE.println(")");
       }
     }
-  } else {
+  }
+  else
+  {
     CONSOLE.println("/!\\ No Micronet network found /!\\");
     CONSOLE.println("Check that your Micronet network is powered on.");
   }
 }
 
-void MenuAttachNetwork() {
+void MenuAttachNetwork()
+{
   char input[16], c;
   uint32_t charIndex = 0;
 
   CONSOLE.print("Enter Network ID to attach to : ");
 
-  do {
-    if (CONSOLE.available()) {
+  do
+  {
+    if (CONSOLE.available())
+    {
       c = CONSOLE.read();
-      if (c == 0x0d) {
+      if (c == 0x0d)
+      {
         CONSOLE.println("");
         break;
-      } else if ((c == 0x08) && (charIndex > 0)) {
+      }
+      else if ((c == 0x08) && (charIndex > 0))
+      {
         charIndex--;
         CONSOLE.print(c);
         CONSOLE.print(" ");
         CONSOLE.print(c);
-      } else if (charIndex < sizeof(input)) {
+      }
+      else if (charIndex < sizeof(input))
+      {
         input[charIndex++] = c;
         CONSOLE.print(c);
       }
@@ -476,19 +539,28 @@ void MenuAttachNetwork() {
   bool invalidInput = false;
   uint32_t newNetworkId = 0;
 
-  if (charIndex == 0) {
+  if (charIndex == 0)
+  {
     invalidInput = true;
   }
 
-  for (uint32_t i = 0; i < charIndex; i++) {
+  for (uint32_t i = 0; i < charIndex; i++)
+  {
     c = input[i];
-    if ((c >= '0') && (c <= '9')) {
+    if ((c >= '0') && (c <= '9'))
+    {
       c -= '0';
-    } else if ((c >= 'a') && (c <= 'f')) {
+    }
+    else if ((c >= 'a') && (c <= 'f'))
+    {
       c = c - 'a' + 10;
-    } else if ((c >= 'A') && (c <= 'F')) {
+    }
+    else if ((c >= 'A') && (c <= 'F'))
+    {
       c = c - 'A' + 10;
-    } else {
+    }
+    else
+    {
       invalidInput = true;
       break;
     }
@@ -496,9 +568,12 @@ void MenuAttachNetwork() {
     newNetworkId = (newNetworkId << 4) | c;
   }
 
-  if (invalidInput) {
+  if (invalidInput)
+  {
     CONSOLE.println("Invalid Network ID entered, ignoring input.");
-  } else {
+  }
+  else
+  {
     gConfiguration.networkId = newNetworkId;
     CONSOLE.print("Now attached to NetworkID ");
     CONSOLE.println(newNetworkId, HEX);
@@ -506,7 +581,8 @@ void MenuAttachNetwork() {
   }
 }
 
-void MenuConvertToNmea() {
+void MenuConvertToNmea()
+{
   bool exitNmeaLoop = false;
   MicronetMessage_t *rxMessage;
   MicronetMessageFifo txMessageFifo;
@@ -517,7 +593,8 @@ void MenuConvertToNmea() {
   MicronetSlaveDevice micronetDevice(&micronetCodec);
 
   // Check that we have been attached to a network
-  if (gConfiguration.networkId == 0) {
+  if (gConfiguration.networkId == 0)
+  {
     CONSOLE.println("No Micronet network has been attached.");
     CONSOLE.println("Scan and attach a Micronet network first.");
     return;
@@ -541,14 +618,17 @@ void MenuConvertToNmea() {
 
   gRxMessageFifo.ResetFifo();
 
-  do {
-    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr) {
+  do
+  {
+    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
+    {
       micronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
       gRfReceiver.Transmit(&txMessageFifo);
 
       dataBridge.UpdateMicronetData();
 
-      if (micronetCodec.navData.calibrationUpdated) {
+      if (micronetCodec.navData.calibrationUpdated)
+      {
         micronetCodec.navData.calibrationUpdated = false;
         SaveCalibration(micronetCodec);
       }
@@ -556,14 +636,17 @@ void MenuConvertToNmea() {
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (GNSS_SERIAL.available() > 0) {
+    while (GNSS_SERIAL.available() > 0)
+    {
       dataBridge.PushNmeaChar(GNSS_SERIAL.read(), LINK_NMEA_GNSS);
     }
 
     char c;
-    while (NMEA_EXT.available() > 0) {
+    while (NMEA_EXT.available() > 0)
+    {
       c = NMEA_EXT.read();
-      if (((void *)(&CONSOLE) == (void *)(&NMEA_EXT)) && (c == 0x1b)) {
+      if (((void *)(&CONSOLE) == (void *)(&NMEA_EXT)) && (c == 0x1b))
+      {
         CONSOLE.println("ESC key pressed, stopping conversion.");
         exitNmeaLoop = true;
       }
@@ -571,18 +654,23 @@ void MenuConvertToNmea() {
     }
 
     // Only execute magnetic heading code if navigation compass is available
-    if (gConfiguration.navCompassAvailable == true) {
+    if (gConfiguration.navCompassAvailable == true)
+    {
       // Handle magnetic compass
       // Only request new reading if previous is at least 100ms old
-      if ((millis() - lastHeadingTime) > 100) {
+      if ((millis() - lastHeadingTime) > 100)
+      {
         lastHeadingTime = millis();
         dataBridge.UpdateCompassData(gNavCompass.GetHeading());
       }
     }
 
-    if ((void *)(&CONSOLE) != (void *)(&NMEA_EXT)) {
-      while (CONSOLE.available() > 0) {
-        if (CONSOLE.read() == 0x1b) {
+    if ((void *)(&CONSOLE) != (void *)(&NMEA_EXT))
+    {
+      while (CONSOLE.available() > 0)
+      {
+        if (CONSOLE.read() == 0x1b)
+        {
           CONSOLE.println("ESC key pressed, stopping conversion.");
           exitNmeaLoop = true;
         }
@@ -603,7 +691,8 @@ void MenuConvertToNmea() {
   gRfReceiver.DisableFrequencyTracking();
 }
 
-void MenuScanAllMicronetTraffic() {
+void MenuScanAllMicronetTraffic()
+{
   bool exitSniffLoop = false;
   uint32_t lastMasterRequest_us = 0;
   MicronetCodec::NetworkMap networkMap;
@@ -618,11 +707,15 @@ void MenuScanAllMicronetTraffic() {
   gRxMessageFifo.ResetFifo();
 
   MicronetMessage_t *message;
-  do {
-    if ((message = gRxMessageFifo.Peek()) != nullptr) {
-      if (micronetCodec.VerifyHeaderCrc(message)) {
+  do
+  {
+    if ((message = gRxMessageFifo.Peek()) != nullptr)
+    {
+      if (micronetCodec.VerifyHeaderCrc(message))
+      {
         if (message->data[MICRONET_MI_OFFSET] ==
-            MICRONET_MESSAGE_ID_MASTER_REQUEST) {
+            MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        {
           CONSOLE.println("");
           lastMasterRequest_us = message->endTime_us;
           micronetCodec.GetNetworkMap(message, &networkMap);
@@ -633,8 +726,10 @@ void MenuScanAllMicronetTraffic() {
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (CONSOLE.available() > 0) {
-      if (CONSOLE.read() == 0x1b) {
+    while (CONSOLE.available() > 0)
+    {
+      if (CONSOLE.read() == 0x1b)
+      {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitSniffLoop = true;
       }
@@ -643,7 +738,8 @@ void MenuScanAllMicronetTraffic() {
   } while (!exitSniffLoop);
 }
 
-void MenuCalibrateMagnetoMeter() {
+void MenuCalibrateMagnetoMeter()
+{
   bool exitLoop = false;
   uint32_t pDisplayTime = 0;
   uint32_t pSampleTime = 0;
@@ -656,18 +752,22 @@ void MenuCalibrateMagnetoMeter() {
   float zMax = -1000;
   char c;
 
-  if (gConfiguration.navCompassAvailable == false) {
+  if (gConfiguration.navCompassAvailable == false)
+  {
     CONSOLE.println("No navigation compass detected. Exiting menu ...");
     return;
   }
 
   CONSOLE.println("Calibrating magnetometer ... ");
 
-  do {
+  do
+  {
     uint32_t currentTime = millis();
-    if ((currentTime - pSampleTime) > 100) {
+    if ((currentTime - pSampleTime) > 100)
+    {
       gNavCompass.GetMagneticField(&mx, &my, &mz);
-      if ((currentTime - pDisplayTime) > 250) {
+      if ((currentTime - pDisplayTime) > 250)
+      {
         pDisplayTime = currentTime;
         if (mx < xMin)
           xMin = mx;
@@ -710,8 +810,10 @@ void MenuCalibrateMagnetoMeter() {
       }
     }
 
-    while (CONSOLE.available() > 0) {
-      if (CONSOLE.read() == 0x1b) {
+    while (CONSOLE.available() > 0)
+    {
+      if (CONSOLE.read() == 0x1b)
+      {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitLoop = true;
       }
@@ -722,18 +824,22 @@ void MenuCalibrateMagnetoMeter() {
   while (CONSOLE.available() == 0)
     ;
   c = CONSOLE.read();
-  if ((c == 'y') || (c == 'Y')) {
+  if ((c == 'y') || (c == 'Y'))
+  {
     gConfiguration.xMagOffset = (xMin + xMax) / 2;
     gConfiguration.yMagOffset = (yMin + yMax) / 2;
     gConfiguration.zMagOffset = (zMin + zMax) / 2;
     gConfiguration.SaveToEeprom();
     CONSOLE.println("Configuration saved");
-  } else {
+  }
+  else
+  {
     CONSOLE.println("Configuration discarded");
   }
 }
 
-void MenuCalibrateRfFrequency() {
+void MenuCalibrateRfFrequency()
+{
 #define FREQUENCY_SWEEP_RANGE_KHZ 300
 #define FREQUENCY_SWEEP_STEP_KHZ 3
 
@@ -759,7 +865,8 @@ void MenuCalibrateRfFrequency() {
   CONSOLE.println("Tuning phase will last about two minutes.");
   CONSOLE.println("Press any key when you are ready to start.");
 
-  while (CONSOLE.available() == 0) {
+  while (CONSOLE.available() == 0)
+  {
     yield();
   }
 
@@ -778,11 +885,14 @@ void MenuCalibrateRfFrequency() {
   exitTuneLoop = false;
 
   gRxMessageFifo.ResetFifo();
-  do {
+  do
+  {
     MicronetMessage_t *rxMessage;
-    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr) {
+    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
+    {
       if (micronetCodec.GetMessageId(rxMessage) ==
-          MICRONET_MESSAGE_ID_MASTER_REQUEST) {
+          MICRONET_MESSAGE_ID_MASTER_REQUEST)
+      {
         lastMessageTime = millis();
         CONSOLE.print("*");
         updateFreq = true;
@@ -794,24 +904,30 @@ void MenuCalibrateRfFrequency() {
       gRxMessageFifo.DeleteMessage();
     }
 
-    if (millis() - lastMessageTime > 1250) {
+    if (millis() - lastMessageTime > 1250)
+    {
       lastMessageTime = millis();
       CONSOLE.print(".");
       updateFreq = true;
     }
 
-    if (updateFreq) {
+    if (updateFreq)
+    {
       lastMessageTime = millis();
       updateFreq = false;
       if (currentFreq_MHz < MICRONET_RF_CENTER_FREQUENCY_MHZ +
-                                (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f)) {
+                                (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f))
+      {
         currentFreq_MHz += (FREQUENCY_SWEEP_STEP_KHZ / 1000.0f);
         gRfReceiver.SetFrequency(currentFreq_MHz);
-      } else {
+      }
+      else
+      {
         centerFrequency_MHz =
             ((lastWorkingFreq_MHz + firstWorkingFreq_MHz) / 2);
         range_kHz = (lastWorkingFreq_MHz - firstWorkingFreq_MHz) * 1000;
-        if ((range_kHz > 0) && (range_kHz < FREQUENCY_SWEEP_RANGE_KHZ)) {
+        if ((range_kHz > 0) && (range_kHz < FREQUENCY_SWEEP_RANGE_KHZ))
+        {
           CONSOLE.println("");
           CONSOLE.print("Frequency = ");
           CONSOLE.print(centerFrequency_MHz * 1000);
@@ -834,12 +950,15 @@ void MenuCalibrateRfFrequency() {
           while (CONSOLE.available() == 0)
             ;
           c = CONSOLE.read();
-          if ((c == 'y') || (c == 'Y')) {
+          if ((c == 'y') || (c == 'Y'))
+          {
             gConfiguration.rfFrequencyOffset_MHz =
                 (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
             gConfiguration.SaveToEeprom();
             CONSOLE.println("Configuration saved");
-          } else {
+          }
+          else
+          {
             CONSOLE.println("Configuration discarded");
           }
         }
@@ -848,8 +967,10 @@ void MenuCalibrateRfFrequency() {
       }
     }
 
-    while (CONSOLE.available() > 0) {
-      if (CONSOLE.read() == 0x1b) {
+    while (CONSOLE.available() > 0)
+    {
+      if (CONSOLE.read() == 0x1b)
+      {
         CONSOLE.println("\r\nESC key pressed, stopping frequency tuning.");
         exitTuneLoop = true;
       }
@@ -863,7 +984,8 @@ void MenuCalibrateRfFrequency() {
   gRfReceiver.SetFrequency(MICRONET_RF_CENTER_FREQUENCY_MHZ);
 }
 
-void MenuTestRfQuality() {
+void MenuTestRfQuality()
+{
   bool exitTestLoop = false;
   MicronetCodec::NetworkMap networkMap;
   float strength;
@@ -880,13 +1002,17 @@ void MenuTestRfQuality() {
 
   gRxMessageFifo.ResetFifo();
 
-  do {
+  do
+  {
     MicronetMessage_t *message;
 
-    if ((message = gRxMessageFifo.Peek()) != nullptr) {
-      if (micronetCodec.VerifyHeaderCrc(message)) {
+    if ((message = gRxMessageFifo.Peek()) != nullptr)
+    {
+      if (micronetCodec.VerifyHeaderCrc(message))
+      {
         if (message->data[MICRONET_MI_OFFSET] ==
-            MICRONET_MESSAGE_ID_MASTER_REQUEST) {
+            MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        {
           CONSOLE.println("");
           micronetCodec.GetNetworkMap(message, &networkMap);
           txSlot = micronetCodec.GetAsyncTransmissionSlot(&networkMap);
@@ -899,39 +1025,56 @@ void MenuTestRfQuality() {
         }
 
         bool alreadyReceived = false;
-        for (int i = 0; i < MICRONET_MAX_DEVICES_PER_NETWORK; i++) {
+        for (int i = 0; i < MICRONET_MAX_DEVICES_PER_NETWORK; i++)
+        {
           uint32_t did = micronetCodec.GetDeviceId(message);
-          if (receivedDid[i] == did) {
+          if (receivedDid[i] == did)
+          {
             alreadyReceived = true;
             break;
-          } else if (receivedDid[i] == 0) {
+          }
+          else if (receivedDid[i] == 0)
+          {
             receivedDid[i] = did;
             break;
           }
         }
 
-        if (!alreadyReceived) {
+        if (!alreadyReceived)
+        {
           PrintInt(micronetCodec.GetDeviceId(message));
           CONSOLE.print(" Strength=");
           strength = micronetCodec.CalculateSignalFloatStrength(message);
           CONSOLE.print(strength);
           CONSOLE.print(" (");
-          if (strength < 1.0) {
+          if (strength < 1.0)
+          {
             CONSOLE.print("Very low");
-          } else if (strength < 2.5) {
+          }
+          else if (strength < 2.5)
+          {
             CONSOLE.print("Low");
-          } else if (strength < 5.0) {
+          }
+          else if (strength < 5.0)
+          {
             CONSOLE.print("Medium");
-          } else if (strength < 7.0) {
+          }
+          else if (strength < 7.0)
+          {
             CONSOLE.print("Good");
-          } else if (strength < 9.0) {
+          }
+          else if (strength < 9.0)
+          {
             CONSOLE.print("Very Good");
-          } else {
+          }
+          else
+          {
             CONSOLE.print("Excellent");
           }
 
           CONSOLE.print(") ");
-          switch (micronetCodec.GetDeviceType(message)) {
+          switch (micronetCodec.GetDeviceType(message))
+          {
           case MICRONET_DEVICE_TYPE_HULL_TRANSMITTER:
             CONSOLE.print("Hull Transmitter");
             break;
@@ -966,7 +1109,8 @@ void MenuTestRfQuality() {
             CONSOLE.print("Unknown device");
             break;
           }
-          if (networkMap.masterDevice == micronetCodec.GetDeviceId(message)) {
+          if (networkMap.masterDevice == micronetCodec.GetDeviceId(message))
+          {
             CONSOLE.print(", MASTER");
           }
           CONSOLE.println("");
@@ -975,8 +1119,10 @@ void MenuTestRfQuality() {
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (CONSOLE.available() > 0) {
-      if (CONSOLE.read() == 0x1b) {
+    while (CONSOLE.available() > 0)
+    {
+      if (CONSOLE.read() == 0x1b)
+      {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitTestLoop = true;
       }
@@ -985,25 +1131,22 @@ void MenuTestRfQuality() {
   } while (!exitTestLoop);
 }
 
-void SaveCalibration(MicronetCodec &micronetCodec) {
-  gConfiguration.waterSpeedFactor_per =
-      micronetCodec.navData.waterSpeedFactor_per;
-  gConfiguration.waterTemperatureOffset_C =
-      micronetCodec.navData.waterTemperatureOffset_degc;
+void SaveCalibration(MicronetCodec &micronetCodec)
+{
+  gConfiguration.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
+  gConfiguration.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
   gConfiguration.depthOffset_m = micronetCodec.navData.depthOffset_m;
-  gConfiguration.windSpeedFactor_per =
-      micronetCodec.navData.windSpeedFactor_per;
-  gConfiguration.windDirectionOffset_deg =
-      micronetCodec.navData.windDirectionOffset_deg;
+  gConfiguration.windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
+  gConfiguration.windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
   gConfiguration.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
-  gConfiguration.magneticVariation_deg =
-      micronetCodec.navData.magneticVariation_deg;
+  gConfiguration.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
   gConfiguration.windShift = micronetCodec.navData.windShift_min;
 
   gConfiguration.SaveToEeprom();
 }
 
-void LoadCalibration(MicronetCodec &micronetCodec) {
+void LoadCalibration(MicronetCodec &micronetCodec)
+{
   micronetCodec.navData.waterSpeedFactor_per =
       gConfiguration.waterSpeedFactor_per;
   micronetCodec.navData.waterTemperatureOffset_degc =
@@ -1019,7 +1162,8 @@ void LoadCalibration(MicronetCodec &micronetCodec) {
   micronetCodec.navData.windShift_min = gConfiguration.windShift;
 }
 
-void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice) {
+void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice)
+{
   // Configure Micronet's slave devices
   micronetDevice.SetNetworkId(gConfiguration.networkId);
   micronetDevice.SetDeviceId(gConfiguration.deviceId);
@@ -1028,19 +1172,23 @@ void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice) {
       DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
       DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
-  if (DEPTH_SOURCE_LINK != LINK_MICRONET) {
+  if (DEPTH_SOURCE_LINK != LINK_MICRONET)
+  {
     micronetDevice.AddDataFields(DATA_FIELD_HDG);
   }
 
-  if (DEPTH_SOURCE_LINK != LINK_MICRONET) {
+  if (DEPTH_SOURCE_LINK != LINK_MICRONET)
+  {
     micronetDevice.AddDataFields(DATA_FIELD_DPT);
   }
 
-  if (SPEED_SOURCE_LINK != LINK_MICRONET) {
+  if (SPEED_SOURCE_LINK != LINK_MICRONET)
+  {
     micronetDevice.AddDataFields(DATA_FIELD_SPD);
   }
 
-  if ((MICRONET_WIND_REPEATER == 1) || (WIND_SOURCE_LINK != LINK_MICRONET)) {
+  if ((MICRONET_WIND_REPEATER == 1) || (WIND_SOURCE_LINK != LINK_MICRONET))
+  {
     micronetDevice.AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
   }
 }

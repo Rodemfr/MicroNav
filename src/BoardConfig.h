@@ -73,7 +73,7 @@
 
 // The console to use for menu and NMEA output
 #define CONSOLE  USB_NMEA
-#define NMEA_EXT WIRED_NMEA
+#define NMEA_EXT USB_NMEA
 
 // Button for user interaction
 #define BUTTON_PIN      38
