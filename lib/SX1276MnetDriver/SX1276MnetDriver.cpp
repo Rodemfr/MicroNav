@@ -34,7 +34,6 @@
 #include "SX1276Regs.h"
 
 #include <Arduino.h>
-#include <RadioLib.h>
 #include <SPI.h>
 #include <cmath>
 
@@ -156,9 +155,9 @@ void SX1276MnetDriver::SetFrequency(float frequency)
   uint32_t freqIndex =
       (frequency * (uint32_t(1) << SX127X_DIV_EXPONENT)) / SX127X_CRYSTAL_FREQ;
 
-  SpiWriteRegister(RADIOLIB_SX127X_REG_FRF_MSB, (freqIndex >> 16) & 0xff);
-  SpiWriteRegister(RADIOLIB_SX127X_REG_FRF_MID, (freqIndex >> 8) & 0xff);
-  SpiWriteRegister(RADIOLIB_SX127X_REG_FRF_LSB, freqIndex & 0xff);
+  SpiWriteRegister(SX127X_REG_FRF_MSB, (freqIndex >> 16) & 0xff);
+  SpiWriteRegister(SX127X_REG_FRF_MID, (freqIndex >> 8) & 0xff);
+  SpiWriteRegister(SX127X_REG_FRF_LSB, freqIndex & 0xff);
 }
 
 /*
@@ -168,7 +167,7 @@ void SX1276MnetDriver::SetFrequency(float frequency)
 void SX1276MnetDriver::SetBandwidth(float bandwidth)
 {
 
-  SpiWriteRegister(RADIOLIB_SX127X_REG_RX_BW,
+  SpiWriteRegister(SX127X_REG_RX_BW,
                    CalculateBandwidthRegister(bandwidth));
 }
 
@@ -198,8 +197,8 @@ void SX1276MnetDriver::SetBitrate(float birate)
 void SX1276MnetDriver::SetDeviation(float deviation)
 {
   uint32_t FDEV = roundf((deviation * (1 << 19)) / 32000.0);
-  SpiWriteRegister(RADIOLIB_SX127X_REG_FDEV_MSB, (FDEV >> 8) & 0xff);
-  SpiWriteRegister(RADIOLIB_SX127X_REG_FDEV_LSB, FDEV & 0xff);
+  SpiWriteRegister(SX127X_REG_FDEV_MSB, (FDEV >> 8) & 0xff);
+  SpiWriteRegister(SX127X_REG_FDEV_LSB, FDEV & 0xff);
 }
 
 /*
