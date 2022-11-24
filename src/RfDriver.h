@@ -73,11 +73,10 @@ public:
 	virtual ~RfDriver();
 
 	bool Init(MicronetMessageFifo *messageFifo, float frequencyOffset_mHz);
+	void Start();
 	void SetFrequencyOffset(float offset_MHz);
 	void SetFrequency(float frequency_MHz);
 	void SetBandwidth(RfBandwidth_t bandwidth);
-	void RfIsr();
-	void RestartReception();
 	void Transmit(MicronetMessageFifo *txMessageFifo);
 	void Transmit(MicronetMessage_t *message);
 	void EnableFrequencyTracking(uint32_t networkId);
@@ -92,6 +91,8 @@ private:
 	volatile int messageBytesSent;
 	float frequencyOffset_MHz;
 	uint32_t freqTrackingNID;
+	uint32_t cpuFreq_MHz;
+	hw_timer_t *txTimer;
 
 	static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
 

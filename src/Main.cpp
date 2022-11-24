@@ -180,7 +180,7 @@ void setup()
   }
 
   // Start listening
-  gRfReceiver.RestartReception();
+  gRfReceiver.Start();
 
   // Display serial menu
   gMenuManager.PrintMenu();
@@ -207,8 +207,6 @@ void loop()
 
   firstLoop = false;
 }
-
-void RfIsr() { gRfReceiver.RfIsr(); }
 
 void PrintByte(uint8_t data)
 {

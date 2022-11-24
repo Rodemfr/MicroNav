@@ -69,27 +69,13 @@ public:
             uint32_t rstPin, MicronetMessageFifo *messageFifo);
   void SetFrequency(float frequency);
   void SetBandwidth(float bandwidth);
-  void SetBitrate(float bitrate);
-  void SetDeviation(float deviation);
   void StartTx(void);
   void StartRx(void);
-  int32_t GetRssi(void);
   void GoToIdle(void);
   void LowPower();
   void ActivePower();
-  void SetSyncByte(uint8_t syncByte);
-  void SetPacketLength(uint8_t length);
-  void ReadFifo(uint8_t *buffer, int nbBytes);
-  void WriteFifo(uint8_t data);
-  void WriteFifo(uint8_t const *buffer, int nbBytes);
-  void IrqOnTxFifoUnderflow();
-  void IrqOnTxFifoThreshold();
-  void IrqOnRxFifoThreshold();
-  void SetFifoThreshold(uint8_t fifoThreshold);
-  void FlushFifo();
-
+  
 private:
-
   SPISettings spiSettings;
   uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
   TaskHandle_t DioTaskHandle;
@@ -104,8 +90,11 @@ private:
   void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
   void Reset();
+  int32_t GetRssi(void);
   void RestartRx();
-  void ChangeOperatyingMode(uint8_t mode);
+  void SetBitrate(float bitrate);
+  void SetDeviation(float deviation);
+  void ChangeOperatingMode(uint8_t mode);
   void SetBaseConfiguration();
   uint8_t CalculateBandwidthRegister(float bandwidth);
   void ExtendedPinMode(int pinNum, int pinDir);

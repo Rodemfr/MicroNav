@@ -71,7 +71,7 @@ const uint8_t RfDriver::preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH] = {
 RfDriver::RfDriver()
     : messageFifo(nullptr), rfState(RF_STATE_RX_WAIT_SYNC),
       nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
-      freqTrackingNID(0)
+      freqTrackingNID(0), cpuFreq_MHz(0), txTimer(nullptr)
 {
   memset(transmitList, 0, sizeof(transmitList));
 }
@@ -85,23 +85,25 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
   this->messageFifo = messageFifo;
   rfDriver = this;
 
-  // timerInt.begin(TimerHandler);
+  cpuFreq_MHz = getCpuFrequencyMhz();
+  txTimer = timerBegin(0, cpuFreq_MHz, true);
+  ;
+  timerAttachInterrupt(txTimer, TimerHandler, true);
 
-  if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN,
-                         RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN, messageFifo))
+  if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN, RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN, messageFifo))
   {
     return false;
   }
 
-  sx1276Driver.SetFrequency(MICRONET_RF_CENTER_FREQUENCY_MHZ +
-                            frequencyOffset_mHz);
-  sx1276Driver.SetDeviation(MICRONET_RF_DEVIATION_KHZ);
-  sx1276Driver.SetBitrate(MICRONET_RF_BAUDRATE_BAUD / 1000.0f);
-  sx1276Driver.SetBandwidth(250);
-  sx1276Driver.SetSyncByte(0x99);
-  sx1276Driver.SetPacketLength(SX1276_FIFO_MAX_SIZE);
+  sx1276Driver.SetFrequency(MICRONET_RF_CENTER_FREQUENCY_MHZ + frequencyOffset_MHz);
+  SetBandwidth(RF_BANDWIDTH_HIGH);
 
   return true;
+}
+
+void RfDriver::Start()
+{
+  sx1276Driver.StartRx();
 }
 
 void RfDriver::SetFrequencyOffset(float offset_MHz)
@@ -132,15 +134,6 @@ void RfDriver::SetBandwidth(RfBandwidth_t bandwidth)
   }
 }
 
-void RfDriver::RfIsr()
-{
-  if ((rfState == RF_STATE_TX_TRANSMIT) ||
-      (rfState == RF_STATE_TX_LAST_TRANSMIT))
-  {
-    RfIsr_Tx();
-  }
-}
-
 void RfDriver::RfIsr_Tx()
 {
   if (rfState == RF_STATE_TX_TRANSMIT)
@@ -155,33 +148,23 @@ void RfDriver::RfIsr_Tx()
       bytesToLoad = SX1276_FIFO_MAX_SIZE - bytesInFifo;
     }
 
-    sx1276Driver.WriteFifo(
-        &transmitList[nextTransmitIndex].data[messageBytesSent], bytesToLoad);
-    messageBytesSent += bytesToLoad;
+    // sx1276Driver.WriteFifo(
+    //     &transmitList[nextTransmitIndex].data[messageBytesSent], bytesToLoad);
+    // messageBytesSent += bytesToLoad;
 
-    if (messageBytesSent >= transmitList[nextTransmitIndex].len)
-    {
-      rfState = RF_STATE_TX_LAST_TRANSMIT;
-      sx1276Driver.IrqOnTxFifoUnderflow();
-    }
+    // if (messageBytesSent >= transmitList[nextTransmitIndex].len)
+    // {
+    //   rfState = RF_STATE_TX_LAST_TRANSMIT;
+    //   sx1276Driver.IrqOnTxFifoUnderflow();
+    // }
   }
   else
   {
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
-    RestartReception();
     ScheduleTransmit();
   }
-}
-
-void RfDriver::RestartReception()
-{
-  sx1276Driver.GoToIdle();
-  sx1276Driver.SetFifoThreshold(13);
-  sx1276Driver.SetPacketLength(SX1276_FIFO_MAX_SIZE);
-  rfState = RF_STATE_RX_WAIT_SYNC;
-  sx1276Driver.StartRx();
 }
 
 void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
@@ -288,7 +271,6 @@ void RfDriver::TransmitCallback()
 {
   if (nextTransmitIndex < 0)
   {
-    RestartReception();
     return;
   }
 
@@ -321,8 +303,6 @@ void RfDriver::TransmitCallback()
     nextTransmitIndex = -1;
 
     sx1276Driver.ActivePower();
-    RestartReception();
-
     ScheduleTransmit();
   }
   else if (rfState == RF_STATE_RX_WAIT_SYNC)
@@ -331,19 +311,19 @@ void RfDriver::TransmitCallback()
 
     // Change CC1101 configuration for transmission
     sx1276Driver.GoToIdle();
-    sx1276Driver.IrqOnTxFifoThreshold();
-    sx1276Driver.SetFifoThreshold(8);
+    // sx1276Driver.IrqOnTxFifoThreshold();
+    // sx1276Driver.SetFifoThreshold(8);
 
     // Fill FIFO with preamble's first byte
-    sx1276Driver.WriteFifo(MICRONET_RF_PREAMBLE_BYTE);
+    // sx1276Driver.WriteFifo(MICRONET_RF_PREAMBLE_BYTE);
 
     // Start transmission as soon as we have the first byte available in FIFO to
     // minimize latency
     sx1276Driver.StartTx();
 
     // Fill FIFO with rest of preamble and sync byte
-    sx1276Driver.WriteFifo(static_cast<const uint8_t *>(preambleAndSync),
-                           sizeof(preambleAndSync));
+    // sx1276Driver.WriteFifo(static_cast<const uint8_t *>(preambleAndSync),
+    //                        sizeof(preambleAndSync));
 
     messageBytesSent = 0;
   }
