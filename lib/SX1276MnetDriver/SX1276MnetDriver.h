@@ -57,7 +57,8 @@ class SX1276MnetDriver
 enum class RfState_t
 {
   RX_HEADER_RECEIVE = 0,
-  RX_PAYLOAD_RECEIVE
+  RX_PAYLOAD_RECEIVE,
+  TX_TRANSMIT
 };
 
 public:
@@ -74,6 +75,7 @@ public:
   void GoToIdle(void);
   void LowPower();
   void ActivePower();
+  void TransmitFromIsr(MicronetMessage_t &message);
   
 private:
   SPISettings spiSettings;
@@ -103,7 +105,7 @@ private:
   static void StaticRfIsr();
   static void DioTask(void *parameter);
 
-  void IsrProcessing();
+  void DioProcessing();
 };
 
 #endif

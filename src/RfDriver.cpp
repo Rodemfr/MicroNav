@@ -54,22 +54,12 @@
 
 RfDriver *RfDriver::rfDriver;
 
-const uint8_t RfDriver::preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH] = {
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_PREAMBLE_BYTE, MICRONET_RF_PREAMBLE_BYTE,
-    MICRONET_RF_SYNC_BYTE};
-
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
 RfDriver::RfDriver()
-    : messageFifo(nullptr), rfState(RF_STATE_RX_WAIT_SYNC),
+    : messageFifo(nullptr),
       nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
       freqTrackingNID(0), cpuFreq_MHz(0), txTimer(nullptr)
 {
@@ -87,7 +77,7 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
 
   cpuFreq_MHz = getCpuFrequencyMhz();
   txTimer = timerBegin(0, cpuFreq_MHz, true);
-  ;
+  timerAlarmDisable(txTimer);
   timerAttachInterrupt(txTimer, TimerHandler, true);
 
   if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN, RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN, messageFifo))
@@ -134,39 +124,6 @@ void RfDriver::SetBandwidth(RfBandwidth_t bandwidth)
   }
 }
 
-void RfDriver::RfIsr_Tx()
-{
-  if (rfState == RF_STATE_TX_TRANSMIT)
-  {
-    int bytesInFifo;
-    int bytesToLoad = transmitList[nextTransmitIndex].len - messageBytesSent;
-
-    // FIXME : handle FIFO correctly
-    bytesInFifo = 13;
-    if (bytesToLoad + bytesInFifo > SX1276_FIFO_MAX_SIZE)
-    {
-      bytesToLoad = SX1276_FIFO_MAX_SIZE - bytesInFifo;
-    }
-
-    // sx1276Driver.WriteFifo(
-    //     &transmitList[nextTransmitIndex].data[messageBytesSent], bytesToLoad);
-    // messageBytesSent += bytesToLoad;
-
-    // if (messageBytesSent >= transmitList[nextTransmitIndex].len)
-    // {
-    //   rfState = RF_STATE_TX_LAST_TRANSMIT;
-    //   sx1276Driver.IrqOnTxFifoUnderflow();
-    // }
-  }
-  else
-  {
-    transmitList[nextTransmitIndex].startTime_us = 0;
-    nextTransmitIndex = -1;
-
-    ScheduleTransmit();
-  }
-}
-
 void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
 {
   MicronetMessage_t *txMessage;
@@ -209,7 +166,7 @@ void RfDriver::ScheduleTransmit()
     if (transmitIndex < 0)
     {
       // No transmit to schedule : stop timer and leave
-      //			timerInt.stop();
+      timerAlarmDisable(txTimer);
       return;
     }
     int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
@@ -223,7 +180,8 @@ void RfDriver::ScheduleTransmit()
 
     // Schedule new transmit
     nextTransmitIndex = transmitIndex;
-    //		timerInt.trigger(transmitDelay);
+    timerAlarmWrite(txTimer, transmitDelay, true);
+    timerAlarmEnable(txTimer);
 
     return;
   } while (true);
@@ -265,10 +223,15 @@ int RfDriver::GetFreeTransmitSlot()
   return freeIndex;
 }
 
-void RfDriver::TimerHandler() { rfDriver->TransmitCallback(); }
+void RfDriver::TimerHandler()
+{
+  rfDriver->TransmitCallback();
+}
 
 void RfDriver::TransmitCallback()
 {
+  timerAlarmDisable(txTimer);
+
   if (nextTransmitIndex < 0)
   {
     return;
@@ -276,6 +239,7 @@ void RfDriver::TransmitCallback()
 
   int32_t triggerDelay =
       micros() - transmitList[nextTransmitIndex].startTime_us;
+
 
   if (triggerDelay < 0)
   {
@@ -292,7 +256,6 @@ void RfDriver::TransmitCallback()
     nextTransmitIndex = -1;
 
     sx1276Driver.LowPower();
-    rfState = RF_STATE_RX_WAIT_SYNC;
 
     ScheduleTransmit();
   }
@@ -305,30 +268,10 @@ void RfDriver::TransmitCallback()
     sx1276Driver.ActivePower();
     ScheduleTransmit();
   }
-  else if (rfState == RF_STATE_RX_WAIT_SYNC)
-  {
-    rfState = RF_STATE_TX_TRANSMIT;
-
-    // Change CC1101 configuration for transmission
-    sx1276Driver.GoToIdle();
-    // sx1276Driver.IrqOnTxFifoThreshold();
-    // sx1276Driver.SetFifoThreshold(8);
-
-    // Fill FIFO with preamble's first byte
-    // sx1276Driver.WriteFifo(MICRONET_RF_PREAMBLE_BYTE);
-
-    // Start transmission as soon as we have the first byte available in FIFO to
-    // minimize latency
-    sx1276Driver.StartTx();
-
-    // Fill FIFO with rest of preamble and sync byte
-    // sx1276Driver.WriteFifo(static_cast<const uint8_t *>(preambleAndSync),
-    //                        sizeof(preambleAndSync));
-
-    messageBytesSent = 0;
-  }
   else
   {
+    sx1276Driver.TransmitFromIsr(transmitList[nextTransmitIndex]);
+    transmitList[nextTransmitIndex].startTime_us = 0;
     ScheduleTransmit();
   }
 }

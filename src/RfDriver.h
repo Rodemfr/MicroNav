@@ -85,7 +85,6 @@ public:
 private:
 	SX1276MnetDriver sx1276Driver;
 	MicronetMessageFifo *messageFifo;
-	volatile RfDriverState_t rfState;
 	MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];
 	volatile int nextTransmitIndex;
 	volatile int messageBytesSent;
@@ -100,7 +99,6 @@ private:
 	int GetNextTransmitIndex();
 	int GetFreeTransmitSlot();
 	void TransmitCallback();
-	void RfIsr_Tx();
 
 	static void TimerHandler();
 	static RfDriver *rfDriver;
