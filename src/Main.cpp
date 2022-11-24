@@ -122,6 +122,7 @@ void setup()
   }
 
   // Load configuration from EEPROM
+  gConfiguration.Init();
   gConfiguration.LoadFromEeprom();
 
   // Init USB serial link

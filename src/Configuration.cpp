@@ -37,8 +37,9 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define EEPROM_CONFIG_OFFSET 0
-#define CONFIG_MAGIC_NUMBER  0x4D544E4D
+#define CONFIGURATION_EEPROM_SIZE 128
+#define EEPROM_CONFIG_OFFSET      0
+#define CONFIG_MAGIC_NUMBER       0x4D544E4D
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -77,6 +78,11 @@ typedef struct
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
+
+void Configuration::Init()
+{
+	EEPROM.begin(CONFIGURATION_EEPROM_SIZE);
+}
 
 Configuration::Configuration()
 {
@@ -175,6 +181,7 @@ void Configuration::SaveToEeprom()
 		if (pEepromBlock[i] != pConfig[i])
 		{
 			EEPROM.put(0, configBlock);
+			EEPROM.commit();
 			break;
 		}
 	}
