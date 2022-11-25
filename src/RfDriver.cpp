@@ -61,8 +61,9 @@ RfDriver *RfDriver::rfDriver;
 RfDriver::RfDriver()
     : messageFifo(nullptr),
       nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
-      freqTrackingNID(0), cpuFreq_MHz(0), txTimer(nullptr)
+      freqTrackingNID(0), txTimer(nullptr)
 {
+  timerMux = portMUX_INITIALIZER_UNLOCKED;
   memset(transmitList, 0, sizeof(transmitList));
 }
 
@@ -75,8 +76,7 @@ bool RfDriver::Init(MicronetMessageFifo *messageFifo,
   this->messageFifo = messageFifo;
   rfDriver = this;
 
-  cpuFreq_MHz = getCpuFrequencyMhz();
-  txTimer = timerBegin(0, cpuFreq_MHz, true);
+  txTimer = timerBegin(0, getXtalFrequencyMhz(), true);
   timerAlarmDisable(txTimer);
   timerAttachInterrupt(txTimer, TimerHandler, true);
 
@@ -136,7 +136,7 @@ void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
 
 void RfDriver::Transmit(MicronetMessage_t *message)
 {
-  noInterrupts();
+  portENTER_CRITICAL(&timerMux);
   int transmitIndex = GetFreeTransmitSlot();
 
   if (transmitIndex >= 0)
@@ -155,7 +155,7 @@ void RfDriver::Transmit(MicronetMessage_t *message)
   }
 
   ScheduleTransmit();
-  interrupts();
+  portEXIT_CRITICAL(&timerMux);
 }
 
 void RfDriver::ScheduleTransmit()
@@ -166,6 +166,8 @@ void RfDriver::ScheduleTransmit()
     if (transmitIndex < 0)
     {
       // No transmit to schedule : stop timer and leave
+      timerStop(txTimer);
+      timerWrite(txTimer, 0);
       timerAlarmDisable(txTimer);
       return;
     }
@@ -180,10 +182,13 @@ void RfDriver::ScheduleTransmit()
 
     // Schedule new transmit
     nextTransmitIndex = transmitIndex;
-    timerAlarmWrite(txTimer, transmitDelay, true);
+    timerStop(txTimer);
+    timerWrite(txTimer, 0);
+    timerAlarmWrite(txTimer, transmitDelay, false);
     timerAlarmEnable(txTimer);
-
+    timerStart(txTimer);
     return;
+
   } while (true);
 }
 
@@ -230,16 +235,16 @@ void RfDriver::TimerHandler()
 
 void RfDriver::TransmitCallback()
 {
+  portENTER_CRITICAL_ISR(&timerMux);
   timerAlarmDisable(txTimer);
 
   if (nextTransmitIndex < 0)
   {
+    portEXIT_CRITICAL_ISR(&timerMux);
     return;
   }
 
-  int32_t triggerDelay =
-      micros() - transmitList[nextTransmitIndex].startTime_us;
-
+  int32_t triggerDelay = micros() - transmitList[nextTransmitIndex].startTime_us;
 
   if (triggerDelay < 0)
   {
@@ -247,6 +252,7 @@ void RfDriver::TransmitCallback()
     // more than about 50ms. in that case we reprogram it until we reach the
     // specified amount of time
     ScheduleTransmit();
+    portEXIT_CRITICAL_ISR(&timerMux);
     return;
   }
 
@@ -255,24 +261,27 @@ void RfDriver::TransmitCallback()
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
-    sx1276Driver.LowPower();
-
     ScheduleTransmit();
+    portEXIT_CRITICAL_ISR(&timerMux);
+
+    sx1276Driver.LowPower();
   }
-  else if (transmitList[nextTransmitIndex].action ==
-           MICRONET_ACTION_RF_ACTIVE_POWER)
+  else if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_ACTIVE_POWER)
   {
     transmitList[nextTransmitIndex].startTime_us = 0;
     nextTransmitIndex = -1;
 
-    sx1276Driver.ActivePower();
     ScheduleTransmit();
+    portEXIT_CRITICAL_ISR(&timerMux);
+
+    sx1276Driver.ActivePower();
   }
   else
   {
     sx1276Driver.TransmitFromIsr(transmitList[nextTransmitIndex]);
     transmitList[nextTransmitIndex].startTime_us = 0;
     ScheduleTransmit();
+    portEXIT_CRITICAL_ISR(&timerMux);
   }
 }
 
@@ -281,4 +290,7 @@ void RfDriver::EnableFrequencyTracking(uint32_t networkId)
   freqTrackingNID = networkId;
 }
 
-void RfDriver::DisableFrequencyTracking() { freqTrackingNID = 0; }
+void RfDriver::DisableFrequencyTracking()
+{
+  freqTrackingNID = 0;
+}

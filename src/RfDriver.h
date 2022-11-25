@@ -90,8 +90,8 @@ private:
 	volatile int messageBytesSent;
 	float frequencyOffset_MHz;
 	uint32_t freqTrackingNID;
-	uint32_t cpuFreq_MHz;
 	hw_timer_t *txTimer;
+	portMUX_TYPE timerMux;
 
 	static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
 

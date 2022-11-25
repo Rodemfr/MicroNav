@@ -141,7 +141,7 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
 
   // Attach callback to DIO1 pin
   attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
-  //  attachInterrupt(digitalPinToInterrupt(dio0Pin), StaticRfIsr, RISING);
+  attachInterrupt(digitalPinToInterrupt(dio0Pin), StaticRfIsr, RISING);
 
   return true;
 }
@@ -206,7 +206,7 @@ void SX1276MnetDriver::SetDeviation(float deviation)
 */
 void SX1276MnetDriver::StartTx(void)
 {
-  ChangeOperatingMode(SX127X_FSTX);
+  // RStart TX
   ChangeOperatingMode(SX127X_TX);
 }
 
@@ -219,6 +219,16 @@ void SX1276MnetDriver::StartRx(void)
   SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
   ChangeOperatingMode(SX127X_FSRX);
   ChangeOperatingMode(SX127X_RX);
+}
+
+void SX1276MnetDriver::RestartRx()
+{
+  // Set FIFO threshold to header length
+  SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+  // Restart RX
+  SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
+  // Switch to header reception state
+  rfState = RfState_t::RX_HEADER_RECEIVE;
 }
 
 int32_t SX1276MnetDriver::GetRssi(void)
@@ -270,8 +280,7 @@ uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
   @param data pointer to the buffer to store register data in
   @param nbRegs Number of registers to read
 */
-void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data,
-                                            uint16_t nbRegs)
+void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t nbRegs)
 {
   // Assert CS line
   digitalWrite(csPin, LOW);
@@ -328,21 +337,6 @@ void SX1276MnetDriver::Reset()
   delay(5);
 }
 
-void SX1276MnetDriver::RestartRx()
-{
-  // Switch to header reception state
-  rfState = RfState_t::RX_HEADER_RECEIVE;
-  // Set FIFO threshold to header length
-  SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
-  // Empty FIFO
-  while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
-  {
-    SpiReadRegister(SX127X_REG_FIFO);
-  }
-  // Restart RX
-  SpiWriteRegister(SX127X_REG_RX_CONFIG, SX127X_RESTART_RX_WITHOUT_PLL_LOCK);
-}
-
 void SX1276MnetDriver::ChangeOperatingMode(uint8_t mode)
 {
   SpiWriteRegister(SX127X_REG_OP_MODE, mode);
@@ -353,13 +347,11 @@ void SX1276MnetDriver::ChangeOperatingMode(uint8_t mode)
   {
   case SX127X_STANDBY:
   case SX127X_FSTX:
-  case SX127X_TX:
   case SX127X_FSRX:
     while ((SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & 0x80) == 0x00)
       ;
     break;
   default:
-    delay(200);
     break;
   }
 }
@@ -395,7 +387,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SpiWriteRegister(SX127X_REG_RSSI_CONFIG, 2);
   SpiWriteRegister(SX127X_REG_RSSI_THRESH, 200);
   // FIFO threshold set to (header size - 1) and TX condition is !FifoEmpty
-  SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+  SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_LEVEL | (HEADER_LENGTH_IN_BYTES - 1));
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
   SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, 0x00);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
@@ -443,14 +435,30 @@ void SX1276MnetDriver::ExtendedPinMode(int pinNum, int pinDir)
     pinMode(pinNum, pinDir);
 }
 
+void SX1276MnetDriver::FlushFifo()
+{
+  while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
+  {
+    SpiReadRegister(SX127X_REG_FIFO);
+  }
+}
+
 void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
 {
   BaseType_t xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
 
-  if (rfState == RfState_t::RX_HEADER_RECEIVE)
+  if ((rfState == RfState_t::RX_HEADER_RECEIVE) && (message.len <= 64))
   {
-    rfState = RfState_t::TX_TRANSMIT;
+    rfState = RfState_t::TX_TRANSMIT_START;
+
+    mnetTxMsg.action = message.action;
+    mnetTxMsg.startTime_us = message.startTime_us;
+    mnetTxMsg.endTime_us = message.endTime_us;
+    mnetTxMsg.rssi = message.rssi;
+    mnetTxMsg.len = message.len;
+    memcpy(mnetTxMsg.data, message.data, message.len);
+
     vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
                            &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -461,7 +469,8 @@ void SX1276MnetDriver::StaticRfIsr()
 {
   BaseType_t xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
-  if (driverObject->rfState != RfState_t::TX_TRANSMIT)
+
+  if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
   {
     vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
                            &xHigherPriorityTaskWoken);
@@ -483,41 +492,64 @@ void SX1276MnetDriver::DioProcessing()
 
     if (ulNotifiedValue > 0)
     {
-      if (rfState == RfState_t::TX_TRANSMIT)
+      if (rfState == RfState_t::TX_TRANSMIT_START)
       {
-        Serial.println("TX");
+        // rfState = RfState_t::TX_TRANSMIT_ONGOING;
+        // SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_TX);
+        // SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (mnetTxMsg.len - 1));
+        // SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x00);
+        // SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_SYNC_BYTE);
+        // SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
+        // SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
         rfState = RfState_t::RX_HEADER_RECEIVE;
+        SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
+        Serial.print("->");
+        Serial.println(isrTime - mnetTxMsg.startTime_us);
+      }
+      else if ((rfState == RfState_t::TX_TRANSMIT_ONGOING))
+      {
+        uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
+        if (irqFlags2 & SX127X_FLAG_PACKET_SENT)
+        {
+          // SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+          // SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
+          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
+          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
+          // SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
+          // SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
+          rfState == RfState_t::RX_HEADER_RECEIVE;
+        }
       }
       else
       {
-        uint8_t irqFlags2;
-        irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
+        uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
         if (irqFlags2 & SX127X_FLAG_FIFO_LEVEL)
         {
           if (rfState == RfState_t::RX_HEADER_RECEIVE)
           {
             // When we reach this point, we know that a packet is under reception by SX1276 and than we received at least the complete header. We will begin processing it.
-            SpiBurstReadRegister(SX127X_REG_FIFO, mnetMsg.data, HEADER_LENGTH_IN_BYTES);
-            mnetMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
+            SpiBurstReadRegister(SX127X_REG_FIFO, mnetRxMsg.data, HEADER_LENGTH_IN_BYTES);
+            mnetRxMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
             msgDataOffset = HEADER_LENGTH_IN_BYTES;
             rfState = RfState_t::RX_PAYLOAD_RECEIVE;
-            if ((mnetMsg.data[MICRONET_LEN_OFFSET_1] == mnetMsg.data[MICRONET_LEN_OFFSET_2]) &&
-                (mnetMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
-                ((mnetMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
+            if ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] == mnetRxMsg.data[MICRONET_LEN_OFFSET_2]) &&
+                (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
+                ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
             {
               // TODO : Also verify the first checksum
-              mnetMsg.len = mnetMsg.data[MICRONET_LEN_OFFSET_1] + 2;
-              mnetMsg.rssi = GetRssi();
-              mnetMsg.action = MICRONET_ACTION_RF_NO_ACTION;
-              if (mnetMsg.len == HEADER_LENGTH_IN_BYTES)
+              mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
+              mnetRxMsg.rssi = GetRssi();
+              mnetRxMsg.action = MICRONET_ACTION_RF_NO_ACTION;
+              if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
               {
-                mnetMsg.endTime_us = isrTime;
-                messageFifo->Push(mnetMsg);
+                mnetRxMsg.endTime_us = isrTime;
+                messageFifo->Push(mnetRxMsg);
                 RestartRx();
               }
               else
               {
-                uint32_t remainingBytes = mnetMsg.len - HEADER_LENGTH_IN_BYTES;
+                uint32_t remainingBytes = mnetRxMsg.len - HEADER_LENGTH_IN_BYTES;
                 if (remainingBytes > 60)
                 {
                   remainingBytes = 60;
@@ -536,17 +568,17 @@ void SX1276MnetDriver::DioProcessing()
             while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
             {
               // FIXME : verify overflow
-              mnetMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
+              mnetRxMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
             }
-            if (mnetMsg.len <= msgDataOffset)
+            if (mnetRxMsg.len <= msgDataOffset)
             {
-              mnetMsg.endTime_us = isrTime;
-              messageFifo->Push(mnetMsg);
+              mnetRxMsg.endTime_us = isrTime;
+              messageFifo->Push(mnetRxMsg);
               RestartRx();
             }
             else
             {
-              uint32_t remainingBytes = mnetMsg.len - HEADER_LENGTH_IN_BYTES;
+              uint32_t remainingBytes = mnetRxMsg.len - HEADER_LENGTH_IN_BYTES;
               if (remainingBytes > 60)
               {
                 remainingBytes = 60;

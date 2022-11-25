@@ -58,7 +58,8 @@ enum class RfState_t
 {
   RX_HEADER_RECEIVE = 0,
   RX_PAYLOAD_RECEIVE,
-  TX_TRANSMIT
+  TX_TRANSMIT_START,
+  TX_TRANSMIT_ONGOING
 };
 
 public:
@@ -82,7 +83,8 @@ private:
   uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
   TaskHandle_t DioTaskHandle;
   RfState_t rfState;
-  MicronetMessage_t mnetMsg;
+  MicronetMessage_t mnetRxMsg;
+  MicronetMessage_t mnetTxMsg;
   uint32_t msgDataOffset;
   MicronetMessageFifo *messageFifo;
 
@@ -100,6 +102,7 @@ private:
   void SetBaseConfiguration();
   uint8_t CalculateBandwidthRegister(float bandwidth);
   void ExtendedPinMode(int pinNum, int pinDir);
+  void FlushFifo();
 
   static SX1276MnetDriver *driverObject;
   static void StaticRfIsr();
