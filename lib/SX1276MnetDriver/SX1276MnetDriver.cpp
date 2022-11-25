@@ -494,31 +494,28 @@ void SX1276MnetDriver::DioProcessing()
     {
       if (rfState == RfState_t::TX_TRANSMIT_START)
       {
-        // rfState = RfState_t::TX_TRANSMIT_ONGOING;
-        // SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_TX);
-        // SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (mnetTxMsg.len - 1));
-        // SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x00);
-        // SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_SYNC_BYTE);
-        // SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
-        // SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
-        rfState = RfState_t::RX_HEADER_RECEIVE;
-        SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
-        Serial.print("->");
-        Serial.println(isrTime - mnetTxMsg.startTime_us);
+        rfState = RfState_t::TX_TRANSMIT_ONGOING;
+        SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (mnetTxMsg.len - 1));
+        SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x00);
+        SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_SYNC_BYTE);
+        SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
+        SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_TX);
+        SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
       }
       else if ((rfState == RfState_t::TX_TRANSMIT_ONGOING))
       {
         uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
         if (irqFlags2 & SX127X_FLAG_PACKET_SENT)
         {
-          // SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
-          // SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
-          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
-          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
-          // SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
-          // SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-          // SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
+          SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+          SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+          SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
+          SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
+          SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
+          SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
+          SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
           rfState == RfState_t::RX_HEADER_RECEIVE;
+          Serial.println("@");
         }
       }
       else
