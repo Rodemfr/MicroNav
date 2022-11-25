@@ -103,6 +103,7 @@ private:
   uint8_t CalculateBandwidthRegister(float bandwidth);
   void ExtendedPinMode(int pinNum, int pinDir);
   void FlushFifo();
+  void ClearIrq();
 
   static SX1276MnetDriver *driverObject;
   static void StaticRfIsr();

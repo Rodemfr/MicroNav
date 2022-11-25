@@ -351,6 +351,14 @@ void SX1276MnetDriver::ChangeOperatingMode(uint8_t mode)
     while ((SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & 0x80) == 0x00)
       ;
     break;
+  case SX127X_RX:
+    while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_RX_READY))
+      ;
+    break;
+  case SX127X_TX:
+    while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_TX_READY))
+      ;
+    break;
   default:
     break;
   }
@@ -370,7 +378,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // Preamble of 16 bytes for TX operations
   SpiWriteRegister(SX127X_REG_PREAMBLE_DETECT, 0xC0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
-  SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 15);
+  SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 13);
   // Sync word detection ON, 3 bytes long, 0x55 preamble polarity for Tx
   SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
                    SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
@@ -443,6 +451,12 @@ void SX1276MnetDriver::FlushFifo()
   }
 }
 
+void SX1276MnetDriver::ClearIrq()
+{
+  SpiWriteRegister(SX127X_REG_IRQ_FLAGS_1, -1);
+  SpiWriteRegister(SX127X_REG_IRQ_FLAGS_2, -1);
+}
+
 void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
 {
   BaseType_t xHigherPriorityTaskWoken;
@@ -485,22 +499,22 @@ void SX1276MnetDriver::DioTask(void *parameter)
 
 void SX1276MnetDriver::DioProcessing()
 {
+  static uint32_t debugTime = 0;
+
   while (true)
   {
     uint32_t ulNotifiedValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     uint32_t isrTime = micros();
-
     if (ulNotifiedValue > 0)
     {
       if (rfState == RfState_t::TX_TRANSMIT_START)
       {
         rfState = RfState_t::TX_TRANSMIT_ONGOING;
         SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (mnetTxMsg.len - 1));
-        SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x00);
-        SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_SYNC_BYTE);
         SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
-        SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_TX);
+        ChangeOperatingMode(SX127X_TX);
         SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
+        debugTime = micros() - mnetTxMsg.startTime_us;
       }
       else if ((rfState == RfState_t::TX_TRANSMIT_ONGOING))
       {
@@ -508,14 +522,10 @@ void SX1276MnetDriver::DioProcessing()
         if (irqFlags2 & SX127X_FLAG_PACKET_SENT)
         {
           SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
-          SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
-          SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
-          SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
-          SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
           SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-          SpiWriteRegister(SX127X_REG_OP_MODE, SX127X_RX);
-          rfState == RfState_t::RX_HEADER_RECEIVE;
-          Serial.println("@");
+          ChangeOperatingMode(SX127X_RX);
+          rfState = RfState_t::RX_HEADER_RECEIVE;
+          Serial.println(debugTime);
         }
       }
       else
