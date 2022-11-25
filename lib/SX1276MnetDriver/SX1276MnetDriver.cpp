@@ -399,6 +399,8 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
   SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, 0x00);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
+  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0x7f);
+  SpiWriteRegister(SX127X_REG_PA_RAMP, 0x09);
 }
 
 /*
