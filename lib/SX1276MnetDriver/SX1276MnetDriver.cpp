@@ -26,9 +26,9 @@
  ***************************************************************************
  */
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "SX1276MnetDriver.h"
 #include "SX1276Regs.h"
@@ -56,7 +56,7 @@
 /*                           Static & Globals                              */
 /***************************************************************************/
 
-SX1276MnetDriver *SX1276MnetDriver::driverObject;
+SX1276MnetDriver* SX1276MnetDriver::driverObject;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -89,8 +89,8 @@ SX1276MnetDriver::~SX1276MnetDriver() {}
   @return true if SX1276 has been found on SPI bus and configured
 */
 bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
-                            uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
-                            uint32_t dio1Pin, uint32_t rstPin, MicronetMessageFifo *messageFifo)
+  uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
+  uint32_t dio1Pin, uint32_t rstPin, MicronetMessageFifo* messageFifo)
 {
   // Store pin configuration
   this->sckPin = sckPin;
@@ -136,8 +136,8 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   // Set base configuration for Micronet configuration
   SetBaseConfiguration();
 
-  xTaskCreate(DioTask, "DioTask", 1024, (void *)this,
-              (configMAX_PRIORITIES - 1), &DioTaskHandle);
+  xTaskCreate(DioTask, "DioTask", 1024, (void*)this,
+    (configMAX_PRIORITIES - 1), &DioTaskHandle);
 
   // Attach callback to DIO1 pin
   attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
@@ -153,7 +153,7 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
 void SX1276MnetDriver::SetFrequency(float frequency)
 {
   uint32_t freqIndex =
-      (frequency * (uint32_t(1) << SX127X_DIV_EXPONENT)) / SX127X_CRYSTAL_FREQ;
+    (frequency * (uint32_t(1) << SX127X_DIV_EXPONENT)) / SX127X_CRYSTAL_FREQ;
 
   SpiWriteRegister(SX127X_REG_FRF_MSB, (freqIndex >> 16) & 0xff);
   SpiWriteRegister(SX127X_REG_FRF_MID, (freqIndex >> 8) & 0xff);
@@ -168,7 +168,7 @@ void SX1276MnetDriver::SetBandwidth(float bandwidth)
 {
 
   SpiWriteRegister(SX127X_REG_RX_BW,
-                   CalculateBandwidthRegister(bandwidth));
+    CalculateBandwidthRegister(bandwidth));
 }
 
 /*
@@ -280,7 +280,7 @@ uint8_t SX1276MnetDriver::SpiReadRegister(uint8_t addr)
   @param data pointer to the buffer to store register data in
   @param nbRegs Number of registers to read
 */
-void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t nbRegs)
+void SX1276MnetDriver::SpiBurstReadRegister(uint8_t addr, uint8_t* data, uint16_t nbRegs)
 {
   // Assert CS line
   digitalWrite(csPin, LOW);
@@ -313,8 +313,8 @@ void SX1276MnetDriver::SpiWriteRegister(uint8_t addr, uint8_t value)
   @param data pointer to the buffer with data to write to registers
   @param nbRegs Number of registers to write
 */
-void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t *data,
-                                             uint16_t nbRegs)
+void SX1276MnetDriver::SpiBurstWriteRegister(uint8_t addr, uint8_t* data,
+  uint16_t nbRegs)
 {
   // Assert CS line
   digitalWrite(csPin, LOW);
@@ -352,12 +352,12 @@ void SX1276MnetDriver::ChangeOperatingMode(uint8_t mode)
       ;
     break;
   case SX127X_RX:
-    while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_RX_READY))
-      ;
+    // while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_RX_READY))
+    //   ;
     break;
   case SX127X_TX:
-    while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_TX_READY))
-      ;
+    // while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_TX_READY))
+    //   ;
     break;
   default:
     break;
@@ -378,10 +378,10 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // Preamble of 16 bytes for TX operations
   SpiWriteRegister(SX127X_REG_PREAMBLE_DETECT, 0xC0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
-  SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 13);
+  SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 14);
   // Sync word detection ON, 3 bytes long, 0x55 preamble polarity for Tx
   SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
-                   SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+    SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
@@ -399,8 +399,9 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
   SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, 0x00);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
-  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0x7f);
+  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xf7);
   SpiWriteRegister(SX127X_REG_PA_RAMP, 0x09);
+  SpiWriteRegister(SX127X_REG_OCP, 0x00);
 }
 
 /*
@@ -414,7 +415,7 @@ uint8_t SX1276MnetDriver::CalculateBandwidthRegister(float bandwidth)
     for (int8_t m = 2; m >= 0; m--)
     {
       float point = (SX127X_CRYSTAL_FREQ * 1000000.0) /
-                    (((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
+        (((4 * m) + 16) * ((uint32_t)1 << (e + 2)));
       if (fabs(bandwidth - ((point / 1000.0) + 0.05)) <= 0.5)
       {
         return ((m << 3) | e);
@@ -430,9 +431,9 @@ void SX1276MnetDriver::ExtendedPinMode(int pinNum, int pinDir)
   if (pinNum == 32 || pinNum == 33)
   {
     uint64_t gpioBitMask =
-        (pinNum == 32) ? 1ULL << GPIO_NUM_32 : 1ULL << GPIO_NUM_33;
+      (pinNum == 32) ? 1ULL << GPIO_NUM_32 : 1ULL << GPIO_NUM_33;
     gpio_mode_t gpioMode =
-        (pinDir == OUTPUT) ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT;
+      (pinDir == OUTPUT) ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT;
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = gpioMode;
@@ -459,7 +460,7 @@ void SX1276MnetDriver::ClearIrq()
   SpiWriteRegister(SX127X_REG_IRQ_FLAGS_2, -1);
 }
 
-void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
+void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
   BaseType_t xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
@@ -470,13 +471,11 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
 
     mnetTxMsg.action = message.action;
     mnetTxMsg.startTime_us = message.startTime_us;
-    mnetTxMsg.endTime_us = message.endTime_us;
-    mnetTxMsg.rssi = message.rssi;
     mnetTxMsg.len = message.len;
     memcpy(mnetTxMsg.data, message.data, message.len);
 
     vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
-                           &xHigherPriorityTaskWoken);
+      &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
@@ -489,20 +488,18 @@ void SX1276MnetDriver::StaticRfIsr()
   if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
   {
     vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
-                           &xHigherPriorityTaskWoken);
+      &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
 
-void SX1276MnetDriver::DioTask(void *parameter)
+void SX1276MnetDriver::DioTask(void* parameter)
 {
-  ((SX1276MnetDriver *)parameter)->DioProcessing();
+  ((SX1276MnetDriver*)parameter)->DioProcessing();
 }
 
 void SX1276MnetDriver::DioProcessing()
 {
-  static uint32_t debugTime = 0;
-
   while (true)
   {
     uint32_t ulNotifiedValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -516,7 +513,6 @@ void SX1276MnetDriver::DioProcessing()
         SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
         ChangeOperatingMode(SX127X_TX);
         SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
-        debugTime = micros() - mnetTxMsg.startTime_us;
       }
       else if ((rfState == RfState_t::TX_TRANSMIT_ONGOING))
       {
@@ -527,7 +523,6 @@ void SX1276MnetDriver::DioProcessing()
           SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
           ChangeOperatingMode(SX127X_RX);
           rfState = RfState_t::RX_HEADER_RECEIVE;
-          Serial.println(debugTime);
         }
       }
       else
@@ -543,8 +538,8 @@ void SX1276MnetDriver::DioProcessing()
             msgDataOffset = HEADER_LENGTH_IN_BYTES;
             rfState = RfState_t::RX_PAYLOAD_RECEIVE;
             if ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] == mnetRxMsg.data[MICRONET_LEN_OFFSET_2]) &&
-                (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
-                ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
+              (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
+              ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
             {
               // TODO : Also verify the first checksum
               mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
@@ -552,7 +547,7 @@ void SX1276MnetDriver::DioProcessing()
               mnetRxMsg.action = MICRONET_ACTION_RF_NO_ACTION;
               if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
               {
-                mnetRxMsg.endTime_us = isrTime;
+                mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
                 messageFifo->Push(mnetRxMsg);
                 RestartRx();
               }
@@ -581,7 +576,7 @@ void SX1276MnetDriver::DioProcessing()
             }
             if (mnetRxMsg.len <= msgDataOffset)
             {
-              mnetRxMsg.endTime_us = isrTime;
+              mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
               messageFifo->Push(mnetRxMsg);
               RestartRx();
             }

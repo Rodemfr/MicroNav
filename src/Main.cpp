@@ -76,6 +76,7 @@ void MenuScanAllMicronetTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuCalibrateRfFrequency();
 void MenuTestRfQuality();
+void MenuTestTx();
 void SaveCalibration(MicronetCodec &micronetCodec);
 void LoadCalibration(MicronetCodec &micronetCodec);
 void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice);
@@ -98,6 +99,7 @@ MenuEntry_t mainMenu[] = {
     {"Calibrate RF frequency", MenuCalibrateRfFrequency},
     {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
     {"Test RF quality", MenuTestRfQuality},
+    {"Test TX", MenuTestTx},
     {nullptr, nullptr}};
 
 /***************************************************************************/
@@ -1124,6 +1126,44 @@ void MenuTestRfQuality()
       {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitTestLoop = true;
+      }
+    }
+    yield();
+  } while (!exitTestLoop);
+}
+
+void MenuTestTx()
+{
+  bool exitTestLoop = false;
+  MicronetMessage_t txMessage;
+  uint32_t timeRef = millis();
+
+  do
+  {
+    if (millis() >= timeRef + 1000)
+    {
+      timeRef = millis();
+      Serial.println("PING");
+      txMessage.len = 8;
+      txMessage.startTime_us = micros() + 5000;
+      txMessage.action = MICRONET_ACTION_RF_NO_ACTION;
+      txMessage.data[0] = 0x00;
+      txMessage.data[1] = 0xff;
+      txMessage.data[2] = 0xff;
+      txMessage.data[3] = 0xff;
+      txMessage.data[4] = 0xff;
+      txMessage.data[5] = 0xff;
+      txMessage.data[6] = 0x00;
+      txMessage.data[7] = 0xff;
+      gRfReceiver.Transmit(&txMessage);
+
+      while (CONSOLE.available() > 0)
+      {
+        if (CONSOLE.read() == 0x1b)
+        {
+          CONSOLE.println("ESC key pressed, stopping scan.");
+          exitTestLoop = true;
+        }
       }
     }
     yield();

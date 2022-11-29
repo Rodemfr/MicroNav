@@ -179,7 +179,6 @@ void RfDriver::ScheduleTransmit()
       transmitList[transmitIndex].startTime_us = 0;
       continue;
     }
-
     // Schedule new transmit
     nextTransmitIndex = transmitIndex;
     timerStop(txTimer);
