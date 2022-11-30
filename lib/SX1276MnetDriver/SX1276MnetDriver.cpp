@@ -66,7 +66,8 @@ SX1276MnetDriver* SX1276MnetDriver::driverObject;
  * Constructor of SX1276MnetDriver
  * Initialize class attributes, SPI HW and pins
  */
-SX1276MnetDriver::SX1276MnetDriver() : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)), msgDataOffset(0), messageFifo(nullptr)
+SX1276MnetDriver::SX1276MnetDriver() : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)),
+msgDataOffset(0), messageFifo(nullptr)
 {
   driverObject = this;
 }
@@ -187,7 +188,7 @@ void SX1276MnetDriver::SetBitrate(float birate)
 
   SpiWriteRegister(SX127X_REG_BITRATE_MSB, (BrReg >> 8) & 0xff);
   SpiWriteRegister(SX127X_REG_BITRATE_LSB, BrReg & 0xff);
-  //  SpiWriteRegister(SX127X_REG_BITRATE_FRAC, (uint8_t)BrFrac);
+  SpiWriteRegister(SX127X_REG_BITRATE_FRAC, (uint8_t)BrFrac);
 }
 
 /*
@@ -399,7 +400,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
   SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, 0x00);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
-  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xf7);
+  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xf8);
   SpiWriteRegister(SX127X_REG_PA_RAMP, 0x09);
   SpiWriteRegister(SX127X_REG_OCP, 0x00);
 }
@@ -465,7 +466,7 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
   BaseType_t xHigherPriorityTaskWoken;
   xHigherPriorityTaskWoken = pdFALSE;
 
-  if ((rfState == RfState_t::RX_HEADER_RECEIVE) && (message.len <= 64))
+  if ((rfState == RfState_t::RX_HEADER_RECEIVE) && (message.len <= 64) && (message.action == MICRONET_ACTION_RF_TRANSMIT))
   {
     rfState = RfState_t::TX_TRANSMIT_START;
 
@@ -474,8 +475,7 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
     mnetTxMsg.len = message.len;
     memcpy(mnetTxMsg.data, message.data, message.len);
 
-    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
-      &xHigherPriorityTaskWoken);
+    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
@@ -487,8 +487,7 @@ void SX1276MnetDriver::StaticRfIsr()
 
   if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
   {
-    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle,
-      &xHigherPriorityTaskWoken);
+    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
@@ -544,7 +543,7 @@ void SX1276MnetDriver::DioProcessing()
               // TODO : Also verify the first checksum
               mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
               mnetRxMsg.rssi = GetRssi();
-              mnetRxMsg.action = MICRONET_ACTION_RF_NO_ACTION;
+              mnetRxMsg.action = MICRONET_ACTION_RF_TRANSMIT;
               if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
               {
                 mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;

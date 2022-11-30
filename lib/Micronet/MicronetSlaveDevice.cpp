@@ -132,7 +132,7 @@ void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMes
 							micronetCodec->GetDataMessageLength(splitDataFields[i]));
 				}
 
-				txMessage.action = MICRONET_ACTION_RF_NO_ACTION;
+				txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
 				txMessage.startTime_us = txSlot.start_us;
 				messageFifo->Push(txMessage);
 			}
@@ -145,7 +145,7 @@ void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMes
 				{
 					txSlot = micronetCodec->GetAckTransmissionSlot(&networkMap, deviceId + i);
 					micronetCodec->EncodeAckParamMessage(&txMessage, latestSignalStrength, networkId, deviceId + i);
-					txMessage.action = MICRONET_ACTION_RF_NO_ACTION;
+					txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
 					txMessage.startTime_us = txSlot.start_us;
 					messageFifo->Push(txMessage);
 				}

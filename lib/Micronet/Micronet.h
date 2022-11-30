@@ -138,7 +138,7 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-#define MICRONET_ACTION_RF_NO_ACTION    0
+#define MICRONET_ACTION_RF_TRANSMIT     0
 #define MICRONET_ACTION_RF_LOW_POWER    1
 #define MICRONET_ACTION_RF_ACTIVE_POWER 2
 

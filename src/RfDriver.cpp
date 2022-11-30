@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "RfDriver.h"
 #include "BoardConfig.h"
@@ -52,31 +52,31 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
-RfDriver *RfDriver::rfDriver;
+RfDriver* RfDriver::rfDriver;
 
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
 RfDriver::RfDriver()
-    : messageFifo(nullptr),
-      nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
-      freqTrackingNID(0), txTimer(nullptr)
+  : messageFifo(nullptr),
+  nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
+  freqTrackingNID(0), txTimer(nullptr)
 {
   timerMux = portMUX_INITIALIZER_UNLOCKED;
-  memset(transmitList, 0, sizeof(transmitList));
+  memset((void*)transmitList, 0, sizeof(transmitList));
 }
 
 RfDriver::~RfDriver() {}
 
-bool RfDriver::Init(MicronetMessageFifo *messageFifo,
-                    float frequencyOffset_mHz)
+bool RfDriver::Init(MicronetMessageFifo* messageFifo,
+  float frequencyOffset_mHz)
 {
   this->frequencyOffset_MHz = frequencyOffset_mHz;
   this->messageFifo = messageFifo;
   rfDriver = this;
 
-  txTimer = timerBegin(0, getXtalFrequencyMhz(), true);
+  txTimer = timerBegin(0, getApbFrequency() / 1000000, true);
   timerAlarmDisable(txTimer);
   timerAttachInterrupt(txTimer, TimerHandler, true);
 
@@ -124,9 +124,9 @@ void RfDriver::SetBandwidth(RfBandwidth_t bandwidth)
   }
 }
 
-void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
+void RfDriver::Transmit(MicronetMessageFifo* txMessageFifo)
 {
-  MicronetMessage_t *txMessage;
+  MicronetMessage_t* txMessage;
   while ((txMessage = txMessageFifo->Peek()) != nullptr)
   {
     Transmit(txMessage);
@@ -134,7 +134,7 @@ void RfDriver::Transmit(MicronetMessageFifo *txMessageFifo)
   }
 }
 
-void RfDriver::Transmit(MicronetMessage_t *message)
+void RfDriver::Transmit(MicronetMessage_t* message)
 {
   portENTER_CRITICAL(&timerMux);
   int transmitIndex = GetFreeTransmitSlot();
@@ -163,29 +163,30 @@ void RfDriver::ScheduleTransmit()
   do
   {
     int transmitIndex = GetNextTransmitIndex();
-    if (transmitIndex < 0)
+    if ((transmitIndex < 0) || (transmitIndex == nextTransmitIndex))
     {
-      // No transmit to schedule : stop timer and leave
-      timerStop(txTimer);
-      timerWrite(txTimer, 0);
-      timerAlarmDisable(txTimer);
+      // No transmit to schedule : leave
       return;
     }
-    int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
+
+    timerAlarmDisable(txTimer);
+    timerStop(txTimer);
+    timerWrite(txTimer, 0);
+
+    uint32_t now = micros();
+    int32_t transmitDelay = transmitList[transmitIndex].startTime_us - now;
     if ((transmitDelay <= 0) || (transmitDelay > 3000000))
     {
-      // Transmit already in the past, or invalid : delete it and schedule the
-      // next one
+      // Transmit already in the past, or invalid : delete it and schedule the next one
       transmitList[transmitIndex].startTime_us = 0;
       continue;
     }
+
     // Schedule new transmit
     nextTransmitIndex = transmitIndex;
-    timerStop(txTimer);
-    timerWrite(txTimer, 0);
     timerAlarmWrite(txTimer, transmitDelay, false);
-    timerAlarmEnable(txTimer);
     timerStart(txTimer);
+    timerAlarmEnable(txTimer);
     return;
 
   } while (true);
@@ -235,7 +236,6 @@ void RfDriver::TimerHandler()
 void RfDriver::TransmitCallback()
 {
   portENTER_CRITICAL_ISR(&timerMux);
-  timerAlarmDisable(txTimer);
 
   if (nextTransmitIndex < 0)
   {
@@ -243,7 +243,8 @@ void RfDriver::TransmitCallback()
     return;
   }
 
-  int32_t triggerDelay = micros() - transmitList[nextTransmitIndex].startTime_us;
+  uint32_t triggerTime = micros();
+  int32_t triggerDelay = triggerTime - transmitList[nextTransmitIndex].startTime_us;
 
   if (triggerDelay < 0)
   {
@@ -262,7 +263,6 @@ void RfDriver::TransmitCallback()
 
     ScheduleTransmit();
     portEXIT_CRITICAL_ISR(&timerMux);
-
     sx1276Driver.LowPower();
   }
   else if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_ACTIVE_POWER)
@@ -272,7 +272,6 @@ void RfDriver::TransmitCallback()
 
     ScheduleTransmit();
     portEXIT_CRITICAL_ISR(&timerMux);
-
     sx1276Driver.ActivePower();
   }
   else

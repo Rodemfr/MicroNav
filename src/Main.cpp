@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "BoardConfig.h"
 #include "Configuration.h"
@@ -65,9 +65,9 @@
 void RfIsr();
 void PrintByte(uint8_t data);
 void PrintInt(uint32_t data);
-void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us);
-void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap);
-void PrintMessageFifo(MicronetMessageFifo &messageFifo);
+void PrintRawMessage(MicronetMessage_t* message, uint32_t lastMasterRequest_us);
+void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap);
+void PrintMessageFifo(MicronetMessageFifo& messageFifo);
 void MenuAbout();
 void MenuScanNetworks();
 void MenuAttachNetwork();
@@ -76,10 +76,9 @@ void MenuScanAllMicronetTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuCalibrateRfFrequency();
 void MenuTestRfQuality();
-void MenuTestTx();
-void SaveCalibration(MicronetCodec &micronetCodec);
-void LoadCalibration(MicronetCodec &micronetCodec);
-void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice);
+void SaveCalibration(MicronetCodec& micronetCodec);
+void LoadCalibration(MicronetCodec& micronetCodec);
+void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice);
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -99,8 +98,7 @@ MenuEntry_t mainMenu[] = {
     {"Calibrate RF frequency", MenuCalibrateRfFrequency},
     {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
     {"Test RF quality", MenuTestRfQuality},
-    {"Test TX", MenuTestTx},
-    {nullptr, nullptr}};
+    {nullptr, nullptr} };
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -145,7 +143,7 @@ void setup()
   delay(250);
 
 #if (GNSS_UBLOXM8N == 1)
-  CONSOLE.println("Configuring UBlox M8N GNSS");
+  CONSOLE.println("Configuring UBlox GNSS");
   gM8nDriver.Start(M8N_GGA_ENABLE | M8N_VTG_ENABLE | M8N_RMC_ENABLE);
 #endif
 
@@ -155,7 +153,7 @@ void setup()
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
   if (!gRfReceiver.Init(&gRxMessageFifo,
-                        gConfiguration.rfFrequencyOffset_MHz))
+    gConfiguration.rfFrequencyOffset_MHz))
   {
 
     while (1)
@@ -227,8 +225,8 @@ void PrintInt(uint32_t data)
   PrintByte(data & 0x0ff);
 }
 
-void PrintRawMessage(MicronetMessage_t *message,
-                     uint32_t lastMasterRequest_us)
+void PrintRawMessage(MicronetMessage_t* message,
+  uint32_t lastMasterRequest_us)
 {
   if (message->len < MICRONET_PAYLOAD_OFFSET)
   {
@@ -274,7 +272,7 @@ void PrintRawMessage(MicronetMessage_t *message,
   CONSOLE.println();
 }
 
-void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap)
+void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap)
 {
   CONSOLE.print("Network ID : 0x");
   PrintInt(networkMap->networkId);
@@ -332,13 +330,13 @@ void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap)
   CONSOLE.println("");
 }
 
-void PrintMessageFifo(MicronetMessageFifo &messageFifo)
+void PrintMessageFifo(MicronetMessageFifo& messageFifo)
 {
   if (messageFifo.GetNbMessages() > 0)
   {
     for (int i = 0; i < messageFifo.GetNbMessages(); i++)
     {
-      MicronetMessage_t *message = messageFifo.Peek(i);
+      MicronetMessage_t* message = messageFifo.Peek(i);
       CONSOLE.print("MSG ");
       CONSOLE.print(i);
       CONSOLE.print(" : ");
@@ -376,7 +374,7 @@ void MenuAbout()
   CONSOLE.print(gConfiguration.rfFrequencyOffset_MHz * 1000);
   CONSOLE.print(" kHz (");
   CONSOLE.print((int)(1000000.0 * gConfiguration.rfFrequencyOffset_MHz /
-                      MICRONET_RF_CENTER_FREQUENCY_MHZ));
+    MICRONET_RF_CENTER_FREQUENCY_MHZ));
   CONSOLE.println(" ppm)");
   CONSOLE.print("Wind speed factor = ");
   CONSOLE.println(gConfiguration.windSpeedFactor_per);
@@ -389,7 +387,7 @@ void MenuAbout()
   if (gConfiguration.navCompassAvailable == false)
   {
     CONSOLE.println(
-        "No navigation compass detected, disabling magnetic heading.");
+      "No navigation compass detected, disabling magnetic heading.");
   }
   else
   {
@@ -407,11 +405,11 @@ void MenuAbout()
 
 void MenuScanNetworks()
 {
-  MicronetMessage_t *message;
+  MicronetMessage_t* message;
   uint32_t nidArray[MAX_SCANNED_NETWORKS];
   int16_t rssiArray[MAX_SCANNED_NETWORKS];
   MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-                              MICRONAV_SW_MINOR_VERSION);
+    MICRONAV_SW_MINOR_VERSION);
 
   memset(nidArray, 0, sizeof(nidArray));
   memset(rssiArray, 0, sizeof(rssiArray));
@@ -585,11 +583,11 @@ void MenuAttachNetwork()
 void MenuConvertToNmea()
 {
   bool exitNmeaLoop = false;
-  MicronetMessage_t *rxMessage;
+  MicronetMessage_t* rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
   MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-                              MICRONAV_SW_MINOR_VERSION);
+    MICRONAV_SW_MINOR_VERSION);
   DataBridge dataBridge(&micronetCodec);
   MicronetSlaveDevice micronetDevice(&micronetCodec);
 
@@ -604,7 +602,7 @@ void MenuConvertToNmea()
   CONSOLE.println("");
   CONSOLE.println("Starting Micronet to NMEA0183 conversion.");
   CONSOLE.println(
-      "Press ESC key at any time to stop conversion and come back to menu.");
+    "Press ESC key at any time to stop conversion and come back to menu.");
   CONSOLE.println("");
 
   // Load sensor calibration data into Micronet codec
@@ -624,6 +622,7 @@ void MenuConvertToNmea()
     if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
     {
       micronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
+
       gRfReceiver.Transmit(&txMessageFifo);
 
       dataBridge.UpdateMicronetData();
@@ -646,7 +645,7 @@ void MenuConvertToNmea()
     while (NMEA_EXT.available() > 0)
     {
       c = NMEA_EXT.read();
-      if (((void *)(&CONSOLE) == (void *)(&NMEA_EXT)) && (c == 0x1b))
+      if (((void*)(&CONSOLE) == (void*)(&NMEA_EXT)) && (c == 0x1b))
       {
         CONSOLE.println("ESC key pressed, stopping conversion.");
         exitNmeaLoop = true;
@@ -666,7 +665,7 @@ void MenuConvertToNmea()
       }
     }
 
-    if ((void *)(&CONSOLE) != (void *)(&NMEA_EXT))
+    if ((void*)(&CONSOLE) != (void*)(&NMEA_EXT))
     {
       while (CONSOLE.available() > 0)
       {
@@ -698,16 +697,16 @@ void MenuScanAllMicronetTraffic()
   uint32_t lastMasterRequest_us = 0;
   MicronetCodec::NetworkMap networkMap;
   MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-                              MICRONAV_SW_MINOR_VERSION);
+    MICRONAV_SW_MINOR_VERSION);
 
   CONSOLE.println("Starting Micronet traffic scanning.");
   CONSOLE.println(
-      "Press ESC key at any time to stop scanning and come back to menu.");
+    "Press ESC key at any time to stop scanning and come back to menu.");
   CONSOLE.println("");
 
   gRxMessageFifo.ResetFifo();
 
-  MicronetMessage_t *message;
+  MicronetMessage_t* message;
   do
   {
     if ((message = gRxMessageFifo.Peek()) != nullptr)
@@ -715,7 +714,7 @@ void MenuScanAllMicronetTraffic()
       if (micronetCodec.VerifyHeaderCrc(message))
       {
         if (message->data[MICRONET_MI_OFFSET] ==
-            MICRONET_MESSAGE_ID_MASTER_REQUEST)
+          MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
           CONSOLE.println("");
           lastMasterRequest_us = message->endTime_us;
@@ -848,21 +847,21 @@ void MenuCalibrateRfFrequency()
   bool updateFreq;
   uint32_t lastMessageTime = millis();
   float currentFreq_MHz =
-      MICRONET_RF_CENTER_FREQUENCY_MHZ - (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f);
+    MICRONET_RF_CENTER_FREQUENCY_MHZ - (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f);
   float firstWorkingFreq_MHz = 100000;
   float lastWorkingFreq_MHz = 0;
   float range_kHz, centerFrequency_MHz;
   char c;
   MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-                              MICRONAV_SW_MINOR_VERSION);
+    MICRONAV_SW_MINOR_VERSION);
 
   CONSOLE.println("");
   CONSOLE.println(
-      "To tune RF frequency, you must start your Micronet network and");
+    "To tune RF frequency, you must start your Micronet network and");
   CONSOLE.println("put MicronetToNMEA HW close to your Micronet main display "
-                  "(less than one meter).");
+    "(less than one meter).");
   CONSOLE.println(
-      "You must not move any of the devices during the tuning phase.");
+    "You must not move any of the devices during the tuning phase.");
   CONSOLE.println("Tuning phase will last about two minutes.");
   CONSOLE.println("Press any key when you are ready to start.");
 
@@ -874,7 +873,7 @@ void MenuCalibrateRfFrequency()
   CONSOLE.println("");
   CONSOLE.println("Starting Frequency tuning");
   CONSOLE.println(
-      "Press ESC key at any time to stop tuning and come back to menu.");
+    "Press ESC key at any time to stop tuning and come back to menu.");
   CONSOLE.println("");
 
   gRfReceiver.DisableFrequencyTracking();
@@ -888,11 +887,11 @@ void MenuCalibrateRfFrequency()
   gRxMessageFifo.ResetFifo();
   do
   {
-    MicronetMessage_t *rxMessage;
+    MicronetMessage_t* rxMessage;
     if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
     {
       if (micronetCodec.GetMessageId(rxMessage) ==
-          MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        MICRONET_MESSAGE_ID_MASTER_REQUEST)
       {
         lastMessageTime = millis();
         CONSOLE.print("*");
@@ -917,7 +916,7 @@ void MenuCalibrateRfFrequency()
       lastMessageTime = millis();
       updateFreq = false;
       if (currentFreq_MHz < MICRONET_RF_CENTER_FREQUENCY_MHZ +
-                                (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f))
+        (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f))
       {
         currentFreq_MHz += (FREQUENCY_SWEEP_STEP_KHZ / 1000.0f);
         gRfReceiver.SetFrequency(currentFreq_MHz);
@@ -925,7 +924,7 @@ void MenuCalibrateRfFrequency()
       else
       {
         centerFrequency_MHz =
-            ((lastWorkingFreq_MHz + firstWorkingFreq_MHz) / 2);
+          ((lastWorkingFreq_MHz + firstWorkingFreq_MHz) / 2);
         range_kHz = (lastWorkingFreq_MHz - firstWorkingFreq_MHz) * 1000;
         if ((range_kHz > 0) && (range_kHz < FREQUENCY_SWEEP_RANGE_KHZ))
         {
@@ -938,23 +937,23 @@ void MenuCalibrateRfFrequency()
           CONSOLE.println("kHz");
           CONSOLE.print("Deviation to real frequency = ");
           CONSOLE.print(
-              (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) * 1000);
+            (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) * 1000);
           CONSOLE.print("kHz (");
           CONSOLE.print(
-              (int)(1000000.0 *
-                    (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) /
-                    MICRONET_RF_CENTER_FREQUENCY_MHZ));
+            (int)(1000000.0 *
+              (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) /
+              MICRONET_RF_CENTER_FREQUENCY_MHZ));
           CONSOLE.println(" ppm)");
 
           CONSOLE.println(
-              "Do you want to save the new RF calibration values (y/n) ?");
+            "Do you want to save the new RF calibration values (y/n) ?");
           while (CONSOLE.available() == 0)
             ;
           c = CONSOLE.read();
           if ((c == 'y') || (c == 'Y'))
           {
             gConfiguration.rfFrequencyOffset_MHz =
-                (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
+              (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
             gConfiguration.SaveToEeprom();
             CONSOLE.println("Configuration saved");
           }
@@ -994,32 +993,32 @@ void MenuTestRfQuality()
   MicronetMessage_t txMessage;
   uint32_t receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
   MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-                              MICRONAV_SW_MINOR_VERSION);
+    MICRONAV_SW_MINOR_VERSION);
 
   CONSOLE.println("Starting RF signal quality test.");
   CONSOLE.println(
-      "Press ESC key at any time to stop testing and come back to menu.");
+    "Press ESC key at any time to stop testing and come back to menu.");
   CONSOLE.println("");
 
   gRxMessageFifo.ResetFifo();
 
   do
   {
-    MicronetMessage_t *message;
+    MicronetMessage_t* message;
 
     if ((message = gRxMessageFifo.Peek()) != nullptr)
     {
       if (micronetCodec.VerifyHeaderCrc(message))
       {
         if (message->data[MICRONET_MI_OFFSET] ==
-            MICRONET_MESSAGE_ID_MASTER_REQUEST)
+          MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
           CONSOLE.println("");
           micronetCodec.GetNetworkMap(message, &networkMap);
           txSlot = micronetCodec.GetAsyncTransmissionSlot(&networkMap);
           micronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId,
-                                          gConfiguration.deviceId);
-          txMessage.action = MICRONET_ACTION_RF_NO_ACTION;
+            gConfiguration.deviceId);
+          txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
           txMessage.startTime_us = txSlot.start_us;
           gRfReceiver.Transmit(&txMessage);
           memset(receivedDid, 0, sizeof(receivedDid));
@@ -1132,45 +1131,7 @@ void MenuTestRfQuality()
   } while (!exitTestLoop);
 }
 
-void MenuTestTx()
-{
-  bool exitTestLoop = false;
-  MicronetMessage_t txMessage;
-  uint32_t timeRef = millis();
-
-  do
-  {
-    if (millis() >= timeRef + 1000)
-    {
-      timeRef = millis();
-      Serial.println("PING");
-      txMessage.len = 8;
-      txMessage.startTime_us = micros() + 5000;
-      txMessage.action = MICRONET_ACTION_RF_NO_ACTION;
-      txMessage.data[0] = 0x00;
-      txMessage.data[1] = 0xff;
-      txMessage.data[2] = 0xff;
-      txMessage.data[3] = 0xff;
-      txMessage.data[4] = 0xff;
-      txMessage.data[5] = 0xff;
-      txMessage.data[6] = 0x00;
-      txMessage.data[7] = 0xff;
-      gRfReceiver.Transmit(&txMessage);
-
-      while (CONSOLE.available() > 0)
-      {
-        if (CONSOLE.read() == 0x1b)
-        {
-          CONSOLE.println("ESC key pressed, stopping scan.");
-          exitTestLoop = true;
-        }
-      }
-    }
-    yield();
-  } while (!exitTestLoop);
-}
-
-void SaveCalibration(MicronetCodec &micronetCodec)
+void SaveCalibration(MicronetCodec& micronetCodec)
 {
   gConfiguration.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
   gConfiguration.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
@@ -1184,32 +1145,32 @@ void SaveCalibration(MicronetCodec &micronetCodec)
   gConfiguration.SaveToEeprom();
 }
 
-void LoadCalibration(MicronetCodec &micronetCodec)
+void LoadCalibration(MicronetCodec& micronetCodec)
 {
   micronetCodec.navData.waterSpeedFactor_per =
-      gConfiguration.waterSpeedFactor_per;
+    gConfiguration.waterSpeedFactor_per;
   micronetCodec.navData.waterTemperatureOffset_degc =
-      gConfiguration.waterTemperatureOffset_C;
+    gConfiguration.waterTemperatureOffset_C;
   micronetCodec.navData.depthOffset_m = gConfiguration.depthOffset_m;
   micronetCodec.navData.windSpeedFactor_per =
-      gConfiguration.windSpeedFactor_per;
+    gConfiguration.windSpeedFactor_per;
   micronetCodec.navData.windDirectionOffset_deg =
-      gConfiguration.windDirectionOffset_deg;
+    gConfiguration.windDirectionOffset_deg;
   micronetCodec.navData.headingOffset_deg = gConfiguration.headingOffset_deg;
   micronetCodec.navData.magneticVariation_deg =
-      gConfiguration.magneticVariation_deg;
+    gConfiguration.magneticVariation_deg;
   micronetCodec.navData.windShift_min = gConfiguration.windShift;
 }
 
-void ConfigureSlaveDevice(MicronetSlaveDevice &micronetDevice)
+void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
 {
   // Configure Micronet's slave devices
   micronetDevice.SetNetworkId(gConfiguration.networkId);
   micronetDevice.SetDeviceId(gConfiguration.deviceId);
   micronetDevice.SetDataFields(
-      DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
-      DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
-      DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
+    DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
+    DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
+    DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
   if (DEPTH_SOURCE_LINK != LINK_MICRONET)
   {
