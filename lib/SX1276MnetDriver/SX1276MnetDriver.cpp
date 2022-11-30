@@ -41,8 +41,15 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define SPI_WRITE_COMMAND 0x80
+#define SPI_WRITE_COMMAND     0x80
 #define DEFAULT_PACKET_LENGTH 255
+
+#define ISR_EVENT_DIO0         0x00000001
+#define ISR_EVENT_DIO1         0x00000002
+#define ISR_EVENT_TRANSMIT     0x00000004
+#define ISR_EVENT_LOW_POWER    0x00000008
+#define ISR_EVENT_ACTIVE_POWER 0x00000010
+#define ISR_EVENT_ALL          0x0000001f
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -117,6 +124,8 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
 
   this->messageFifo = messageFifo;
 
+  isrEventGroup = xEventGroupCreate();
+
   // Start SPI driver
   SPI.begin(sckPin, miso_Pin, mosiPin, csPin);
   // In  the context of MicronetToNMEA, only SX1276 is alone on its SPI bus, so
@@ -137,12 +146,11 @@ bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin,
   // Set base configuration for Micronet configuration
   SetBaseConfiguration();
 
-  xTaskCreate(DioTask, "DioTask", 1024, (void*)this,
-    (configMAX_PRIORITIES - 1), &DioTaskHandle);
+  xTaskCreate(IsrProcessingTask, "DioTask", 1024, (void*)this, (configMAX_PRIORITIES - 1), &DioTaskHandle);
 
   // Attach callback to DIO1 pin
-  attachInterrupt(digitalPinToInterrupt(dio1Pin), StaticRfIsr, RISING);
-  attachInterrupt(digitalPinToInterrupt(dio0Pin), StaticRfIsr, RISING);
+  attachInterrupt(digitalPinToInterrupt(dio0Pin), Dio0Isr, RISING);
+  attachInterrupt(digitalPinToInterrupt(dio1Pin), Dio1Isr, RISING);
 
   return true;
 }
@@ -248,12 +256,16 @@ void SX1276MnetDriver::GoToIdle(void)
 /*
   Put SX1276 in low power mode
 */
-void SX1276MnetDriver::LowPower() {}
+void SX1276MnetDriver::LowPower() {
+  ChangeOperatingMode(SX127X_SLEEP);
+}
 
 /*
   Put SX1276 in active power mode
 */
-void SX1276MnetDriver::ActivePower() {}
+void SX1276MnetDriver::ActivePower() {
+  StartRx();
+}
 
 /*
   Read one SX1276 register
@@ -353,13 +365,7 @@ void SX1276MnetDriver::ChangeOperatingMode(uint8_t mode)
       ;
     break;
   case SX127X_RX:
-    // while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_RX_READY))
-    //   ;
-    break;
   case SX127X_TX:
-    // while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_1) & SX127X_FLAG_TX_READY))
-    //   ;
-    break;
   default:
     break;
   }
@@ -381,8 +387,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
   SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 14);
   // Sync word detection ON, 3 bytes long, 0x55 preamble polarity for Tx
-  SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
-    SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+  SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
   SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
@@ -463,8 +468,7 @@ void SX1276MnetDriver::ClearIrq()
 
 void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
-  BaseType_t xHigherPriorityTaskWoken;
-  xHigherPriorityTaskWoken = pdFALSE;
+  BaseType_t scheduleChange = pdFALSE;
 
   if ((rfState == RfState_t::RX_HEADER_RECEIVE) && (message.len <= 64) && (message.action == MICRONET_ACTION_RF_TRANSMIT))
   {
@@ -475,35 +479,54 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
     mnetTxMsg.len = message.len;
     memcpy(mnetTxMsg.data, message.data, message.len);
 
-    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    xEventGroupSetBitsFromISR(isrEventGroup, ISR_EVENT_TRANSMIT, &scheduleChange);
+    portYIELD_FROM_ISR(scheduleChange);
   }
 }
 
-void SX1276MnetDriver::StaticRfIsr()
+void SX1276MnetDriver::Dio0Isr()
 {
-  BaseType_t xHigherPriorityTaskWoken;
-  xHigherPriorityTaskWoken = pdFALSE;
+  BaseType_t scheduleChange = pdFALSE;
 
   if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
   {
-    vTaskNotifyGiveFromISR(driverObject->DioTaskHandle, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    xEventGroupSetBitsFromISR(driverObject->isrEventGroup, ISR_EVENT_DIO0, &scheduleChange);
+    portYIELD_FROM_ISR(scheduleChange);
   }
 }
 
-void SX1276MnetDriver::DioTask(void* parameter)
+void SX1276MnetDriver::Dio1Isr()
 {
-  ((SX1276MnetDriver*)parameter)->DioProcessing();
+  BaseType_t scheduleChange = pdFALSE;
+
+  if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
+  {
+    xEventGroupSetBitsFromISR(driverObject->isrEventGroup, ISR_EVENT_DIO1, &scheduleChange);
+    portYIELD_FROM_ISR(scheduleChange);
+  }
 }
 
-void SX1276MnetDriver::DioProcessing()
+void SX1276MnetDriver::IsrProcessingTask(void* parameter)
+{
+  ((SX1276MnetDriver*)parameter)->IsrProcessing();
+}
+
+void SX1276MnetDriver::IsrProcessing()
 {
   while (true)
   {
-    uint32_t ulNotifiedValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    EventBits_t isrFlags = xEventGroupWaitBits(isrEventGroup, ISR_EVENT_ALL, pdTRUE, pdFALSE, portMAX_DELAY);
     uint32_t isrTime = micros();
-    if (ulNotifiedValue > 0)
+
+    if (isrFlags & ISR_EVENT_LOW_POWER)
+    {
+      LowPower();
+    }
+    else if (isrFlags & ISR_EVENT_ACTIVE_POWER)
+    {
+      ActivePower();
+    }
+    else
     {
       if (rfState == RfState_t::TX_TRANSMIT_START)
       {

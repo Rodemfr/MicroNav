@@ -165,28 +165,29 @@ void RfDriver::ScheduleTransmit()
     int transmitIndex = GetNextTransmitIndex();
     if ((transmitIndex < 0) || (transmitIndex == nextTransmitIndex))
     {
-      // No transmit to schedule : leave
+      // No new transmit to schedule : leave
       return;
     }
 
-    timerAlarmDisable(txTimer);
+    // A new transmit is to be scheduled : stop current timer
     timerStop(txTimer);
+    timerAlarmDisable(txTimer);
     timerWrite(txTimer, 0);
 
-    uint32_t now = micros();
-    int32_t transmitDelay = transmitList[transmitIndex].startTime_us - now;
-    if ((transmitDelay <= 0) || (transmitDelay > 3000000))
+    // Check that we are not already late for this transmit
+    int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
+    if ((transmitDelay <= 0) || (transmitDelay > 2000000))
     {
       // Transmit already in the past, or invalid : delete it and schedule the next one
       transmitList[transmitIndex].startTime_us = 0;
       continue;
     }
 
-    // Schedule new transmit
+    // Transmit is valid : program the timer accordingly
     nextTransmitIndex = transmitIndex;
     timerAlarmWrite(txTimer, transmitDelay, false);
-    timerStart(txTimer);
     timerAlarmEnable(txTimer);
+    timerStart(txTimer);
     return;
 
   } while (true);
@@ -243,12 +244,11 @@ void RfDriver::TransmitCallback()
     return;
   }
 
-  uint32_t triggerTime = micros();
-  int32_t triggerDelay = triggerTime - transmitList[nextTransmitIndex].startTime_us;
+  int32_t triggerDelay = micros(); - transmitList[nextTransmitIndex].startTime_us;
 
   if (triggerDelay < 0)
   {
-    // Depending on the Teensy version, timer may not be able to reach delay of
+    // Depending on the host HW, timer may not be able to reach delay of
     // more than about 50ms. in that case we reprogram it until we reach the
     // specified amount of time
     ScheduleTransmit();
@@ -256,31 +256,10 @@ void RfDriver::TransmitCallback()
     return;
   }
 
-  if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_LOW_POWER)
-  {
-    transmitList[nextTransmitIndex].startTime_us = 0;
-    nextTransmitIndex = -1;
-
-    ScheduleTransmit();
-    portEXIT_CRITICAL_ISR(&timerMux);
-    sx1276Driver.LowPower();
-  }
-  else if (transmitList[nextTransmitIndex].action == MICRONET_ACTION_RF_ACTIVE_POWER)
-  {
-    transmitList[nextTransmitIndex].startTime_us = 0;
-    nextTransmitIndex = -1;
-
-    ScheduleTransmit();
-    portEXIT_CRITICAL_ISR(&timerMux);
-    sx1276Driver.ActivePower();
-  }
-  else
-  {
-    sx1276Driver.TransmitFromIsr(transmitList[nextTransmitIndex]);
-    transmitList[nextTransmitIndex].startTime_us = 0;
-    ScheduleTransmit();
-    portEXIT_CRITICAL_ISR(&timerMux);
-  }
+  sx1276Driver.TransmitFromIsr(transmitList[nextTransmitIndex]);
+  transmitList[nextTransmitIndex].startTime_us = 0;
+  ScheduleTransmit();
+  portEXIT_CRITICAL_ISR(&timerMux);
 }
 
 void RfDriver::EnableFrequencyTracking(uint32_t networkId)

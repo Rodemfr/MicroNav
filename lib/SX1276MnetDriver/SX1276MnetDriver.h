@@ -87,6 +87,7 @@ private:
   MicronetMessage_t mnetTxMsg;
   uint32_t msgDataOffset;
   MicronetMessageFifo *messageFifo;
+  EventGroupHandle_t isrEventGroup;
 
   uint8_t SpiReadRegister(uint8_t addr);
   void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
@@ -106,10 +107,11 @@ private:
   void ClearIrq();
 
   static SX1276MnetDriver *driverObject;
-  static void StaticRfIsr();
-  static void DioTask(void *parameter);
+  static void Dio0Isr();
+  static void Dio1Isr();
+  static void IsrProcessingTask(void *parameter);
 
-  void DioProcessing();
+  void IsrProcessing();
 };
 
 #endif
