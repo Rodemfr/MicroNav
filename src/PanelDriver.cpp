@@ -38,11 +38,16 @@
 
 #include "logo.h"
 #include "t000.h"
+#include "t060.h"
+#include "t075.h"
 #include "t110.h"
 #include "t111.h"
 #include "t112.h"
+#include "t113.h"
 #include "t120.h"
 #include "t121.h"
+#include "t210.h"
+#include "t215.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -138,8 +143,13 @@ void PanelDriver::DrawNetworkPage()
     DrawDeviceIcon(T110, 1, 1);
     DrawDeviceIcon(T111, 2, 2);
     DrawDeviceIcon(T112, 3, 3);
-    DrawDeviceIcon(T120, 4, 4);
-    DrawDeviceIcon(T121, 5, 5);
+    DrawDeviceIcon(T113, 4, 5);
+    DrawDeviceIcon(T120, 5, 4);
+    DrawDeviceIcon(T121, 6, 3);
+    DrawDeviceIcon(T210, 7, 2);
+    DrawDeviceIcon(T215, 8, 1);
+    DrawDeviceIcon(T060, 9, 0);
+    DrawDeviceIcon(T075, 10, 5);
     display.display();
 }
 
@@ -153,6 +163,6 @@ void PanelDriver::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_
     display.drawBitmap(xPos, yPos, (uint8_t*)icon, DEVICE_ICON_WIDTH, DEVICE_ICON_HEIGHT, 1);
     if (radioLevel < 5)
     {
-        display.fillRect(xPos + 22, yPos + 4, 6, 3 * (5 - radioLevel), 0);
+        display.fillRect(xPos + 26, yPos + 4, 6, 3 * (5 - radioLevel), 0);
     }
 }
