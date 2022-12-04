@@ -36,6 +36,7 @@
 #include "MicronetCodec.h"
 #include "MicronetMessageFifo.h"
 #include "NavCompass.h"
+#include "PanelDriver.h"
 #include "Version.h"
 
 #include <Arduino.h>
@@ -110,11 +111,11 @@ void setup()
   Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
   if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
   {
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);
-    pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
+    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LoRa
+    pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON); 
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON); // OLED
   }
   else
   {
@@ -177,6 +178,18 @@ void setup()
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" Found");
     gConfiguration.navCompassAvailable = true;
+  }
+
+  CONSOLE.print("Initializing display ... ");
+  if (!gPanelDriver.Init())
+  {
+    CONSOLE.println("NOT DETECTED");
+    gConfiguration.displayAvailable = false;
+  }
+  else
+  {
+    CONSOLE.println(" Found");
+    gConfiguration.displayAvailable = true;
   }
 
   // Start listening

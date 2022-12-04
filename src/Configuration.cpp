@@ -88,6 +88,7 @@ Configuration::Configuration()
 {
 	// Set default configuration
 	navCompassAvailable = false;
+	displayAvailable = false;
 	networkId = 0;
 	waterSpeedFactor_per = 1.0f;
 	waterTemperatureOffset_C = 0;

@@ -40,6 +40,7 @@
 #include "NavCompass.h"
 #include "RfDriver.h"
 #include "M8NDriver.h"
+#include "PanelDriver.h"
 #include "MicronetSlaveDevice.h"
 
 /***************************************************************************/
@@ -60,6 +61,7 @@ extern MicronetMessageFifo gRxMessageFifo;
 extern Configuration gConfiguration;
 extern NavCompass gNavCompass;
 extern M8NDriver gM8nDriver;
+extern PanelDriver gPanelDriver;
 
 /***************************************************************************/
 /*                              Prototypes                                 */
