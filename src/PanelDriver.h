@@ -27,15 +27,21 @@
 #ifndef PANELDRIVER_H_
 #define PANELDRIVER_H_
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
+
+enum {
+    PAGE_WELCOME = 0,
+    PAGE_NETWORK,
+    PAGE_MAX_PAGES
+} PanelPages_t;
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -52,6 +58,17 @@ public:
     ~PanelDriver();
 
     bool Init();
+    void SetPage(uint32_t pageNumber);
+    void DrawPage();
+
+private:
+    bool displayAvailable;
+    uint32_t pageNumber;
+
+    void DrawWelcomePage();
+    void DrawNetworkPage();
+
+    void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
 };
 
 #endif
