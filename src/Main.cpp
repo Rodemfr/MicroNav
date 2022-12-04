@@ -129,9 +129,9 @@ void setup()
   USB_NMEA.begin(USB_BAUDRATE);
 
   CONSOLE.print("MicroNav v");
-  CONSOLE.print(MICRONAV_SW_MAJOR_VERSION);
+  CONSOLE.print(SW_MAJOR_VERSION);
   CONSOLE.print(".");
-  CONSOLE.println(MICRONAV_SW_MINOR_VERSION);
+  CONSOLE.println(SW_MINOR_VERSION);
 
   // Init GNSS NMEA serial link
   GNSS_SERIAL.begin(GNSS_BAUDRATE, SERIAL_8N1, GNSS_RX_PIN, GNSS_TX_PIN);
@@ -167,7 +167,7 @@ void setup()
   CONSOLE.println("OK");
 
   CONSOLE.print("Initializing navigation compass ... ");
-  if (!gNavCompass.Init())
+  if (1) //!gNavCompass.Init())
   {
     CONSOLE.println("NOT DETECTED");
     gConfiguration.navCompassAvailable = false;
@@ -353,9 +353,9 @@ void PrintMessageFifo(MicronetMessageFifo& messageFifo)
 void MenuAbout()
 {
   CONSOLE.print("MicronetToNMEA, Version ");
-  CONSOLE.print(MICRONAV_SW_MAJOR_VERSION, DEC);
+  CONSOLE.print(SW_MAJOR_VERSION, DEC);
   CONSOLE.print(".");
-  CONSOLE.println(MICRONAV_SW_MINOR_VERSION, DEC);
+  CONSOLE.println(SW_MINOR_VERSION, DEC);
 
   CONSOLE.print("Device ID : ");
   CONSOLE.println(gConfiguration.deviceId, HEX);
@@ -408,8 +408,7 @@ void MenuScanNetworks()
   MicronetMessage_t* message;
   uint32_t nidArray[MAX_SCANNED_NETWORKS];
   int16_t rssiArray[MAX_SCANNED_NETWORKS];
-  MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-    MICRONAV_SW_MINOR_VERSION);
+  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   memset(nidArray, 0, sizeof(nidArray));
   memset(rssiArray, 0, sizeof(rssiArray));
@@ -586,8 +585,7 @@ void MenuConvertToNmea()
   MicronetMessage_t* rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
-  MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-    MICRONAV_SW_MINOR_VERSION);
+  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
   DataBridge dataBridge(&micronetCodec);
   MicronetSlaveDevice micronetDevice(&micronetCodec);
 
@@ -663,6 +661,10 @@ void MenuConvertToNmea()
         lastHeadingTime = millis();
         dataBridge.UpdateCompassData(gNavCompass.GetHeading());
       }
+    } else 
+    {
+      // TODO : Remove debug code
+      dataBridge.UpdateCompassData((millis() / 1000) % 360);
     }
 
     if ((void*)(&CONSOLE) != (void*)(&NMEA_EXT))
@@ -696,8 +698,7 @@ void MenuScanAllMicronetTraffic()
   bool exitSniffLoop = false;
   uint32_t lastMasterRequest_us = 0;
   MicronetCodec::NetworkMap networkMap;
-  MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-    MICRONAV_SW_MINOR_VERSION);
+  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("Starting Micronet traffic scanning.");
   CONSOLE.println(
@@ -852,8 +853,7 @@ void MenuCalibrateRfFrequency()
   float lastWorkingFreq_MHz = 0;
   float range_kHz, centerFrequency_MHz;
   char c;
-  MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-    MICRONAV_SW_MINOR_VERSION);
+  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("");
   CONSOLE.println(
@@ -992,8 +992,7 @@ void MenuTestRfQuality()
   TxSlotDesc_t txSlot;
   MicronetMessage_t txMessage;
   uint32_t receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
-  MicronetCodec micronetCodec(MICRONAV_SW_MAJOR_VERSION,
-    MICRONAV_SW_MINOR_VERSION);
+  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("Starting RF signal quality test.");
   CONSOLE.println(
@@ -1172,7 +1171,7 @@ void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
     DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
     DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
-  if (DEPTH_SOURCE_LINK != LINK_MICRONET)
+  if (COMPASS_SOURCE_LINK != LINK_MICRONET)
   {
     micronetDevice.AddDataFields(DATA_FIELD_HDG);
   }

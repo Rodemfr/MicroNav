@@ -136,7 +136,7 @@ void RfDriver::Transmit(MicronetMessageFifo* txMessageFifo)
 
 void RfDriver::Transmit(MicronetMessage_t* message)
 {
-  portENTER_CRITICAL(&timerMux);
+  taskENTER_CRITICAL(&timerMux);
   int transmitIndex = GetFreeTransmitSlot();
 
   if (transmitIndex >= 0)
@@ -155,7 +155,7 @@ void RfDriver::Transmit(MicronetMessage_t* message)
   }
 
   ScheduleTransmit();
-  portEXIT_CRITICAL(&timerMux);
+  taskEXIT_CRITICAL(&timerMux);
 }
 
 void RfDriver::ScheduleTransmit()
@@ -176,7 +176,7 @@ void RfDriver::ScheduleTransmit()
 
     // Check that we are not already late for this transmit
     int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
-    if ((transmitDelay <= 0) || (transmitDelay > 2000000))
+    if ((transmitDelay < 0) || (transmitDelay > 2000000))
     {
       // Transmit already in the past, or invalid : delete it and schedule the next one
       transmitList[transmitIndex].startTime_us = 0;
@@ -244,15 +244,10 @@ void RfDriver::TransmitCallback()
     return;
   }
 
-  int32_t triggerDelay = micros(); - transmitList[nextTransmitIndex].startTime_us;
+  int32_t triggerDelay = micros() - transmitList[nextTransmitIndex].startTime_us;
 
   if (triggerDelay < 0)
   {
-    // Depending on the host HW, timer may not be able to reach delay of
-    // more than about 50ms. in that case we reprogram it until we reach the
-    // specified amount of time
-    ScheduleTransmit();
-    portEXIT_CRITICAL_ISR(&timerMux);
     return;
   }
 

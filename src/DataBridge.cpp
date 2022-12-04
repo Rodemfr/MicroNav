@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "BoardConfig.h"
 #include "DataBridge.h"
@@ -40,12 +40,22 @@
 /***************************************************************************/
 
 const uint8_t DataBridge::asciiTable[128] =
-{ ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '\"', ' ', ' ', '%', '&', '\'', ' ', ' ', ' ', '+', ' ', '-', '.', '/', '0',
-		'1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ' ', '<', ' ', '>', '?', ' ', 'A', '(', 'C', ')', 'E', 'F', 'G', 'H',
-		'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', ' ', ' ', ' ', ' ', ' ',
-		'A', '(', 'C', ')', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-		'Y', 'Z', ' ', ' ', ' ', ' ', ' ' };
+{ ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+  ' ', ' ', '\"', ' ', ' ', '%', '&', '\'',
+  ' ', ' ', ' ', '+', ' ', '-', '.', '/',
+  '0', '1', '2', '3', '4', '5', '6', '7',
+  '8', '9', ':', ' ', '<', ' ', '>', '?',
+  ' ', 'A', '(', 'C', ')', 'E', 'F', 'G',
+  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+  'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+  'X', 'Y', 'Z', ' ', ' ', ' ', ' ', ' ',
+  ' ', 'A', '(', 'C', ')', 'E', 'F', 'G',
+  'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+  'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+  'X', 'Y', 'Z', ' ', ' ', ' ', ' ', ' ' };
 
 /***************************************************************************/
 /*                                Macros                                   */
@@ -67,7 +77,7 @@ const uint8_t DataBridge::asciiTable[128] =
 /*                              Functions                                  */
 /***************************************************************************/
 
-DataBridge::DataBridge(MicronetCodec *micronetCodec)
+DataBridge::DataBridge(MicronetCodec* micronetCodec)
 {
 	nmeaExtWriteIndex = 0;
 	nmeaExtBuffer[0] = 0;
@@ -93,8 +103,8 @@ DataBridge::~DataBridge()
 
 void DataBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 {
-	char *nmeaBuffer = nullptr;
-	int *nmeaWriteIndex = 0;
+	char* nmeaBuffer = nullptr;
+	int* nmeaWriteIndex = 0;
 
 	switch (sourceLink)
 	{
@@ -218,9 +228,13 @@ void DataBridge::UpdateCompassData(float heading_deg)
 {
 	if (COMPASS_SOURCE_LINK == LINK_COMPASS)
 	{
-		micronetCodec->navData.hdg_deg.value = heading_deg;
-		micronetCodec->navData.hdg_deg.valid = true;
-		micronetCodec->navData.hdg_deg.timeStamp = millis();
+		while (heading_deg < 0.0f)
+			heading_deg += 360.0f;
+		while (heading_deg >= 360.0f)
+			heading_deg -= 360.0f;
+		micronetCodec->navData.magHdg_deg.value = heading_deg;
+		micronetCodec->navData.magHdg_deg.valid = true;
+		micronetCodec->navData.magHdg_deg.timeStamp = millis();
 		EncodeHDG();
 	}
 }
@@ -237,12 +251,12 @@ void DataBridge::UpdateMicronetData()
 	EncodeXDR();
 }
 
-bool DataBridge::IsSentenceValid(char *nmeaBuffer)
+bool DataBridge::IsSentenceValid(char* nmeaBuffer)
 {
 	if (nmeaBuffer[0] != '$')
 		return false;
 
-	char *pCs = strrchr(static_cast<char*>(nmeaBuffer), '*') + 1;
+	char* pCs = strrchr(static_cast<char*>(nmeaBuffer), '*') + 1;
 	if (pCs == nullptr)
 		return false;
 	int16_t Cs = (NibbleValue(pCs[0]) << 4) | NibbleValue(pCs[1]);
@@ -250,7 +264,7 @@ bool DataBridge::IsSentenceValid(char *nmeaBuffer)
 		return false;
 
 	uint8_t crc = 0;
-	for (char *pC = nmeaBuffer + 1; pC < (pCs - 1); pC++)
+	for (char* pC = nmeaBuffer + 1; pC < (pCs - 1); pC++)
 	{
 		crc = crc ^ (*pC);
 	}
@@ -261,11 +275,11 @@ bool DataBridge::IsSentenceValid(char *nmeaBuffer)
 	return true;
 }
 
-NmeaId_t DataBridge::SentenceId(char *nmeaBuffer)
+NmeaId_t DataBridge::SentenceId(char* nmeaBuffer)
 {
-	uint32_t sId = ((uint8_t) nmeaBuffer[3]) << 16;
-	sId |= ((uint8_t) nmeaBuffer[4]) << 8;
-	sId |= ((uint8_t) nmeaBuffer[5]);
+	uint32_t sId = ((uint8_t)nmeaBuffer[3]) << 16;
+	sId |= ((uint8_t)nmeaBuffer[4]) << 8;
+	sId |= ((uint8_t)nmeaBuffer[5]);
 
 	NmeaId_t nmeaSentence = NMEA_ID_UNKNOWN;
 
@@ -308,7 +322,7 @@ NmeaId_t DataBridge::SentenceId(char *nmeaBuffer)
 	return nmeaSentence;
 }
 
-void DataBridge::DecodeRMBSentence(char *sentence)
+void DataBridge::DecodeRMBSentence(char* sentence)
 {
 	float value;
 
@@ -353,7 +367,7 @@ void DataBridge::DecodeRMBSentence(char *sentence)
 				c = sentence[i];
 				if (c < 128)
 				{
-					c = asciiTable[(int32_t) sentence[i]];
+					c = asciiTable[(int32_t)sentence[i]];
 				}
 				else
 				{
@@ -406,7 +420,7 @@ void DataBridge::DecodeRMBSentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeRMCSentence(char *sentence)
+void DataBridge::DecodeRMCSentence(char* sentence)
 {
 	sentence += 7;
 
@@ -433,7 +447,7 @@ void DataBridge::DecodeRMCSentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeGGASentence(char *sentence)
+void DataBridge::DecodeGGASentence(char* sentence)
 {
 	float degs, mins;
 
@@ -474,11 +488,11 @@ void DataBridge::DecodeGGASentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeVTGSentence(char *sentence)
+void DataBridge::DecodeVTGSentence(char* sentence)
 {
 	float value;
 	int comaCount = 0;
-	char *pChar = sentence;
+	char* pChar = sentence;
 	int fieldsToSkip;
 
 	sentence += 7;
@@ -524,7 +538,7 @@ void DataBridge::DecodeVTGSentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeMWVSentence(char *sentence)
+void DataBridge::DecodeMWVSentence(char* sentence)
 {
 	float value;
 	float awa = -9999.0;
@@ -583,7 +597,7 @@ void DataBridge::DecodeMWVSentence(char *sentence)
 	micronetCodec->CalculateTrueWind();
 }
 
-void DataBridge::DecodeDPTSentence(char *sentence)
+void DataBridge::DecodeDPTSentence(char* sentence)
 {
 	float value;
 	float depth;
@@ -607,7 +621,7 @@ void DataBridge::DecodeDPTSentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeVHWSentence(char *sentence)
+void DataBridge::DecodeVHWSentence(char* sentence)
 {
 	float value;
 
@@ -628,9 +642,9 @@ void DataBridge::DecodeVHWSentence(char *sentence)
 	{
 		if (value < 0)
 			value += 360.0f;
-		micronetCodec->navData.hdg_deg.value = value;
-		micronetCodec->navData.hdg_deg.valid = true;
-		micronetCodec->navData.hdg_deg.timeStamp = millis();
+		micronetCodec->navData.magHdg_deg.value = value;
+		micronetCodec->navData.magHdg_deg.valid = true;
+		micronetCodec->navData.magHdg_deg.timeStamp = millis();
 	}
 	if ((sentence = strchr(sentence, ',')) == nullptr)
 		return;
@@ -648,7 +662,7 @@ void DataBridge::DecodeVHWSentence(char *sentence)
 	}
 }
 
-void DataBridge::DecodeHDGSentence(char *sentence)
+void DataBridge::DecodeHDGSentence(char* sentence)
 {
 	float value;
 
@@ -656,11 +670,13 @@ void DataBridge::DecodeHDGSentence(char *sentence)
 
 	if (sscanf(sentence, "%f", &value) != 1)
 		return;
-	if (value < 0)
+	while (value < 0)
 		value += 360.0f;
-	micronetCodec->navData.hdg_deg.value = value;
-	micronetCodec->navData.hdg_deg.valid = true;
-	micronetCodec->navData.hdg_deg.timeStamp = millis();
+	while (value >= 360.0)
+		value -= 360.0f;
+	micronetCodec->navData.magHdg_deg.value = value;
+	micronetCodec->navData.magHdg_deg.valid = true;
+	micronetCodec->navData.magHdg_deg.timeStamp = millis();
 }
 
 int16_t DataBridge::NibbleValue(char c)
@@ -797,19 +813,19 @@ void DataBridge::EncodeVHW()
 		bool update;
 
 		update = (micronetCodec->navData.spd_kt.timeStamp > nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS);
-		update = update || (micronetCodec->navData.hdg_deg.timeStamp > nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS);
-		update = update && (micronetCodec->navData.spd_kt.valid || micronetCodec->navData.hdg_deg.valid);
+		update = update || (micronetCodec->navData.magHdg_deg.timeStamp > nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS);
+		update = update && (micronetCodec->navData.spd_kt.valid || micronetCodec->navData.magHdg_deg.valid);
 
 		if (update)
 		{
 			char sentence[NMEA_SENTENCE_MAX_LENGTH];
-			if ((micronetCodec->navData.hdg_deg.valid) && (micronetCodec->navData.spd_kt.valid))
+			if ((micronetCodec->navData.magHdg_deg.valid) && (micronetCodec->navData.spd_kt.valid))
 			{
-				sprintf(sentence, "$INVHW,,T,%.0f,M,%.2f,N,,K", micronetCodec->navData.hdg_deg.value, micronetCodec->navData.spd_kt.value);
+				sprintf(sentence, "$INVHW,,T,%.0f,M,%.2f,N,,K", micronetCodec->navData.magHdg_deg.value, micronetCodec->navData.spd_kt.value);
 			}
-			else if (micronetCodec->navData.hdg_deg.valid)
+			else if (micronetCodec->navData.magHdg_deg.valid)
 			{
-				sprintf(sentence, "$INVHW,,T,%.0f,M,,N,,K", micronetCodec->navData.hdg_deg.value);
+				sprintf(sentence, "$INVHW,,T,%.0f,M,,N,,K", micronetCodec->navData.magHdg_deg.value);
 			}
 			else
 			{
@@ -828,13 +844,14 @@ void DataBridge::EncodeHDG()
 	{
 		bool update;
 
-		update = (micronetCodec->navData.hdg_deg.timeStamp > nmeaTimeStamps.hdg + NMEA_SENTENCE_MIN_PERIOD_MS);
-		update = update && micronetCodec->navData.hdg_deg.valid;
+		update = (micronetCodec->navData.magHdg_deg.timeStamp > nmeaTimeStamps.hdg + NMEA_SENTENCE_MIN_PERIOD_MS);
+		update = update && micronetCodec->navData.magHdg_deg.valid;
 
 		if (update)
 		{
 			char sentence[NMEA_SENTENCE_MAX_LENGTH];
-			sprintf(sentence, "$INHDG,%.0f,,,,", micronetCodec->navData.hdg_deg.value + gConfiguration.headingOffset_deg);
+			sprintf(sentence, "$INHDG,%.0f,%.0f,%c,,", micronetCodec->navData.magHdg_deg.value, fabsf(micronetCodec->navData.magneticVariation_deg),
+				(micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W' : 'E');
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.hdg = millis();
 			NMEA_EXT.println(sentence);
@@ -862,11 +879,11 @@ void DataBridge::EncodeXDR()
 	}
 }
 
-uint8_t DataBridge::AddNmeaChecksum(char *sentence)
+uint8_t DataBridge::AddNmeaChecksum(char* sentence)
 {
 	uint8_t crc = 0;
 	char crcString[8];
-	char *pChar = sentence + 1;
+	char* pChar = sentence + 1;
 
 	while (*pChar != 0)
 	{

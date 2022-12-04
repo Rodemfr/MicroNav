@@ -75,7 +75,7 @@ bool LSM303DLHDriver::Init()
 {
 	uint8_t ira = 0, irb = 0, irc = 0, sr, whoami = 0;
 
-	NAVCOMPASS_I2C.begin(NAVCOMPASS_I2C_SDA, NAVCOMPASS_I2C_SCL);
+	NAVCOMPASS_I2C.begin();
 
 	// First we search for linear acceleration address which depends on SA0 pin level on LSM303DLH
 	if (!I2CRead(LSM303DLH_ACC_ADDR_1, STATUS_REG_A, &sr))

@@ -96,7 +96,7 @@
 #define SPEED_SOURCE_LINK   LINK_MICRONET  // Speed data (SPD, LOG)
 #define VOLTAGE_SOURCE_LINK LINK_MICRONET  // Battery voltage data (XDG)
 #define SEATEMP_SOURCE_LINK LINK_MICRONET  // Temperature data (STP)
-#define COMPASS_SOURCE_LINK LINK_COMPASS   // Heading data (HDG)
+#define COMPASS_SOURCE_LINK LINK_COMPASS  // Heading data (HDG)
 
 // Navigation softwares can send a wrong RMB sentence and invert "FROM" and "TO" fields
 // If you see your Micronet display showing the "FROM" waypoint name instead of the "TO"

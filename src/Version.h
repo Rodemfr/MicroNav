@@ -36,9 +36,9 @@
 /***************************************************************************/
 
 // MicroNav SW version
-#define MICRONAV_SW_MAJOR_VERSION 0
-#define MICRONAV_SW_MINOR_VERSION 1
-#define MICRONAV_SW_PATCH_VERSION 1
+#define SW_MAJOR_VERSION 0
+#define SW_MINOR_VERSION 1
+#define SW_PATCH_VERSION 2
 
 /***************************************************************************/
 /*                                Types                                    */

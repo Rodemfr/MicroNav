@@ -99,7 +99,7 @@ public:
 
 	NavigationData navData;
 
-	MicronetCodec(uint8_t majorSwVersion, uint8_t minorSwVersion);
+	MicronetCodec(uint8_t swMajorVersion, uint8_t swMinorVersion);
 	virtual ~MicronetCodec();
 
 	uint32_t GetNetworkId(MicronetMessage_t *message);
@@ -134,8 +134,8 @@ public:
 	void CalculateTrueWind();
 
 private:
-	uint8_t majorSwVersion;
-	uint8_t minorSwVersion;
+	uint8_t swMajorVersion;
+	uint8_t swMinorVersion;
 
 	void DecodeSendDataMessage(MicronetMessage_t *message);
 	void DecodeSetParameterMessage(MicronetMessage_t *message);
