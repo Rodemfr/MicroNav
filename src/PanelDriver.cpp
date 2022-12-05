@@ -35,6 +35,10 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSansBold18pt7b.h>
+#include <Fonts/FreeSansBold24pt7b.h>
 
 #include "logo.h"
 #include "t000.h"
@@ -94,7 +98,7 @@ bool PanelDriver::Init()
     if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
     {
         displayAvailable = true;
-        pageNumber = 2;
+        pageNumber = PAGE_CLOCK;
         DrawPage();
     }
 
@@ -154,24 +158,27 @@ void PanelDriver::DrawNetworkPage()
 
 void PanelDriver::DrawClockPage()
 {
-    // char latStr[11];
-    // char lonStr[12];
-
-    // strncpy(latStr, "N43_33.178", sizeof(latStr));
-    // strncpy(lonStr, "E001_17.659", sizeof(lonStr));
-    // latStr[3] = 0xf8;
-    // lonStr[4] = 0xf8;
+    String time = "22:17";
+    String date = "05/12/2022";
+    int16_t xTime, yTime, xDate, yDate;
+    uint16_t wTime, hTime, wDate, hDate;
 
     display.clearDisplay();
     display.cp437(true);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.setTextSize(4);
-    display.println(F("22:24"));
-    display.setTextSize(2);
-    display.println(F("04/12/2022"));
-    // display.println(latStr);
-    // display.println(lonStr);
+    display.setTextSize(1);
+    display.setFont(&FreeSansBold24pt7b);
+    display.getTextBounds(time, 0, 0, &xTime, &yTime, &wTime, &hTime);
+    display.setFont(&FreeSansBold12pt7b);
+    display.getTextBounds(date, 0, 0, &xDate, &yDate, &wDate, &hDate);
+
+    display.setFont(&FreeSansBold24pt7b);
+    display.setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+    display.println(time);
+
+    display.setFont(&FreeSansBold12pt7b);
+    display.setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+    display.println(date);
     display.display();
 }
 
