@@ -40,6 +40,7 @@
 enum {
     PAGE_WELCOME = 0,
     PAGE_NETWORK,
+    PAGE_CLOCK,
     PAGE_MAX_PAGES
 } PanelPages_t;
 
@@ -67,6 +68,7 @@ private:
 
     void DrawWelcomePage();
     void DrawNetworkPage();
+    void DrawClockPage();
 
     void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
 };

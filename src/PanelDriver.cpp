@@ -94,7 +94,7 @@ bool PanelDriver::Init()
     if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
     {
         displayAvailable = true;
-        pageNumber = 1;
+        pageNumber = 2;
         DrawPage();
     }
 
@@ -120,6 +120,9 @@ void PanelDriver::DrawPage()
     case PAGE_NETWORK:
         DrawNetworkPage();
         break;
+    case PAGE_CLOCK:
+        DrawClockPage();
+        break;
     default:
         break;
     }
@@ -128,28 +131,47 @@ void PanelDriver::DrawPage()
 void PanelDriver::DrawWelcomePage()
 {
     display.clearDisplay();
-    display.drawBitmap(0, 0,
-        LOGO,
-        LOGO_WIDTH,
-        LOGO_HEIGHT,
-        1);
+    display.drawBitmap(0, 0, LOGO, LOGO_WIDTH, LOGO_HEIGHT, 1);
     display.display();
 }
 
 void PanelDriver::DrawNetworkPage()
 {
     display.clearDisplay();
-    DrawDeviceIcon(T000, 0, 0);
-    DrawDeviceIcon(T110, 1, 1);
-    DrawDeviceIcon(T111, 2, 2);
-    DrawDeviceIcon(T112, 3, 3);
+    DrawDeviceIcon(T000, 0, 5);
+    DrawDeviceIcon(T110, 1, 4);
+    DrawDeviceIcon(T111, 2, 5);
+    DrawDeviceIcon(T112, 3, 4);
     DrawDeviceIcon(T113, 4, 5);
     DrawDeviceIcon(T120, 5, 4);
-    DrawDeviceIcon(T121, 6, 3);
-    DrawDeviceIcon(T210, 7, 2);
-    DrawDeviceIcon(T215, 8, 1);
-    DrawDeviceIcon(T060, 9, 0);
+    DrawDeviceIcon(T121, 6, 5);
+    DrawDeviceIcon(T210, 7, 4);
+    DrawDeviceIcon(T215, 8, 5);
+    DrawDeviceIcon(T060, 9, 4);
     DrawDeviceIcon(T075, 10, 5);
+    display.display();
+}
+
+void PanelDriver::DrawClockPage()
+{
+    // char latStr[11];
+    // char lonStr[12];
+
+    // strncpy(latStr, "N43_33.178", sizeof(latStr));
+    // strncpy(lonStr, "E001_17.659", sizeof(lonStr));
+    // latStr[3] = 0xf8;
+    // lonStr[4] = 0xf8;
+
+    display.clearDisplay();
+    display.cp437(true);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.setTextSize(4);
+    display.println(F("22:24"));
+    display.setTextSize(2);
+    display.println(F("04/12/2022"));
+    // display.println(latStr);
+    // display.println(lonStr);
     display.display();
 }
 
