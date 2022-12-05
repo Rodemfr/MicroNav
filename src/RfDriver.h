@@ -81,6 +81,7 @@ public:
 	void Transmit(MicronetMessage_t *message);
 	void EnableFrequencyTracking(uint32_t networkId);
 	void DisableFrequencyTracking();
+	void DebugPrintIcStatus();
 
 private:
 	SX1276MnetDriver sx1276Driver;

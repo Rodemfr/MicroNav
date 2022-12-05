@@ -175,11 +175,12 @@ void RfDriver::ScheduleTransmit()
     timerWrite(txTimer, 0);
 
     // Check that we are not already late for this transmit
-    int32_t transmitDelay = transmitList[transmitIndex].startTime_us - micros();
-    if ((transmitDelay < 0) || (transmitDelay > 2000000))
+    uint32_t now = micros();
+    uint32_t transmitDelay = transmitList[transmitIndex].startTime_us - now;
+    if (transmitDelay > 60000000)
     {
-      // Transmit already in the past, or invalid : delete it and schedule the next one
-      transmitList[transmitIndex].startTime_us = 0;
+      // transmitDelay is more than 1 minute away, this is invalid
+      transmitList[transmitIndex].action = MICRONET_ACTION_RF_NO_ACTION;
       continue;
     }
 
@@ -197,15 +198,38 @@ int RfDriver::GetNextTransmitIndex()
 {
   uint32_t minTime = 0xffffffff;
   int minIndex = -1;
+  bool upperTimestamps = false;
+  bool lowerTimestamps = false;
+  bool timeWrap = false;
 
   for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
   {
-    if (transmitList[i].startTime_us != 0)
+    if (transmitList[i].action != MICRONET_ACTION_RF_NO_ACTION)
     {
-      if (transmitList[i].startTime_us <= minTime)
+      if (transmitList[i].startTime_us < 0x80000000UL)
       {
-        minTime = transmitList[i].startTime_us;
-        minIndex = i;
+        lowerTimestamps = true;
+      }
+      else
+      {
+        upperTimestamps = true;
+      }
+    }
+  }
+
+  timeWrap = lowerTimestamps && upperTimestamps;
+
+  for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
+  {
+    if (transmitList[i].action != MICRONET_ACTION_RF_NO_ACTION)
+    {
+      if ((!timeWrap) || (transmitList[i].startTime_us > 0x80000000UL))
+      {
+        if (transmitList[i].startTime_us <= minTime)
+        {
+          minTime = transmitList[i].startTime_us;
+          minIndex = i;
+        }
       }
     }
   }
@@ -219,7 +243,7 @@ int RfDriver::GetFreeTransmitSlot()
 
   for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
   {
-    if (transmitList[i].startTime_us == 0)
+    if (transmitList[i].action == MICRONET_ACTION_RF_NO_ACTION)
     {
       freeIndex = i;
       break;
@@ -244,15 +268,8 @@ void RfDriver::TransmitCallback()
     return;
   }
 
-  int32_t triggerDelay = micros() - transmitList[nextTransmitIndex].startTime_us;
-
-  if (triggerDelay < 0)
-  {
-    return;
-  }
-
   sx1276Driver.TransmitFromIsr(transmitList[nextTransmitIndex]);
-  transmitList[nextTransmitIndex].startTime_us = 0;
+  transmitList[nextTransmitIndex].action = MICRONET_ACTION_RF_NO_ACTION;
   ScheduleTransmit();
   portEXIT_CRITICAL_ISR(&timerMux);
 }
@@ -265,4 +282,9 @@ void RfDriver::EnableFrequencyTracking(uint32_t networkId)
 void RfDriver::DisableFrequencyTracking()
 {
   freqTrackingNID = 0;
+}
+
+void RfDriver::DebugPrintIcStatus()
+{
+  sx1276Driver.DebugPrintIcStatus();
 }

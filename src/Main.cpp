@@ -77,6 +77,7 @@ void MenuScanAllMicronetTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuCalibrateRfFrequency();
 void MenuTestRfQuality();
+void MenuDebugInfo();
 void SaveCalibration(MicronetCodec& micronetCodec);
 void LoadCalibration(MicronetCodec& micronetCodec);
 void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice);
@@ -99,6 +100,7 @@ MenuEntry_t mainMenu[] = {
     {"Calibrate RF frequency", MenuCalibrateRfFrequency},
     {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
     {"Test RF quality", MenuTestRfQuality},
+    {"Debug Info", MenuDebugInfo},
     {nullptr, nullptr} };
 
 /***************************************************************************/
@@ -1141,6 +1143,11 @@ void MenuTestRfQuality()
     }
     yield();
   } while (!exitTestLoop);
+}
+
+void MenuDebugInfo()
+{
+  gRfReceiver.DebugPrintIcStatus();
 }
 
 void SaveCalibration(MicronetCodec& micronetCodec)

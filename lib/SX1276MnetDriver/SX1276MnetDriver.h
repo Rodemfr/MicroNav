@@ -58,8 +58,7 @@ enum class RfState_t
 {
   RX_HEADER_RECEIVE = 0,
   RX_PAYLOAD_RECEIVE,
-  TX_TRANSMIT_START,
-  TX_TRANSMIT_ONGOING
+  TX_TRANSMITTING
 };
 
 public:
@@ -77,6 +76,7 @@ public:
   void LowPower();
   void ActivePower();
   void TransmitFromIsr(MicronetMessage_t &message);
+  void DebugPrintIcStatus();
   
 private:
   SPISettings spiSettings;

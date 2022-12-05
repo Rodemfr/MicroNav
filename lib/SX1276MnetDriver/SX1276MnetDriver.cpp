@@ -47,12 +47,9 @@
 #define ISR_EVENT_DIO0         0x00000001
 #define ISR_EVENT_DIO1         0x00000002
 #define ISR_EVENT_TRANSMIT     0x00000004
-#define ISR_EVENT_LOW_POWER    0x00000008
-#define ISR_EVENT_ACTIVE_POWER 0x00000010
 #define ISR_EVENT_ALL          0x0000001f
 
-#define DIOCONFIG_FOR_RX 0x80
-#define DIOCONFIG_FOR_TX 0x30
+#define DIOCONFIG_FOR_RXTX     0x00
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -218,7 +215,6 @@ void SX1276MnetDriver::SetDeviation(float deviation)
 */
 void SX1276MnetDriver::StartTx(void)
 {
-  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_TX);
   // RStart TX
   ChangeOperatingMode(SX127X_TX);
 }
@@ -229,7 +225,6 @@ void SX1276MnetDriver::StartTx(void)
 void SX1276MnetDriver::StartRx(void)
 {
   rfState = RfState_t::RX_HEADER_RECEIVE;
-  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RX);
   SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
   ChangeOperatingMode(SX127X_FSRX);
   ChangeOperatingMode(SX127X_RX);
@@ -237,7 +232,6 @@ void SX1276MnetDriver::StartRx(void)
 
 void SX1276MnetDriver::RestartRx()
 {
-  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RX);
   // Set FIFO threshold to header length
   SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
   // Restart RX
@@ -409,7 +403,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // FIFO threshold set to (header size - 1) and TX condition is !FifoEmpty
   SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_LEVEL | (HEADER_LENGTH_IN_BYTES - 1));
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
-  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RX);
+  SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RXTX);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
   SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xf8);
   SpiWriteRegister(SX127X_REG_PA_RAMP, 0x09);
@@ -476,10 +470,8 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
   BaseType_t scheduleChange = pdFALSE;
 
-  if ((message.len <= 64) && (message.action == MICRONET_ACTION_RF_TRANSMIT))
+  if ((message.action == MICRONET_ACTION_RF_TRANSMIT) && (message.len < 64))
   {
-    rfState = RfState_t::TX_TRANSMIT_START;
-
     mnetTxMsg.action = message.action;
     mnetTxMsg.startTime_us = message.startTime_us;
     mnetTxMsg.len = message.len;
@@ -502,11 +494,8 @@ void SX1276MnetDriver::Dio1Isr()
 {
   BaseType_t scheduleChange = pdFALSE;
 
-  if (driverObject->rfState != RfState_t::TX_TRANSMIT_START)
-  {
-    xEventGroupSetBitsFromISR(driverObject->isrEventGroup, ISR_EVENT_DIO1, &scheduleChange);
-    portYIELD_FROM_ISR(scheduleChange);
-  }
+  xEventGroupSetBitsFromISR(driverObject->isrEventGroup, ISR_EVENT_DIO1, &scheduleChange);
+  portYIELD_FROM_ISR(scheduleChange);
 }
 
 void SX1276MnetDriver::IsrProcessingTask(void* parameter)
@@ -520,124 +509,67 @@ void SX1276MnetDriver::IsrProcessing()
   {
     EventBits_t isrFlags = xEventGroupWaitBits(isrEventGroup, ISR_EVENT_ALL, pdTRUE, pdFALSE, portMAX_DELAY);
     uint32_t isrTime = micros();
-    uint8_t branch = 0;
 
-    if (isrFlags & ISR_EVENT_LOW_POWER)
+    if (isrFlags & ISR_EVENT_TRANSMIT)
     {
-      branch = 1;
-      LowPower();
+      if (mnetTxMsg.action = MICRONET_ACTION_RF_TRANSMIT)
+      {
+        rfState = RfState_t::TX_TRANSMITTING;
+        ChangeOperatingMode(SX127X_FSTX);
+        ChangeOperatingMode(SX127X_TX);
+        SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | mnetTxMsg.len);
+        SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
+        SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
+      }
     }
-    else if (isrFlags & ISR_EVENT_ACTIVE_POWER)
+    else if (rfState == RfState_t::TX_TRANSMITTING)
     {
-      branch = 2;
-      ActivePower();
+      uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
+      if ((irqFlags2 & SX127X_FLAG_PACKET_SENT) || (irqFlags2 & SX127X_FLAG_FIFO_EMPTY))
+      {
+        rfState = RfState_t::RX_HEADER_RECEIVE;
+        SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
+        SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
+        ChangeOperatingMode(SX127X_RX);
+      }
     }
     else
     {
-      branch = 3;
-      if (rfState == RfState_t::TX_TRANSMIT_START)
+      uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
+      if (irqFlags2 & SX127X_FLAG_FIFO_LEVEL)
       {
-        branch = 4;
-        rfState = RfState_t::TX_TRANSMIT_ONGOING;
-        // Disable DIO1 during tansmit
-        SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_TX);
-        FlushFifo();
-        SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (mnetTxMsg.len - 1));
-        SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
-        ChangeOperatingMode(SX127X_TX);
-        SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
-      }
-      else if ((rfState == RfState_t::TX_TRANSMIT_ONGOING))
-      {
-        branch = 5;
-        uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
-        if (irqFlags2 & SX127X_FLAG_PACKET_SENT)
+        if (rfState == RfState_t::RX_HEADER_RECEIVE)
         {
-          branch = 6;
-          SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RX);
-          SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (HEADER_LENGTH_IN_BYTES - 1));
-          SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, DEFAULT_PACKET_LENGTH);
-          // Enable DIO1 for RX operations
-          ChangeOperatingMode(SX127X_RX);
-          rfState = RfState_t::RX_HEADER_RECEIVE;
-        }
-      }
-      else
-      {
-        branch = 7;
-        uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
-        if (irqFlags2 & SX127X_FLAG_FIFO_LEVEL)
-        {
-          branch = 8;
-          if (rfState == RfState_t::RX_HEADER_RECEIVE)
-          {
-            branch = 9;
-            uint8_t checksum = 0;
+          uint8_t checksum = 0;
 
-            // When we reach this point, we know that a packet is under reception by SX1276 and than we received at least the complete header. We will begin processing it.
-            SpiBurstReadRegister(SX127X_REG_FIFO, mnetRxMsg.data, HEADER_LENGTH_IN_BYTES);
-            mnetRxMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
-            msgDataOffset = HEADER_LENGTH_IN_BYTES;
-            rfState = RfState_t::RX_PAYLOAD_RECEIVE;
-            // Calculate checksum
-            for (int i = 0; i < 11; i++)
-            {
-              checksum += mnetRxMsg.data[i];
-            }
-            // Verify validity of the header
-            if ((checksum == mnetRxMsg.data[MICRONET_CS_OFFSET]) &&
-              (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] == mnetRxMsg.data[MICRONET_LEN_OFFSET_2]) &&
-              (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
-              ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
-            {
-              branch = 10;
-              // TODO : Also verify the first checksum
-              mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
-              mnetRxMsg.rssi = GetRssi();
-              mnetRxMsg.action = MICRONET_ACTION_RF_TRANSMIT;
-              if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
-              {
-                branch = 11;
-                mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
-                messageFifo->Push(mnetRxMsg);
-                RestartRx();
-              }
-              else
-              {
-                branch = 12;
-                uint32_t remainingBytes = mnetRxMsg.len - HEADER_LENGTH_IN_BYTES;
-                if (remainingBytes > 60)
-                {
-                  remainingBytes = 60;
-                }
-                SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (remainingBytes - 1));
-              }
-            }
-            else
-            {
-              branch = 13;
-              // Packet content is invalid : ignore it and restart reception for the next packet
-              RestartRx();
-            }
-          }
-          else if (rfState == RfState_t::RX_PAYLOAD_RECEIVE)
+          // When we reach this point, we know that a packet is under reception by SX1276 and than we received at least the complete header. We will begin processing it.
+          SpiBurstReadRegister(SX127X_REG_FIFO, mnetRxMsg.data, HEADER_LENGTH_IN_BYTES);
+          mnetRxMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
+          msgDataOffset = HEADER_LENGTH_IN_BYTES;
+          rfState = RfState_t::RX_PAYLOAD_RECEIVE;
+          // Calculate checksum
+          for (int i = 0; i < 11; i++)
           {
-            branch = 14;
-            while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
+            checksum += mnetRxMsg.data[i];
+          }
+          // Verify validity of the header
+          if ((checksum == mnetRxMsg.data[MICRONET_CS_OFFSET]) &&
+            (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] == mnetRxMsg.data[MICRONET_LEN_OFFSET_2]) &&
+            (mnetRxMsg.data[MICRONET_LEN_OFFSET_1] < MICRONET_MAX_MESSAGE_LENGTH - 3) &&
+            ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
+          {
+            // TODO : Also verify the first checksum
+            mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
+            mnetRxMsg.rssi = GetRssi();
+            mnetRxMsg.action = MICRONET_ACTION_RF_TRANSMIT;
+            if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
             {
-              // FIXME : verify overflow
-              mnetRxMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
-            }
-            if (mnetRxMsg.len <= msgDataOffset)
-            {
-              branch = 15;
               mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
               messageFifo->Push(mnetRxMsg);
               RestartRx();
             }
             else
             {
-              branch = 16;
               uint32_t remainingBytes = mnetRxMsg.len - HEADER_LENGTH_IN_BYTES;
               if (remainingBytes > 60)
               {
@@ -646,8 +578,49 @@ void SX1276MnetDriver::IsrProcessing()
               SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (remainingBytes - 1));
             }
           }
+          else
+          {
+            // Packet content is invalid : ignore it and restart reception for the next packet
+            RestartRx();
+          }
+        }
+        else if (rfState == RfState_t::RX_PAYLOAD_RECEIVE)
+        {
+          while (!(SpiReadRegister(SX127X_REG_IRQ_FLAGS_2) & SX127X_FLAG_FIFO_EMPTY))
+          {
+            // FIXME : verify overflow
+            mnetRxMsg.data[msgDataOffset++] = SpiReadRegister(SX127X_REG_FIFO);
+          }
+          if (mnetRxMsg.len <= msgDataOffset)
+          {
+            mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
+            messageFifo->Push(mnetRxMsg);
+            RestartRx();
+          }
+          else
+          {
+            uint32_t remainingBytes = mnetRxMsg.len - HEADER_LENGTH_IN_BYTES;
+            if (remainingBytes > 60)
+            {
+              remainingBytes = 60;
+            }
+            SpiWriteRegister(SX127X_REG_FIFO_THRESH, SX127X_TX_START_FIFO_NOT_EMPTY | (remainingBytes - 1));
+          }
         }
       }
     }
+
   }
+}
+
+void SX1276MnetDriver::DebugPrintIcStatus()
+{
+  uint8_t irqFlags1 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_1);
+  uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
+  Serial.print("IRQ Flags 1 = 0x");
+  Serial.println(irqFlags1, HEX);
+  Serial.print("IRQ Flags 2 = 0x");
+  Serial.println(irqFlags2, HEX);
+  Serial.print("RfState = ");
+  Serial.println((int)rfState);
 }
