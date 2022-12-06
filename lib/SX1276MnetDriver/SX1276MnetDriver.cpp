@@ -47,7 +47,7 @@
 #define ISR_EVENT_DIO0         0x00000001
 #define ISR_EVENT_DIO1         0x00000002
 #define ISR_EVENT_TRANSMIT     0x00000004
-#define ISR_EVENT_ALL          0x0000001f
+#define ISR_EVENT_ALL          0x00000007
 
 #define DIOCONFIG_FOR_RXTX     0x00
 
@@ -456,12 +456,18 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
   BaseType_t scheduleChange = pdFALSE;
 
-  if ((message.action == MICRONET_ACTION_RF_TRANSMIT) && (message.len < 64))
+  // if ((message.action == MICRONET_ACTION_RF_TRANSMIT) && (message.len < 64))
+  if (message.len < 64)
   {
     mnetTxMsg.action = message.action;
+    mnetTxMsg.rssi = message.rssi;
     mnetTxMsg.startTime_us = message.startTime_us;
+    mnetTxMsg.endTime_us = message.endTime_us;
     mnetTxMsg.len = message.len;
-    memcpy(mnetTxMsg.data, message.data, message.len);
+    if (message.len > 0)
+    {
+      memcpy(mnetTxMsg.data, message.data, message.len);
+    }
 
     xEventGroupSetBitsFromISR(isrEventGroup, ISR_EVENT_TRANSMIT, &scheduleChange);
     portYIELD_FROM_ISR(scheduleChange);
@@ -498,7 +504,7 @@ void SX1276MnetDriver::IsrProcessing()
 
     if (isrFlags & ISR_EVENT_TRANSMIT)
     {
-      if (mnetTxMsg.action = MICRONET_ACTION_RF_TRANSMIT)
+      if (mnetTxMsg.action == MICRONET_ACTION_RF_TRANSMIT)
       {
         rfState = RfState_t::TX_TRANSMITTING;
         ChangeOperatingMode(SX127X_FSTX);
@@ -507,17 +513,17 @@ void SX1276MnetDriver::IsrProcessing()
         SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
         SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
       }
-      // else if (mnetTxMsg.action = MICRONET_ACTION_RF_LOW_POWER)
-      // {
-      //   rfState = RfState_t::RF_SLEEP;
-      //   ChangeOperatingMode(SX127X_SLEEP);
-      //   Serial.println("LOW");
-      // }
-      // else if (mnetTxMsg.action = MICRONET_ACTION_RF_ACTIVE_POWER)
-      // {
-      //   StartRx();
-      //   Serial.println("ACTIVE");
-      // }
+      else if (mnetTxMsg.action == MICRONET_ACTION_RF_LOW_POWER)
+      {
+        rfState = RfState_t::RF_SLEEP;
+        ChangeOperatingMode(SX127X_STANDBY);
+        ChangeOperatingMode(SX127X_SLEEP);
+      }
+      else if (mnetTxMsg.action == MICRONET_ACTION_RF_ACTIVE_POWER)
+      {
+        ChangeOperatingMode(SX127X_STANDBY);
+        StartRx();
+      }
     }
     else if (rfState == RfState_t::TX_TRANSMITTING)
     {
