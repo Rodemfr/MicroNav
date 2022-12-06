@@ -672,7 +672,7 @@ void MenuConvertToNmea()
       if ((millis() - lastHeadingTime) > 100)
       {
         lastHeadingTime = millis();
-        dataBridge.UpdateCompassData(gNavCompass.GetHeading());
+        dataBridge.UpdateCompassData(gNavCompass.GetHeading() + micronetCodec.navData.headingOffset_deg);
       }
     } else 
     {

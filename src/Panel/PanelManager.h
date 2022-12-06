@@ -66,14 +66,21 @@ public:
     bool Init();
     void SetPage(uint32_t pageNumber);
     void DrawPage();
+    void NextPage();
 
 private:
     bool displayAvailable;
     uint32_t pageNumber;
+    PageHandler *currentPage;
+    TaskHandle_t commandTaskHandle;
+    EventGroupHandle_t commandEventGroup;
     LogoPage logoPage;
     ClockPage clockPage;
     NetworkPage networkPage;
-    PageHandler *currentPage;
+    SemaphoreHandle_t mutex;
+
+    static void CommandProcessingTask(void* parameter);
+    void CommandCallback();
 };
 
 #endif

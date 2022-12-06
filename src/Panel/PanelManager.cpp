@@ -44,6 +44,9 @@
 #define OLED_RESET     -1 
 #define SCREEN_ADDRESS 0x3C
 
+#define COMMAND_EVENT_REFRESH 0x00000001
+#define COMMAND_EVENT_ALL     0x00000001
+
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
@@ -62,7 +65,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 /*                              Functions                                  */
 /***************************************************************************/
 
-PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler *)&logoPage)
+PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler*)&logoPage)
 {
 }
 
@@ -77,9 +80,19 @@ bool PanelManager::Init()
     if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
     {
         displayAvailable = true;
-        pageNumber = PAGE_NETWORK;
-        DrawPage();
+
+        logoPage.SetDisplay(&display);
+        clockPage.SetDisplay(&display);
+        networkPage.SetDisplay(&display);
+
+        pageNumber = 0;
+
+        mutex = xSemaphoreCreateMutex();
+        commandEventGroup = xEventGroupCreate();
+        xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void*)this, 5, &commandTaskHandle);
     }
+
+    DrawPage();
 
     return displayAvailable;
 }
@@ -88,31 +101,60 @@ void PanelManager::SetPage(uint32_t pageNumber)
 {
     if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
     {
+        xSemaphoreTake(mutex, portMAX_DELAY);
         this->pageNumber = pageNumber;
-        DrawPage();
+        xSemaphoreGive(mutex);
     }
 }
 
 void PanelManager::DrawPage()
 {
-    switch (pageNumber)
+    xEventGroupSetBits(commandEventGroup, COMMAND_EVENT_REFRESH);
+}
+
+void PanelManager::NextPage()
+{
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+        xSemaphoreGive(mutex);
+}
+void PanelManager::CommandProcessingTask(void* parameter)
+{
+    ((PanelManager*)parameter)->CommandCallback();
+}
+
+void PanelManager::CommandCallback()
+{
+    uint32_t localPageNumber;
+    const TickType_t xTicksToWait = 1000 / portTICK_PERIOD_MS;
+
+    while (true)
     {
-    case PAGE_LOGO:
-        currentPage = (PageHandler *)&logoPage;
-        currentPage->SetDisplay(&display);
+        EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, xTicksToWait);
+
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        localPageNumber = pageNumber;
+        xSemaphoreGive(mutex);
+        switch (localPageNumber)
+        {
+        case PAGE_LOGO:
+            currentPage = (PageHandler*)&logoPage;
+            currentPage->Draw();
+            break;
+        case PAGE_NETWORK:
+            currentPage = (PageHandler*)&networkPage;
+            currentPage->Draw();
+            break;
+        case PAGE_CLOCK:
+            currentPage = (PageHandler*)&clockPage;
+            currentPage->Draw();
+            break;
+        default:
+            break;
+        }
+
         currentPage->Draw();
-        break;
-    case PAGE_NETWORK:
-        currentPage = (PageHandler *)&networkPage;
-        currentPage->SetDisplay(&display);
-        currentPage->Draw();
-        break;
-    case PAGE_CLOCK:
-        currentPage = (PageHandler *)&clockPage;
-        currentPage->SetDisplay(&display);
-        currentPage->Draw();
-        break;
-    default:
-        break;
+
+        NextPage();
     }
 }
