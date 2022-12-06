@@ -1,11 +1,11 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Ressources for Panel and Pages                                *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,47 +24,35 @@
  ***************************************************************************
  */
 
-#ifndef GNSSDECODER_H_
-#define GNSSDECODER_H_
+#ifndef PANELRESOURCES_H_
+#define PANELRESOURCES_H_
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
-#include "MenuManager.h"
-#include "MicronetMessageFifo.h"
-#include "MicronetCodec.h"
-#include "Configuration.h"
-#include "DataBridge.h"
-#include "NavigationData.h"
-#include "NavCompass.h"
-#include "RfDriver.h"
-#include "M8NDriver.h"
-#include "Panel/PanelManager.h"
-#include "MicronetSlaveDevice.h"
+#include <Arduino.h>
+#include <Adafruit_GFX.h>
 
-/***************************************************************************/
-/*                              Constants                                  */
-/***************************************************************************/
-
-/***************************************************************************/
-/*                                Types                                    */
-/***************************************************************************/
-
-/***************************************************************************/
-/*                               Globals                                   */
-/***************************************************************************/
-
-extern RfDriver gRfReceiver;
-extern MenuManager gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration gConfiguration;
-extern NavCompass gNavCompass;
-extern M8NDriver gM8nDriver;
-extern PanelManager gPanelDriver;
+#include "bitmaps/logo.h"
+#include "bitmaps/t000.h"
+#include "bitmaps/t060.h"
+#include "bitmaps/t075.h"
+#include "bitmaps/t110.h"
+#include "bitmaps/t111.h"
+#include "bitmaps/t112.h"
+#include "bitmaps/t113.h"
+#include "bitmaps/t120.h"
+#include "bitmaps/t121.h"
+#include "bitmaps/t210.h"
+#include "bitmaps/t215.h"
 
 /***************************************************************************/
 /*                              Prototypes                                 */
 /***************************************************************************/
 
-#endif /* GNSSDECODER_H_ */
+extern GFXfont FreeSansBold9pt;
+extern GFXfont FreeSansBold12pt;
+extern GFXfont FreeSansBold24pt;
+
+#endif

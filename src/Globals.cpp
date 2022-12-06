@@ -56,7 +56,7 @@ MicronetMessageFifo gRxMessageFifo; // Micronet message fifo store, used for com
 Configuration gConfiguration;
 NavCompass gNavCompass;
 M8NDriver gM8nDriver;
-PanelDriver gPanelDriver;
+PanelManager gPanelDriver;
 
 /***************************************************************************/
 /*                              Functions                                  */

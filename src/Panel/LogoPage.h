@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Driver for T-BEAM 1.1 OLED Panel                              *
+ * Purpose:  Handler of the Logo page                                      *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,25 +24,21 @@
  ***************************************************************************
  */
 
-#ifndef PANELDRIVER_H_
-#define PANELDRIVER_H_
+#ifndef LOGOPAGE_H_
+#define LOGOPAGE_H_
 
  /***************************************************************************/
  /*                              Includes                                   */
  /***************************************************************************/
 
-#include <Arduino.h>
+#include "PageHandler.h"
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
-
-enum {
-    PAGE_WELCOME = 0,
-    PAGE_NETWORK,
-    PAGE_CLOCK,
-    PAGE_MAX_PAGES
-} PanelPages_t;
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -52,25 +48,19 @@ enum {
 /*                               Classes                                   */
 /***************************************************************************/
 
-class PanelDriver
+class LogoPage : public PageHandler
 {
 public:
-    PanelDriver();
-    ~PanelDriver();
+    LogoPage();
+    virtual ~LogoPage();
 
-    bool Init();
-    void SetPage(uint32_t pageNumber);
-    void DrawPage();
+    void SetDisplay(Adafruit_SSD1306 *display);
+    void Draw();
+    void UpdateStatus();
 
 private:
-    bool displayAvailable;
-    uint32_t pageNumber;
+    Adafruit_SSD1306 *display;
 
-    void DrawWelcomePage();
-    void DrawNetworkPage();
-    void DrawClockPage();
-
-    void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
 };
 
 #endif

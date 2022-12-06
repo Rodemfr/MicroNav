@@ -1,11 +1,11 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Logo Page Handler                              *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,47 +24,66 @@
  ***************************************************************************
  */
 
-#ifndef GNSSDECODER_H_
-#define GNSSDECODER_H_
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+#include "LogoPage.h"
+#include "PanelResources.h"
 
-#include "MenuManager.h"
-#include "MicronetMessageFifo.h"
-#include "MicronetCodec.h"
-#include "Configuration.h"
-#include "DataBridge.h"
-#include "NavigationData.h"
-#include "NavCompass.h"
-#include "RfDriver.h"
-#include "M8NDriver.h"
-#include "Panel/PanelManager.h"
-#include "MicronetSlaveDevice.h"
+#include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
+#include <Fonts/FreeSansBold24pt7b.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                                Types                                    */
+/*                             Local types                                 */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                           Local prototypes                              */
 /***************************************************************************/
 
-extern RfDriver gRfReceiver;
-extern MenuManager gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration gConfiguration;
-extern NavCompass gNavCompass;
-extern M8NDriver gM8nDriver;
-extern PanelManager gPanelDriver;
-
 /***************************************************************************/
-/*                              Prototypes                                 */
+/*                           Static & Globals                              */
 /***************************************************************************/
 
-#endif /* GNSSDECODER_H_ */
+/***************************************************************************/
+/*                              Functions                                  */
+/***************************************************************************/
+
+LogoPage::LogoPage() : display(nullptr)
+{
+}
+
+LogoPage::~LogoPage()
+{
+}
+
+void LogoPage::SetDisplay(Adafruit_SSD1306* display)
+{
+    this->display = display;
+}
+
+void LogoPage::Draw()
+{
+    if (display != nullptr)
+    {
+        display->clearDisplay();
+        display->drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
+        display->display();
+    }
+}
+
+void LogoPage::UpdateStatus()
+{
+
+}

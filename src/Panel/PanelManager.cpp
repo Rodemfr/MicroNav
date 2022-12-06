@@ -28,29 +28,14 @@
  /*                              Includes                                   */
  /***************************************************************************/
 
-#include "PanelDriver.h"
+#include "Panel/PanelManager.h"
+#include "Panel/PanelResources.h"
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/FreeSansBold9pt7b.h>
-#include <Fonts/FreeSansBold12pt7b.h>
-#include <Fonts/FreeSansBold24pt7b.h>
-
-#include "logo.h"
-#include "t000.h"
-#include "t060.h"
-#include "t075.h"
-#include "t110.h"
-#include "t111.h"
-#include "t112.h"
-#include "t113.h"
-#include "t120.h"
-#include "t121.h"
-#include "t210.h"
-#include "t215.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -82,29 +67,29 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 /*                              Functions                                  */
 /***************************************************************************/
 
-PanelDriver::PanelDriver() : displayAvailable(false), pageNumber(0)
+PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler *)&logoPage)
 {
 }
 
-PanelDriver::~PanelDriver()
+PanelManager::~PanelManager()
 {
 }
 
-bool PanelDriver::Init()
+bool PanelManager::Init()
 {
     displayAvailable = false;
 
     if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
     {
         displayAvailable = true;
-        pageNumber = PAGE_CLOCK;
+        pageNumber = PAGE_LOGO;
         DrawPage();
     }
 
     return displayAvailable;
 }
 
-void PanelDriver::SetPage(uint32_t pageNumber)
+void PanelManager::SetPage(uint32_t pageNumber)
 {
     if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
     {
@@ -113,49 +98,49 @@ void PanelDriver::SetPage(uint32_t pageNumber)
     }
 }
 
-void PanelDriver::DrawPage()
+void PanelManager::DrawPage()
 {
     switch (pageNumber)
     {
-    case PAGE_WELCOME:
-        DrawWelcomePage();
+    case PAGE_LOGO:
+        currentPage = (PageHandler *)&logoPage;
+        currentPage->SetDisplay(&display);
+        currentPage->Draw();
         break;
     case PAGE_NETWORK:
-        DrawNetworkPage();
         break;
     case PAGE_CLOCK:
-        DrawClockPage();
         break;
     default:
         break;
     }
 }
 
-void PanelDriver::DrawWelcomePage()
+void PanelManager::DrawWelcomePage()
 {
     display.clearDisplay();
-    display.drawBitmap(0, 0, LOGO, LOGO_WIDTH, LOGO_HEIGHT, 1);
+    display.drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
     display.display();
 }
 
-void PanelDriver::DrawNetworkPage()
+void PanelManager::DrawNetworkPage()
 {
     display.clearDisplay();
-    DrawDeviceIcon(T000, 0, 5);
-    DrawDeviceIcon(T110, 1, 4);
-    DrawDeviceIcon(T111, 2, 5);
-    DrawDeviceIcon(T112, 3, 4);
-    DrawDeviceIcon(T113, 4, 5);
-    DrawDeviceIcon(T120, 5, 4);
-    DrawDeviceIcon(T121, 6, 5);
-    DrawDeviceIcon(T210, 7, 4);
-    DrawDeviceIcon(T215, 8, 5);
-    DrawDeviceIcon(T060, 9, 4);
-    DrawDeviceIcon(T075, 10, 5);
+    DrawDeviceIcon(T000_BITMAP, 0, 5);
+    DrawDeviceIcon(T110_BITMAP, 1, 4);
+    DrawDeviceIcon(T111_BITMAP, 2, 5);
+    DrawDeviceIcon(T112_BITMAP, 3, 4);
+    DrawDeviceIcon(T113_BITMAP, 4, 5);
+    DrawDeviceIcon(T120_BITMAP, 5, 4);
+    DrawDeviceIcon(T121_BITMAP, 6, 5);
+    DrawDeviceIcon(T210_BITMAP, 7, 4);
+    DrawDeviceIcon(T215_BITMAP, 8, 5);
+    DrawDeviceIcon(T060_BITMAP, 9, 4);
+    DrawDeviceIcon(T075_BITMAP, 10, 5);
     display.display();
 }
 
-void PanelDriver::DrawClockPage()
+void PanelManager::DrawClockPage()
 {
     String time = "22:17";
     String date = "05/12/2022";
@@ -166,22 +151,22 @@ void PanelDriver::DrawClockPage()
     display.cp437(true);
     display.setTextColor(SSD1306_WHITE);
     display.setTextSize(1);
-    display.setFont(&FreeSansBold24pt7b);
+    display.setFont(&FreeSansBold24pt);
     display.getTextBounds(time, 0, 0, &xTime, &yTime, &wTime, &hTime);
-    display.setFont(&FreeSansBold12pt7b);
+    display.setFont(&FreeSansBold12pt);
     display.getTextBounds(date, 0, 0, &xDate, &yDate, &wDate, &hDate);
 
-    display.setFont(&FreeSansBold24pt7b);
+    display.setFont(&FreeSansBold24pt);
     display.setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
     display.println(time);
 
-    display.setFont(&FreeSansBold12pt7b);
+    display.setFont(&FreeSansBold12pt);
     display.setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
     display.println(date);
     display.display();
 }
 
-void PanelDriver::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel)
+void PanelManager::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel)
 {
     if (position > 12)
         return;

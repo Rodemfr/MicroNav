@@ -456,7 +456,7 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
   BaseType_t scheduleChange = pdFALSE;
 
-  // if ((message.action == MICRONET_ACTION_RF_TRANSMIT) && (message.len < 64))
+  // Don't transmit messages which are bigger than SX1276 FIFO size
   if (message.len < 64)
   {
     mnetTxMsg.action = message.action;

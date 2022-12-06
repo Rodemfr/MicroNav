@@ -1,11 +1,11 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Driver for T-BEAM 1.1 OLED Panel                              *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,47 +24,58 @@
  ***************************************************************************
  */
 
-#ifndef GNSSDECODER_H_
-#define GNSSDECODER_H_
+#ifndef PANELDRIVER_H_
+#define PANELDRIVER_H_
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
-#include "MenuManager.h"
-#include "MicronetMessageFifo.h"
-#include "MicronetCodec.h"
-#include "Configuration.h"
-#include "DataBridge.h"
-#include "NavigationData.h"
-#include "NavCompass.h"
-#include "RfDriver.h"
-#include "M8NDriver.h"
-#include "Panel/PanelManager.h"
-#include "MicronetSlaveDevice.h"
+#include "PageHandler.h"
+#include "LogoPage.h"
+
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
+
+enum {
+    PAGE_LOGO = 0,
+    PAGE_NETWORK,
+    PAGE_CLOCK,
+    PAGE_MAX_PAGES
+} PanelPages_t;
 
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                               Classes                                   */
 /***************************************************************************/
 
-extern RfDriver gRfReceiver;
-extern MenuManager gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration gConfiguration;
-extern NavCompass gNavCompass;
-extern M8NDriver gM8nDriver;
-extern PanelManager gPanelDriver;
+class PanelManager
+{
+public:
+    PanelManager();
+    ~PanelManager();
 
-/***************************************************************************/
-/*                              Prototypes                                 */
-/***************************************************************************/
+    bool Init();
+    void SetPage(uint32_t pageNumber);
+    void DrawPage();
 
-#endif /* GNSSDECODER_H_ */
+private:
+    bool displayAvailable;
+    uint32_t pageNumber;
+    LogoPage logoPage;
+    PageHandler *currentPage;
+
+    void DrawWelcomePage();
+    void DrawNetworkPage();
+    void DrawClockPage();
+
+    void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
+};
+
+#endif

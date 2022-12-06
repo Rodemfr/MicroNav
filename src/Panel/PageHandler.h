@@ -1,11 +1,11 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Page Handler abstract class                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,24 +24,15 @@
  ***************************************************************************
  */
 
-#ifndef GNSSDECODER_H_
-#define GNSSDECODER_H_
+#ifndef PAGEHANDLER_H_
+#define PAGEHANDLER_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "MenuManager.h"
-#include "MicronetMessageFifo.h"
-#include "MicronetCodec.h"
-#include "Configuration.h"
-#include "DataBridge.h"
-#include "NavigationData.h"
-#include "NavCompass.h"
-#include "RfDriver.h"
-#include "M8NDriver.h"
-#include "Panel/PanelManager.h"
-#include "MicronetSlaveDevice.h"
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -52,19 +43,18 @@
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                               Classes                                   */
 /***************************************************************************/
 
-extern RfDriver gRfReceiver;
-extern MenuManager gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration gConfiguration;
-extern NavCompass gNavCompass;
-extern M8NDriver gM8nDriver;
-extern PanelManager gPanelDriver;
+class PageHandler
+{
+public:
+    PageHandler();
+    virtual ~PageHandler() = 0;
 
-/***************************************************************************/
-/*                              Prototypes                                 */
-/***************************************************************************/
+    virtual void SetDisplay(Adafruit_SSD1306 *display) = 0;
+    virtual void Draw() = 0;
+    virtual void UpdateStatus() = 0;
+};
 
-#endif /* GNSSDECODER_H_ */
+#endif

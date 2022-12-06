@@ -36,7 +36,7 @@
 #include "MicronetCodec.h"
 #include "MicronetMessageFifo.h"
 #include "NavCompass.h"
-#include "PanelDriver.h"
+#include "Panel/PanelManager.h"
 #include "Version.h"
 
 #include <Arduino.h>
