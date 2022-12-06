@@ -32,13 +32,8 @@
 #include "PanelResources.h"
 
 #include <Arduino.h>
-#include <SPI.h>
-#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/FreeSansBold9pt7b.h>
-#include <Fonts/FreeSansBold12pt7b.h>
-#include <Fonts/FreeSansBold24pt7b.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -60,17 +55,12 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-LogoPage::LogoPage() : display(nullptr)
+LogoPage::LogoPage()
 {
 }
 
 LogoPage::~LogoPage()
 {
-}
-
-void LogoPage::SetDisplay(Adafruit_SSD1306* display)
-{
-    this->display = display;
 }
 
 void LogoPage::Draw()
@@ -85,5 +75,4 @@ void LogoPage::Draw()
 
 void LogoPage::UpdateStatus()
 {
-
 }

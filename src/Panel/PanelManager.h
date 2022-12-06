@@ -33,6 +33,8 @@
 
 #include "PageHandler.h"
 #include "LogoPage.h"
+#include "ClockPage.h"
+#include "NetworkPage.h"
 
 #include <Arduino.h>
 
@@ -69,13 +71,9 @@ private:
     bool displayAvailable;
     uint32_t pageNumber;
     LogoPage logoPage;
+    ClockPage clockPage;
+    NetworkPage networkPage;
     PageHandler *currentPage;
-
-    void DrawWelcomePage();
-    void DrawNetworkPage();
-    void DrawClockPage();
-
-    void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
 };
 
 #endif

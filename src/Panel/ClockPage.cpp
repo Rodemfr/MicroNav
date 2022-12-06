@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Logo Page Handler                              *
+ * Purpose:  Clock page handler                                            *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,7 +28,12 @@
  /*                              Includes                                   */
  /***************************************************************************/
 
-#include "PageHandler.h"
+#include "ClockPage.h"
+#include "PanelResources.h"
+
+#include <Arduino.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -50,15 +55,39 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-PageHandler::PageHandler()
+ClockPage::ClockPage()
 {
 }
 
-PageHandler::~PageHandler()
+ClockPage::~ClockPage()
 {
 }
 
-void PageHandler::SetDisplay(Adafruit_SSD1306* display)
+void ClockPage::Draw()
 {
-    this->display = display;
+    String time = "22:17";
+    String date = "05/12/2022";
+    int16_t xTime, yTime, xDate, yDate;
+    uint16_t wTime, hTime, wDate, hDate;
+
+    display->clearDisplay();
+    display->setTextColor(SSD1306_WHITE);
+    display->setTextSize(1);
+    display->setFont(&FreeSansBold24pt);
+    display->getTextBounds(time, 0, 0, &xTime, &yTime, &wTime, &hTime);
+    display->setFont(&FreeSansBold12pt);
+    display->getTextBounds(date, 0, 0, &xDate, &yDate, &wDate, &hDate);
+
+    display->setFont(&FreeSansBold24pt);
+    display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+    display->println(time);
+
+    display->setFont(&FreeSansBold12pt);
+    display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+    display->println(date);
+    display->display();
+}
+
+void ClockPage::UpdateStatus()
+{
 }

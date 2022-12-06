@@ -52,9 +52,12 @@ public:
     PageHandler();
     virtual ~PageHandler() = 0;
 
-    virtual void SetDisplay(Adafruit_SSD1306 *display) = 0;
+    void SetDisplay(Adafruit_SSD1306 *display);
     virtual void Draw() = 0;
     virtual void UpdateStatus() = 0;
+
+protected:
+    Adafruit_SSD1306 *display;
 };
 
 #endif

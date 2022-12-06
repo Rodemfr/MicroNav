@@ -33,9 +33,6 @@
 
 #include "PageHandler.h"
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
@@ -54,13 +51,8 @@ public:
     LogoPage();
     virtual ~LogoPage();
 
-    void SetDisplay(Adafruit_SSD1306 *display);
     void Draw();
     void UpdateStatus();
-
-private:
-    Adafruit_SSD1306 *display;
-
 };
 
 #endif
