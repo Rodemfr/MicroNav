@@ -53,6 +53,10 @@ public:
 
     void Draw();
     void UpdateStatus();
+
+private:
+    bool prevTimeValid, prevDateValid;
+    uint8_t prevHour, prevMinute, prevDay, prevMonth, prevYear;
 };
 
 #endif

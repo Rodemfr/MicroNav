@@ -31,6 +31,8 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "NavigationData.h"
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -53,11 +55,12 @@ public:
     virtual ~PageHandler() = 0;
 
     void SetDisplay(Adafruit_SSD1306 *display);
+    void SetNavData(NavigationData *navData);
     virtual void Draw() = 0;
-    virtual void UpdateStatus() = 0;
 
 protected:
     Adafruit_SSD1306 *display;
+    NavigationData *navData;
 };
 
 #endif

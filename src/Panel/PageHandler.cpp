@@ -62,3 +62,8 @@ void PageHandler::SetDisplay(Adafruit_SSD1306* display)
 {
     this->display = display;
 }
+
+void PageHandler::SetNavData(NavigationData* navData)
+{
+    this->navData = navData;
+}

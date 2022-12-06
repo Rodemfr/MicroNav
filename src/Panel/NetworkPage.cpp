@@ -86,11 +86,6 @@ void NetworkPage::Draw()
     }
 }
 
-void NetworkPage::UpdateStatus()
-{
-
-}
-
 void NetworkPage::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel)
 {
     if (position > 12)

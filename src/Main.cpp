@@ -602,6 +602,8 @@ void MenuConvertToNmea()
   DataBridge dataBridge(&micronetCodec);
   MicronetSlaveDevice micronetDevice(&micronetCodec);
 
+  gPanelDriver.SetNavigationData(&micronetCodec.navData);
+
   // Check that we have been attached to a network
   if (gConfiguration.networkId == 0)
   {
@@ -703,6 +705,7 @@ void MenuConvertToNmea()
 
   } while (!exitNmeaLoop);
 
+  gPanelDriver.SetNavigationData(nullptr);
   gRfReceiver.DisableFrequencyTracking();
 }
 

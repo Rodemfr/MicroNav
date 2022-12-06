@@ -47,6 +47,8 @@
 #define COMMAND_EVENT_REFRESH 0x00000001
 #define COMMAND_EVENT_ALL     0x00000001
 
+#define DISPLAY_UPDATE_PERIOD 1000
+
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
@@ -85,7 +87,7 @@ bool PanelManager::Init()
         clockPage.SetDisplay(&display);
         networkPage.SetDisplay(&display);
 
-        pageNumber = 0;
+        pageNumber = 1;
 
         mutex = xSemaphoreCreateMutex();
         commandEventGroup = xEventGroupCreate();
@@ -114,10 +116,16 @@ void PanelManager::DrawPage()
 
 void PanelManager::NextPage()
 {
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
-        xSemaphoreGive(mutex);
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    xSemaphoreGive(mutex);
 }
+
+void PanelManager::SetNavigationData(NavigationData* navData)
+{
+    this->navData = navData;
+}
+
 void PanelManager::CommandProcessingTask(void* parameter)
 {
     ((PanelManager*)parameter)->CommandCallback();
@@ -125,36 +133,26 @@ void PanelManager::CommandProcessingTask(void* parameter)
 
 void PanelManager::CommandCallback()
 {
-    uint32_t localPageNumber;
-    const TickType_t xTicksToWait = 1000 / portTICK_PERIOD_MS;
-
     while (true)
     {
-        EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, xTicksToWait);
+        EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, DISPLAY_UPDATE_PERIOD / portTICK_PERIOD_MS);
 
         xSemaphoreTake(mutex, portMAX_DELAY);
-        localPageNumber = pageNumber;
-        xSemaphoreGive(mutex);
-        switch (localPageNumber)
+        switch (pageNumber)
         {
         case PAGE_LOGO:
             currentPage = (PageHandler*)&logoPage;
-            currentPage->Draw();
             break;
         case PAGE_NETWORK:
             currentPage = (PageHandler*)&networkPage;
-            currentPage->Draw();
             break;
         case PAGE_CLOCK:
             currentPage = (PageHandler*)&clockPage;
-            currentPage->Draw();
-            break;
-        default:
             break;
         }
+        currentPage->SetNavData(navData);
+        xSemaphoreGive(mutex);
 
         currentPage->Draw();
-
-        NextPage();
     }
 }

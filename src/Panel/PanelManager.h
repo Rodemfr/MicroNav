@@ -35,6 +35,7 @@
 #include "LogoPage.h"
 #include "ClockPage.h"
 #include "NetworkPage.h"
+#include "NavigationData.h"
 
 #include <Arduino.h>
 
@@ -44,8 +45,8 @@
 
 enum {
     PAGE_LOGO = 0,
-    PAGE_NETWORK,
     PAGE_CLOCK,
+    PAGE_NETWORK,
     PAGE_MAX_PAGES
 } PanelPages_t;
 
@@ -67,6 +68,7 @@ public:
     void SetPage(uint32_t pageNumber);
     void DrawPage();
     void NextPage();
+    void SetNavigationData(NavigationData *navData);
 
 private:
     bool displayAvailable;
@@ -78,6 +80,7 @@ private:
     ClockPage clockPage;
     NetworkPage networkPage;
     SemaphoreHandle_t mutex;
+    NavigationData *navData;
 
     static void CommandProcessingTask(void* parameter);
     void CommandCallback();

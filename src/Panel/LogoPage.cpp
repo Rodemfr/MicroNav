@@ -72,7 +72,3 @@ void LogoPage::Draw()
         display->display();
     }
 }
-
-void LogoPage::UpdateStatus()
-{
-}

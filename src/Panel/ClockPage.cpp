@@ -55,7 +55,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-ClockPage::ClockPage()
+ClockPage::ClockPage() : prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(0), prevDateValid(0)
 {
 }
 
@@ -65,29 +65,85 @@ ClockPage::~ClockPage()
 
 void ClockPage::Draw()
 {
-    String time = "22:17";
-    String date = "05/12/2022";
+    char timeStr[] = "--:--";
+    char dateStr[] = "--/--/----";
     int16_t xTime, yTime, xDate, yDate;
     uint16_t wTime, hTime, wDate, hDate;
+    bool updateDisplay = false;
 
-    display->clearDisplay();
-    display->setTextColor(SSD1306_WHITE);
-    display->setTextSize(1);
-    display->setFont(&FreeSansBold24pt);
-    display->getTextBounds(time, 0, 0, &xTime, &yTime, &wTime, &hTime);
-    display->setFont(&FreeSansBold12pt);
-    display->getTextBounds(date, 0, 0, &xDate, &yDate, &wDate, &hDate);
+    if (navData != nullptr)
+    {
+        if ((navData->time.valid != prevTimeValid) || (navData->time.hour != prevHour) || (navData->time.minute != prevMinute))
+        {
+            updateDisplay = true;
+            prevTimeValid = navData->time.valid;
+            prevHour = navData->time.hour;
+            prevMinute = navData->time.minute;
+        }
 
-    display->setFont(&FreeSansBold24pt);
-    display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
-    display->println(time);
+        if (navData->time.valid)
+        {
+            timeStr[0] = (navData->time.hour / 10) + '0';
+            timeStr[1] = (navData->time.hour % 10) + '0';
+            timeStr[3] = (navData->time.minute / 10) + '0';
+            timeStr[4] = (navData->time.minute % 10) + '0';
+        }
+        else {
+            timeStr[0] = '-';
+            timeStr[1] = '-';
+            timeStr[3] = '-';
+            timeStr[4] = '-';
+        }
 
-    display->setFont(&FreeSansBold12pt);
-    display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
-    display->println(date);
-    display->display();
-}
+        if ((navData->date.valid != prevDateValid) || (navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
+        {
+            updateDisplay = true;
+            prevDateValid = navData->date.valid;
+            prevDay = navData->date.day;
+            prevMonth = navData->date.month;
+            prevYear = navData->date.year;
+        }
 
-void ClockPage::UpdateStatus()
-{
+        if (navData->date.valid)
+        {
+            dateStr[0] = (navData->date.day / 10) + '0';
+            dateStr[1] = (navData->date.day % 10) + '0';
+            dateStr[3] = (navData->date.month / 10) + '0';
+            dateStr[4] = (navData->date.month % 10) + '0';
+            dateStr[6] = '2';
+            dateStr[7] = '0';
+            dateStr[8] = ((navData->date.year / 10) % 10) + '0';
+            dateStr[9] = (navData->date.year % 10) + '0';
+        }
+        else {
+            dateStr[0] = '-';
+            dateStr[1] = '-';
+            dateStr[3] = '-';
+            dateStr[4] = '-';
+            dateStr[6] = '-';
+            dateStr[6] = '-';
+            dateStr[7] = '-';
+            dateStr[8] = '-';
+        }
+    }
+
+    if (updateDisplay)
+    {
+        display->clearDisplay();
+        display->setTextColor(SSD1306_WHITE);
+        display->setTextSize(1);
+        display->setFont(&FreeSansBold24pt);
+        display->getTextBounds(String(timeStr), 0, 0, &xTime, &yTime, &wTime, &hTime);
+        display->setFont(&FreeSansBold12pt);
+        display->getTextBounds(dateStr, 0, 0, &xDate, &yDate, &wDate, &hDate);
+
+        display->setFont(&FreeSansBold24pt);
+        display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+        display->println(timeStr);
+
+        display->setFont(&FreeSansBold12pt);
+        display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+        display->println(dateStr);
+        display->display();
+    }
 }
