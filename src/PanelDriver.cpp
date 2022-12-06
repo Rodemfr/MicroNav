@@ -37,7 +37,6 @@
 #include <Adafruit_SSD1306.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
-#include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold24pt7b.h>
 
 #include "logo.h"
@@ -57,10 +56,10 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define SCREEN_WIDTH   128 // OLED display width, in pixels
-#define SCREEN_HEIGHT  64 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define SCREEN_WIDTH   128
+#define SCREEN_HEIGHT  64
+#define OLED_RESET     -1 
+#define SCREEN_ADDRESS 0x3C
 
 #define DEVICE_ICON_WIDTH  32
 #define DEVICE_ICON_HEIGHT 21

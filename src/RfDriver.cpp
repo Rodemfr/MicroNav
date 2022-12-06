@@ -283,8 +283,3 @@ void RfDriver::DisableFrequencyTracking()
 {
   freqTrackingNID = 0;
 }
-
-void RfDriver::DebugPrintIcStatus()
-{
-  sx1276Driver.DebugPrintIcStatus();
-}

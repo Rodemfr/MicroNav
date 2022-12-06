@@ -254,20 +254,6 @@ void SX1276MnetDriver::GoToIdle(void)
 }
 
 /*
-  Put SX1276 in low power mode
-*/
-void SX1276MnetDriver::LowPower() {
-  ChangeOperatingMode(SX127X_SLEEP);
-}
-
-/*
-  Put SX1276 in active power mode
-*/
-void SX1276MnetDriver::ActivePower() {
-  StartRx();
-}
-
-/*
   Read one SX1276 register
   @param addr Register address
   @return Value of the register
@@ -405,7 +391,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
   // IRQ on PacketSend(TX), FifoLevel (RX) & PayloadReady (RX)
   SpiWriteRegister(SX127X_REG_DIO_MAPPING_1, DIOCONFIG_FOR_RXTX);
   SpiWriteRegister(SX127X_REG_RX_CONFIG, 0x0f);
-  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xf8);
+  SpiWriteRegister(SX127X_REG_PA_CONFIG, 0xfc);
   SpiWriteRegister(SX127X_REG_PA_RAMP, 0x09);
   SpiWriteRegister(SX127X_REG_OCP, 0x00);
 }
@@ -521,6 +507,17 @@ void SX1276MnetDriver::IsrProcessing()
         SpiWriteRegister(SX127X_REG_PAYLOAD_LENGTH_FSK, mnetTxMsg.len);
         SpiBurstWriteRegister(SX127X_REG_FIFO, mnetTxMsg.data, mnetTxMsg.len);
       }
+      // else if (mnetTxMsg.action = MICRONET_ACTION_RF_LOW_POWER)
+      // {
+      //   rfState = RfState_t::RF_SLEEP;
+      //   ChangeOperatingMode(SX127X_SLEEP);
+      //   Serial.println("LOW");
+      // }
+      // else if (mnetTxMsg.action = MICRONET_ACTION_RF_ACTIVE_POWER)
+      // {
+      //   StartRx();
+      //   Serial.println("ACTIVE");
+      // }
     }
     else if (rfState == RfState_t::TX_TRANSMITTING)
     {
@@ -611,16 +608,4 @@ void SX1276MnetDriver::IsrProcessing()
     }
 
   }
-}
-
-void SX1276MnetDriver::DebugPrintIcStatus()
-{
-  uint8_t irqFlags1 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_1);
-  uint8_t irqFlags2 = SpiReadRegister(SX127X_REG_IRQ_FLAGS_2);
-  Serial.print("IRQ Flags 1 = 0x");
-  Serial.println(irqFlags1, HEX);
-  Serial.print("IRQ Flags 2 = 0x");
-  Serial.println(irqFlags2, HEX);
-  Serial.print("RfState = ");
-  Serial.println((int)rfState);
 }
