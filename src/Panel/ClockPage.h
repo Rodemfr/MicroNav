@@ -55,7 +55,7 @@ public:
     void UpdateStatus();
 
 private:
-    bool prevTimeValid, prevDateValid;
+    bool prevNavDataValid, prevTimeValid, prevDateValid;
     uint8_t prevHour, prevMinute, prevDay, prevMonth, prevYear;
 };
 

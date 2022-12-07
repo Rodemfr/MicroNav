@@ -121,6 +121,7 @@ public:
 	float headingOffset_deg;
 	float magneticVariation_deg;
 	float windShift_min;
+	int8_t timeZone_h;
 };
 
 #endif /* NAVIGATIONDATA_H_ */

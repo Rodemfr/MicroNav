@@ -237,6 +237,14 @@ void MicronetCodec::DecodeSetParameterMessage(MicronetMessage_t* message)
 			navData.calibrationUpdated = true;
 		}
 		break;
+	case MICRONET_CALIBRATION_TIMEZONE_ID:
+		if (message->data[MICRONET_PAYLOAD_OFFSET + 2] == 1)
+		{
+			int8_t value = (int8_t)message->data[MICRONET_PAYLOAD_OFFSET + 3];
+			navData.timeZone_h = value;
+			navData.calibrationUpdated = true;
+		}
+		break;
 	}
 }
 

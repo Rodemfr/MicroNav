@@ -39,6 +39,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+const int gMonthLength[13] = {0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
@@ -55,7 +57,8 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-ClockPage::ClockPage() : prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(0), prevDateValid(0)
+ClockPage::ClockPage() : prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0),
+prevTimeValid(false), prevDateValid(false)
 {
 }
 
@@ -70,23 +73,44 @@ void ClockPage::Draw()
     int16_t xTime, yTime, xDate, yDate;
     uint16_t wTime, hTime, wDate, hDate;
     bool updateDisplay = false;
+    int minute, hour, day, month, year;
+    int dayShift = 0;
 
     if (navData != nullptr)
     {
-        if ((navData->time.valid != prevTimeValid) || (navData->time.hour != prevHour) || (navData->time.minute != prevMinute))
+        if (navData->time.valid != prevTimeValid)
         {
             updateDisplay = true;
             prevTimeValid = navData->time.valid;
-            prevHour = navData->time.hour;
-            prevMinute = navData->time.minute;
         }
 
         if (navData->time.valid)
         {
-            timeStr[0] = (navData->time.hour / 10) + '0';
-            timeStr[1] = (navData->time.hour % 10) + '0';
-            timeStr[3] = (navData->time.minute / 10) + '0';
-            timeStr[4] = (navData->time.minute % 10) + '0';
+            minute = navData->time.minute;
+            hour = navData->time.hour;
+            hour += navData->timeZone_h;
+            if (hour < 0)
+            {
+                hour += 24;
+                dayShift = -1;
+            }
+            else if (hour > 23)
+            {
+                hour -= 24;
+                dayShift = 1;
+            }
+
+            timeStr[0] = (hour / 10) + '0';
+            timeStr[1] = (hour % 10) + '0';
+            timeStr[3] = (minute / 10) + '0';
+            timeStr[4] = (minute % 10) + '0';
+
+            if ((hour != prevHour) || (minute != prevMinute))
+            {
+                updateDisplay = true;
+                prevHour = hour;
+                prevMinute = minute;
+            }
         }
         else {
             timeStr[0] = '-';
@@ -95,25 +119,51 @@ void ClockPage::Draw()
             timeStr[4] = '-';
         }
 
-        if ((navData->date.valid != prevDateValid) || (navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
+        if (navData->date.valid != prevDateValid)
         {
             updateDisplay = true;
             prevDateValid = navData->date.valid;
-            prevDay = navData->date.day;
-            prevMonth = navData->date.month;
-            prevYear = navData->date.year;
         }
 
         if (navData->date.valid)
         {
-            dateStr[0] = (navData->date.day / 10) + '0';
-            dateStr[1] = (navData->date.day % 10) + '0';
-            dateStr[3] = (navData->date.month / 10) + '0';
-            dateStr[4] = (navData->date.month % 10) + '0';
+            day = navData->date.day + dayShift;
+            month = navData->date.month;
+            year = navData->date.year;
+
+            int monthLength = gMonthLength[month];
+            if ((month == 2) && ((year % 4) == 0))
+            {
+                monthLength += 1;
+            }
+
+            if (day > monthLength)
+            {
+                day = 1;
+                month += 1;
+                if (month > 12)
+                {
+                    month = 1;
+                    year += 1;
+                }
+            }
+
+            dateStr[0] = (day / 10) + '0';
+            dateStr[1] = (day % 10) + '0';
+            dateStr[3] = (month / 10) + '0';
+            dateStr[4] = (month % 10) + '0';
             dateStr[6] = '2';
             dateStr[7] = '0';
-            dateStr[8] = ((navData->date.year / 10) % 10) + '0';
-            dateStr[9] = (navData->date.year % 10) + '0';
+            dateStr[8] = ((year / 10) % 10) + '0';
+            dateStr[9] = (year % 10) + '0';
+
+        if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
+        {
+            updateDisplay = true;
+            prevDay = day;
+            prevMonth = month;
+            prevYear = year;
+        }
         }
         else {
             dateStr[0] = '-';
@@ -126,6 +176,12 @@ void ClockPage::Draw()
             dateStr[8] = '-';
         }
     }
+
+    if (prevNavDataValid != (navData != nullptr))
+    {
+        prevNavDataValid = (navData != nullptr);
+        updateDisplay = true;
+    };
 
     if (updateDisplay)
     {

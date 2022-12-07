@@ -123,7 +123,9 @@ void PanelManager::NextPage()
 
 void PanelManager::SetNavigationData(NavigationData* navData)
 {
+    xSemaphoreTake(mutex, portMAX_DELAY);
     this->navData = navData;
+    xSemaphoreGive(mutex);
 }
 
 void PanelManager::CommandProcessingTask(void* parameter)
@@ -152,7 +154,6 @@ void PanelManager::CommandCallback()
         }
         currentPage->SetNavData(navData);
         xSemaphoreGive(mutex);
-
         currentPage->Draw();
     }
 }

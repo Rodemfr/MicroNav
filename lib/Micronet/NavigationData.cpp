@@ -94,6 +94,7 @@ NavigationData::NavigationData()
 	headingOffset_deg = 0.0f;
 	magneticVariation_deg = 0.0f;
 	windShift_min = 0.0f;
+	timeZone_h = 0;
 }
 
 NavigationData::~NavigationData()

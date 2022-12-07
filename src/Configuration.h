@@ -74,6 +74,7 @@ public:
 	float yMagOffset;
 	float zMagOffset;
 	float rfFrequencyOffset_MHz;
+	int8_t timeZone_h;
 };
 
 /***************************************************************************/

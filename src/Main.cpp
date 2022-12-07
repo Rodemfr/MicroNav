@@ -1156,6 +1156,7 @@ void SaveCalibration(MicronetCodec& micronetCodec)
   gConfiguration.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
   gConfiguration.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
   gConfiguration.windShift = micronetCodec.navData.windShift_min;
+  gConfiguration.timeZone_h = micronetCodec.navData.timeZone_h;
 
   gConfiguration.SaveToEeprom();
 }
@@ -1175,6 +1176,7 @@ void LoadCalibration(MicronetCodec& micronetCodec)
   micronetCodec.navData.magneticVariation_deg =
     gConfiguration.magneticVariation_deg;
   micronetCodec.navData.windShift_min = gConfiguration.windShift;
+  micronetCodec.navData.timeZone_h = gConfiguration.timeZone_h;
 }
 
 void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
