@@ -62,6 +62,7 @@ extern Configuration gConfiguration;
 extern NavCompass gNavCompass;
 extern M8NDriver gM8nDriver;
 extern PanelManager gPanelDriver;
+extern MicronetCodec gMicronetCodec;
 
 /***************************************************************************/
 /*                              Prototypes                                 */

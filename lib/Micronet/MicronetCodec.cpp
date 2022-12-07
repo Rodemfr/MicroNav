@@ -56,14 +56,23 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
+MicronetCodec::MicronetCodec() : swMajorVersion(0), swMinorVersion(0)
+{
+}
+
 MicronetCodec::MicronetCodec(uint8_t swMajorVersion, uint8_t swMinorVersion)
 {
-	this->swMajorVersion = swMajorVersion;
-	this->swMinorVersion = swMinorVersion;
+	SetSwVersion(swMajorVersion, swMinorVersion);
 }
 
 MicronetCodec::~MicronetCodec()
 {
+}
+
+void MicronetCodec::SetSwVersion(uint8_t swMajorVersion, uint8_t swMinorVersion)
+{
+	this->swMajorVersion = swMajorVersion;
+	this->swMinorVersion = swMinorVersion;
 }
 
 uint32_t MicronetCodec::GetNetworkId(MicronetMessage_t* message)
@@ -538,10 +547,10 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t* message, uint8_t sig
 	if ((dataFields & DATA_FIELD_HDG) && (navData.magHdg_deg.valid))
 	{
 		int16_t headingValue = navData.magHdg_deg.value - navData.headingOffset_deg;
-		if (headingValue < 0.0f)
-			headingValue += 360.0f;
-		if (headingValue >= 360.0f)
-			headingValue -= 360.0f;
+		while (headingValue < 0)
+			headingValue += 360;
+		while (headingValue >= 360)
+			headingValue -= 360;
 		offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_HDG, headingValue);
 	}
 	if ((dataFields & DATA_FIELD_AWS) && ((navData.aws_kt.valid)))

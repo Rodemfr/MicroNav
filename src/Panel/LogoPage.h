@@ -51,8 +51,12 @@ public:
     LogoPage();
     virtual ~LogoPage();
 
-    void Draw();
-    void UpdateStatus();
+    void SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint32_t swPatchVersion);
+    void Draw(bool force);
+
+private:
+    uint8_t swMajorVersion, swMinorVersion;
+    uint32_t swPatchVersion;
 };
 
 #endif

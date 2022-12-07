@@ -66,8 +66,11 @@ public:
 
     bool Init();
     void SetPage(uint32_t pageNumber);
+    void SetPageISR(uint32_t pageNumber);
     void DrawPage();
+    void DrawPageISR();
     void NextPage();
+    void NextPageISR();
     void SetNavigationData(NavigationData *navData);
 
 private:
@@ -79,7 +82,7 @@ private:
     LogoPage logoPage;
     ClockPage clockPage;
     NetworkPage networkPage;
-    SemaphoreHandle_t mutex;
+    portMUX_TYPE mutex;
     NavigationData *navData;
 
     static void CommandProcessingTask(void* parameter);

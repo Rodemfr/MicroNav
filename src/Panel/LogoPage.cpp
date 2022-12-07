@@ -55,7 +55,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-LogoPage::LogoPage()
+LogoPage::LogoPage(): swMajorVersion(0), swMinorVersion(0), swPatchVersion(0)
 {
 }
 
@@ -63,12 +63,33 @@ LogoPage::~LogoPage()
 {
 }
 
-void LogoPage::Draw()
+void LogoPage::SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint32_t swPatchVersion)
 {
+    this->swMajorVersion = swMajorVersion;
+    this->swMinorVersion = swMinorVersion;
+    this->swPatchVersion = swPatchVersion;
+}
+
+void LogoPage::Draw(bool force)
+{
+    char versionStr[10];
+    int16_t xVersion, yVersion;
+    uint16_t wVersion, hVersion;
+
+
     if (display != nullptr)
     {
         display->clearDisplay();
         display->drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
+
+        display->setTextColor(SSD1306_WHITE);
+        display->setTextSize(1);
+        display->setFont(nullptr);
+        snprintf(versionStr, sizeof(versionStr), "v%d.%d.%d", swMajorVersion, swMinorVersion, swPatchVersion);
+        display->getTextBounds(String(versionStr), 0, 0, &xVersion, &yVersion, &wVersion, &hVersion);
+        display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 3);
+        display->print(versionStr);
+
         display->display();
     }
 }

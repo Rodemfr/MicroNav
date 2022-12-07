@@ -51,8 +51,7 @@ public:
     NetworkPage();
     virtual ~NetworkPage();
 
-    void Draw();
-    void UpdateStatus();
+    void Draw(bool force);
 
 private:
     void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);

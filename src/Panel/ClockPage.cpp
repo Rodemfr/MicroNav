@@ -66,7 +66,7 @@ ClockPage::~ClockPage()
 {
 }
 
-void ClockPage::Draw()
+void ClockPage::Draw(bool force)
 {
     char timeStr[] = "--:--";
     char dateStr[] = "--/--/----";
@@ -183,7 +183,7 @@ void ClockPage::Draw()
         updateDisplay = true;
     };
 
-    if (updateDisplay)
+    if (updateDisplay || force)
     {
         display->clearDisplay();
         display->setTextColor(SSD1306_WHITE);

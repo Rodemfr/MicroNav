@@ -28,6 +28,7 @@
  /*                              Includes                                   */
  /***************************************************************************/
 
+#include "Version.h"
 #include "Panel/PanelManager.h"
 #include "Panel/PanelResources.h"
 
@@ -67,7 +68,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 /*                              Functions                                  */
 /***************************************************************************/
 
-PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler*)&logoPage)
+PanelManager::PanelManager(): displayAvailable(false), pageNumber(0), currentPage((PageHandler*)&logoPage)
 {
 }
 
@@ -84,12 +85,13 @@ bool PanelManager::Init()
         displayAvailable = true;
 
         logoPage.SetDisplay(&display);
+        logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
         clockPage.SetDisplay(&display);
         networkPage.SetDisplay(&display);
 
-        pageNumber = 1;
+        pageNumber = 0;
 
-        mutex = xSemaphoreCreateMutex();
+        mutex = portMUX_INITIALIZER_UNLOCKED;
         commandEventGroup = xEventGroupCreate();
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void*)this, 5, &commandTaskHandle);
     }
@@ -103,9 +105,19 @@ void PanelManager::SetPage(uint32_t pageNumber)
 {
     if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
     {
-        xSemaphoreTake(mutex, portMAX_DELAY);
+        portENTER_CRITICAL(&mutex);
         this->pageNumber = pageNumber;
-        xSemaphoreGive(mutex);
+        portEXIT_CRITICAL(&mutex);
+    }
+}
+
+void PanelManager::SetPageISR(uint32_t pageNumber)
+{
+    if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
+    {
+        portENTER_CRITICAL_ISR(&mutex);
+        this->pageNumber = pageNumber;
+        portEXIT_CRITICAL_ISR(&mutex);
     }
 }
 
@@ -114,18 +126,33 @@ void PanelManager::DrawPage()
     xEventGroupSetBits(commandEventGroup, COMMAND_EVENT_REFRESH);
 }
 
+void PanelManager::DrawPageISR()
+{
+    BaseType_t scheduleChange = pdFALSE;
+
+    xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_REFRESH, &scheduleChange);
+    portYIELD_FROM_ISR(scheduleChange);
+}
+
 void PanelManager::NextPage()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    portENTER_CRITICAL(&mutex);
     this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
-    xSemaphoreGive(mutex);
+    portEXIT_CRITICAL(&mutex);
+}
+
+void PanelManager::NextPageISR()
+{
+    portENTER_CRITICAL_ISR(&mutex);
+    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    portEXIT_CRITICAL_ISR(&mutex);
 }
 
 void PanelManager::SetNavigationData(NavigationData* navData)
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    portENTER_CRITICAL(&mutex);
     this->navData = navData;
-    xSemaphoreGive(mutex);
+    portEXIT_CRITICAL(&mutex);
 }
 
 void PanelManager::CommandProcessingTask(void* parameter)
@@ -139,7 +166,7 @@ void PanelManager::CommandCallback()
     {
         EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, DISPLAY_UPDATE_PERIOD / portTICK_PERIOD_MS);
 
-        xSemaphoreTake(mutex, portMAX_DELAY);
+        portENTER_CRITICAL(&mutex);
         switch (pageNumber)
         {
         case PAGE_LOGO:
@@ -153,7 +180,7 @@ void PanelManager::CommandCallback()
             break;
         }
         currentPage->SetNavData(navData);
-        xSemaphoreGive(mutex);
-        currentPage->Draw();
+        portEXIT_CRITICAL(&mutex);
+        currentPage->Draw(commandFlags & COMMAND_EVENT_REFRESH);
     }
 }

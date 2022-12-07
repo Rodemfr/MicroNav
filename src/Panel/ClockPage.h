@@ -51,8 +51,7 @@ public:
     ClockPage();
     virtual ~ClockPage();
 
-    void Draw();
-    void UpdateStatus();
+    void Draw(bool force);
 
 private:
     bool prevNavDataValid, prevTimeValid, prevDateValid;

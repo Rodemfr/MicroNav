@@ -99,9 +99,11 @@ public:
 
 	NavigationData navData;
 
+	MicronetCodec();
 	MicronetCodec(uint8_t swMajorVersion, uint8_t swMinorVersion);
 	virtual ~MicronetCodec();
 
+	void SetSwVersion(uint8_t swMajorVersion, uint8_t swMinorVersion);
 	uint32_t GetNetworkId(MicronetMessage_t *message);
 	uint8_t GetDeviceType(MicronetMessage_t *message);
 	uint32_t GetDeviceId(MicronetMessage_t *message);

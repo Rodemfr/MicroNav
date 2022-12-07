@@ -49,11 +49,6 @@
 /***************************************************************************/
 
 #define MAX_SCANNED_NETWORKS 5
-#define WAIT_TIME_US(t)  \
-  {                      \
-    while (micros() < t) \
-      ;                  \
-  }
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -80,6 +75,7 @@ void MenuTestRfQuality();
 void SaveCalibration(MicronetCodec& micronetCodec);
 void LoadCalibration(MicronetCodec& micronetCodec);
 void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice);
+void ButtonHighIsr();
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -113,7 +109,7 @@ void setup()
   {
     pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LoRa
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON); 
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON); // OLED
   }
@@ -192,11 +188,18 @@ void setup()
     gConfiguration.displayAvailable = true;
   }
 
+  gMicronetCodec.SetSwVersion(SW_MAJOR_VERSION, SW_MINOR_VERSION);
+  gPanelDriver.SetNavigationData(&gMicronetCodec.navData);
+
   // Start listening
   gRfReceiver.Start();
 
   // Display serial menu
   gMenuManager.PrintMenu();
+
+  // Register button's ISR
+  pinMode(BUTTON_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), ButtonHighIsr, HIGH);
 
   // For the main loop to know when it is executing for the first time
   firstLoop = true;
@@ -421,7 +424,6 @@ void MenuScanNetworks()
   MicronetMessage_t* message;
   uint32_t nidArray[MAX_SCANNED_NETWORKS];
   int16_t rssiArray[MAX_SCANNED_NETWORKS];
-  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   memset(nidArray, 0, sizeof(nidArray));
   memset(rssiArray, 0, sizeof(rssiArray));
@@ -435,9 +437,9 @@ void MenuScanNetworks()
     if ((message = gRxMessageFifo.Peek()) != nullptr)
     {
       // Only consider messages with a valid CRC
-      if (micronetCodec.VerifyHeaderCrc(message))
+      if (gMicronetCodec.VerifyHeaderCrc(message))
       {
-        uint32_t nid = micronetCodec.GetNetworkId(message);
+        uint32_t nid = gMicronetCodec.GetNetworkId(message);
         int16_t rssi = message->rssi;
         // Store the network in the array by order of reception power
         for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
@@ -598,11 +600,8 @@ void MenuConvertToNmea()
   MicronetMessage_t* rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
-  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
-  DataBridge dataBridge(&micronetCodec);
-  MicronetSlaveDevice micronetDevice(&micronetCodec);
-
-  gPanelDriver.SetNavigationData(&micronetCodec.navData);
+  DataBridge dataBridge(&gMicronetCodec);
+  MicronetSlaveDevice micronetDevice(&gMicronetCodec);
 
   // Check that we have been attached to a network
   if (gConfiguration.networkId == 0)
@@ -619,7 +618,7 @@ void MenuConvertToNmea()
   CONSOLE.println("");
 
   // Load sensor calibration data into Micronet codec
-  LoadCalibration(micronetCodec);
+  LoadCalibration(gMicronetCodec);
 
   // Configure Micronet device according to board configuration
   ConfigureSlaveDevice(micronetDevice);
@@ -640,10 +639,10 @@ void MenuConvertToNmea()
 
       dataBridge.UpdateMicronetData();
 
-      if (micronetCodec.navData.calibrationUpdated)
+      if (gMicronetCodec.navData.calibrationUpdated)
       {
-        micronetCodec.navData.calibrationUpdated = false;
-        SaveCalibration(micronetCodec);
+        gMicronetCodec.navData.calibrationUpdated = false;
+        SaveCalibration(gMicronetCodec);
       }
 
       gRxMessageFifo.DeleteMessage();
@@ -674,9 +673,10 @@ void MenuConvertToNmea()
       if ((millis() - lastHeadingTime) > 100)
       {
         lastHeadingTime = millis();
-        dataBridge.UpdateCompassData(gNavCompass.GetHeading() + micronetCodec.navData.headingOffset_deg);
+        dataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
       }
-    } else 
+    }
+    else
     {
       // TODO : Remove debug code
       dataBridge.UpdateCompassData((millis() / 1000) % 360);
@@ -694,7 +694,7 @@ void MenuConvertToNmea()
       }
     }
 
-    micronetCodec.navData.UpdateValidity();
+    gMicronetCodec.navData.UpdateValidity();
 
     yield();
 
@@ -705,7 +705,6 @@ void MenuConvertToNmea()
 
   } while (!exitNmeaLoop);
 
-  gPanelDriver.SetNavigationData(nullptr);
   gRfReceiver.DisableFrequencyTracking();
 }
 
@@ -714,7 +713,6 @@ void MenuScanAllMicronetTraffic()
   bool exitSniffLoop = false;
   uint32_t lastMasterRequest_us = 0;
   MicronetCodec::NetworkMap networkMap;
-  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("Starting Micronet traffic scanning.");
   CONSOLE.println(
@@ -728,14 +726,14 @@ void MenuScanAllMicronetTraffic()
   {
     if ((message = gRxMessageFifo.Peek()) != nullptr)
     {
-      if (micronetCodec.VerifyHeaderCrc(message))
+      if (gMicronetCodec.VerifyHeaderCrc(message))
       {
         if (message->data[MICRONET_MI_OFFSET] ==
           MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
           CONSOLE.println("");
           lastMasterRequest_us = message->endTime_us;
-          micronetCodec.GetNetworkMap(message, &networkMap);
+          gMicronetCodec.GetNetworkMap(message, &networkMap);
           PrintNetworkMap(&networkMap);
         }
         PrintRawMessage(message, lastMasterRequest_us);
@@ -869,15 +867,11 @@ void MenuCalibrateRfFrequency()
   float lastWorkingFreq_MHz = 0;
   float range_kHz, centerFrequency_MHz;
   char c;
-  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("");
-  CONSOLE.println(
-    "To tune RF frequency, you must start your Micronet network and");
-  CONSOLE.println("put MicronetToNMEA HW close to your Micronet main display "
-    "(less than one meter).");
-  CONSOLE.println(
-    "You must not move any of the devices during the tuning phase.");
+  CONSOLE.println("To tune RF frequency, you must start your Micronet network and");
+  CONSOLE.println("put MicronetToNMEA HW close to your Micronet main display (less than one meter).");
+  CONSOLE.println("You must not move any of the devices during the tuning phase.");
   CONSOLE.println("Tuning phase will last about two minutes.");
   CONSOLE.println("Press any key when you are ready to start.");
 
@@ -888,8 +882,7 @@ void MenuCalibrateRfFrequency()
 
   CONSOLE.println("");
   CONSOLE.println("Starting Frequency tuning");
-  CONSOLE.println(
-    "Press ESC key at any time to stop tuning and come back to menu.");
+  CONSOLE.println("Press ESC key at any time to stop tuning and come back to menu.");
   CONSOLE.println("");
 
   gRfReceiver.DisableFrequencyTracking();
@@ -906,16 +899,13 @@ void MenuCalibrateRfFrequency()
     MicronetMessage_t* rxMessage;
     if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
     {
-      if (micronetCodec.GetMessageId(rxMessage) ==
-        MICRONET_MESSAGE_ID_MASTER_REQUEST)
+      if (gMicronetCodec.GetMessageId(rxMessage) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
       {
         lastMessageTime = millis();
         CONSOLE.print("*");
         updateFreq = true;
-        if (currentFreq_MHz < firstWorkingFreq_MHz)
-          firstWorkingFreq_MHz = currentFreq_MHz;
-        if (currentFreq_MHz > lastWorkingFreq_MHz)
-          lastWorkingFreq_MHz = currentFreq_MHz;
+        if (currentFreq_MHz < firstWorkingFreq_MHz) firstWorkingFreq_MHz = currentFreq_MHz;
+        if (currentFreq_MHz > lastWorkingFreq_MHz) lastWorkingFreq_MHz = currentFreq_MHz;
       }
       gRxMessageFifo.DeleteMessage();
     }
@@ -952,24 +942,21 @@ void MenuCalibrateRfFrequency()
           CONSOLE.print(range_kHz);
           CONSOLE.println("kHz");
           CONSOLE.print("Deviation to real frequency = ");
-          CONSOLE.print(
-            (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) * 1000);
+          CONSOLE.print((centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) * 1000);
           CONSOLE.print("kHz (");
-          CONSOLE.print(
-            (int)(1000000.0 *
-              (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) /
-              MICRONET_RF_CENTER_FREQUENCY_MHZ));
+          CONSOLE.print((int)(1000000.0 * (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) / MICRONET_RF_CENTER_FREQUENCY_MHZ));
           CONSOLE.println(" ppm)");
 
-          CONSOLE.println(
-            "Do you want to save the new RF calibration values (y/n) ?");
+          CONSOLE.println("Do you want to save the new RF calibration values (y/n) ?");
+
           while (CONSOLE.available() == 0)
-            ;
+          {
+          };
+
           c = CONSOLE.read();
           if ((c == 'y') || (c == 'Y'))
           {
-            gConfiguration.rfFrequencyOffset_MHz =
-              (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
+            gConfiguration.rfFrequencyOffset_MHz = (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
             gConfiguration.SaveToEeprom();
             CONSOLE.println("Configuration saved");
           }
@@ -1008,11 +995,9 @@ void MenuTestRfQuality()
   TxSlotDesc_t txSlot;
   MicronetMessage_t txMessage;
   uint32_t receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
-  MicronetCodec micronetCodec(SW_MAJOR_VERSION, SW_MINOR_VERSION);
 
   CONSOLE.println("Starting RF signal quality test.");
-  CONSOLE.println(
-    "Press ESC key at any time to stop testing and come back to menu.");
+  CONSOLE.println("Press ESC key at any time to stop testing and come back to menu.");
   CONSOLE.println("");
 
   gRxMessageFifo.ResetFifo();
@@ -1023,16 +1008,14 @@ void MenuTestRfQuality()
 
     if ((message = gRxMessageFifo.Peek()) != nullptr)
     {
-      if (micronetCodec.VerifyHeaderCrc(message))
+      if (gMicronetCodec.VerifyHeaderCrc(message))
       {
-        if (message->data[MICRONET_MI_OFFSET] ==
-          MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        if (message->data[MICRONET_MI_OFFSET] == MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
           CONSOLE.println("");
-          micronetCodec.GetNetworkMap(message, &networkMap);
-          txSlot = micronetCodec.GetAsyncTransmissionSlot(&networkMap);
-          micronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId,
-            gConfiguration.deviceId);
+          gMicronetCodec.GetNetworkMap(message, &networkMap);
+          txSlot = gMicronetCodec.GetAsyncTransmissionSlot(&networkMap);
+          gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.deviceId);
           txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
           txMessage.startTime_us = txSlot.start_us;
           gRfReceiver.Transmit(&txMessage);
@@ -1042,7 +1025,7 @@ void MenuTestRfQuality()
         bool alreadyReceived = false;
         for (int i = 0; i < MICRONET_MAX_DEVICES_PER_NETWORK; i++)
         {
-          uint32_t did = micronetCodec.GetDeviceId(message);
+          uint32_t did = gMicronetCodec.GetDeviceId(message);
           if (receivedDid[i] == did)
           {
             alreadyReceived = true;
@@ -1057,9 +1040,9 @@ void MenuTestRfQuality()
 
         if (!alreadyReceived)
         {
-          PrintInt(micronetCodec.GetDeviceId(message));
+          PrintInt(gMicronetCodec.GetDeviceId(message));
           CONSOLE.print(" Strength=");
-          strength = micronetCodec.CalculateSignalFloatStrength(message);
+          strength = gMicronetCodec.CalculateSignalFloatStrength(message);
           CONSOLE.print(strength);
           CONSOLE.print(" (");
           if (strength < 1.0)
@@ -1088,7 +1071,7 @@ void MenuTestRfQuality()
           }
 
           CONSOLE.print(") ");
-          switch (micronetCodec.GetDeviceType(message))
+          switch (gMicronetCodec.GetDeviceType(message))
           {
           case MICRONET_DEVICE_TYPE_HULL_TRANSMITTER:
             CONSOLE.print("Hull Transmitter");
@@ -1124,7 +1107,7 @@ void MenuTestRfQuality()
             CONSOLE.print("Unknown device");
             break;
           }
-          if (networkMap.masterDevice == micronetCodec.GetDeviceId(message))
+          if (networkMap.masterDevice == gMicronetCodec.GetDeviceId(message))
           {
             CONSOLE.print(", MASTER");
           }
@@ -1163,18 +1146,13 @@ void SaveCalibration(MicronetCodec& micronetCodec)
 
 void LoadCalibration(MicronetCodec& micronetCodec)
 {
-  micronetCodec.navData.waterSpeedFactor_per =
-    gConfiguration.waterSpeedFactor_per;
-  micronetCodec.navData.waterTemperatureOffset_degc =
-    gConfiguration.waterTemperatureOffset_C;
+  micronetCodec.navData.waterSpeedFactor_per = gConfiguration.waterSpeedFactor_per;
+  micronetCodec.navData.waterTemperatureOffset_degc = gConfiguration.waterTemperatureOffset_C;
   micronetCodec.navData.depthOffset_m = gConfiguration.depthOffset_m;
-  micronetCodec.navData.windSpeedFactor_per =
-    gConfiguration.windSpeedFactor_per;
-  micronetCodec.navData.windDirectionOffset_deg =
-    gConfiguration.windDirectionOffset_deg;
+  micronetCodec.navData.windSpeedFactor_per = gConfiguration.windSpeedFactor_per;
+  micronetCodec.navData.windDirectionOffset_deg = gConfiguration.windDirectionOffset_deg;
   micronetCodec.navData.headingOffset_deg = gConfiguration.headingOffset_deg;
-  micronetCodec.navData.magneticVariation_deg =
-    gConfiguration.magneticVariation_deg;
+  micronetCodec.navData.magneticVariation_deg = gConfiguration.magneticVariation_deg;
   micronetCodec.navData.windShift_min = gConfiguration.windShift;
   micronetCodec.navData.timeZone_h = gConfiguration.timeZone_h;
 }
@@ -1207,5 +1185,18 @@ void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
   if ((MICRONET_WIND_REPEATER == 1) || (WIND_SOURCE_LINK != LINK_MICRONET))
   {
     micronetDevice.AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
+  }
+}
+
+void ButtonHighIsr()
+{
+  static uint32_t lastBtnHState = 0;
+  uint32_t now = millis();
+
+  if (now - lastBtnHState > 150)
+  {
+    lastBtnHState = now;
+    gPanelDriver.NextPageISR();
+    gPanelDriver.DrawPageISR();
   }
 }

@@ -66,7 +66,7 @@ NetworkPage::~NetworkPage()
 {
 }
 
-void NetworkPage::Draw()
+void NetworkPage::Draw(bool force)
 {
     if (display != nullptr)
     {

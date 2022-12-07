@@ -56,7 +56,7 @@ public:
 
     void SetDisplay(Adafruit_SSD1306 *display);
     void SetNavData(NavigationData *navData);
-    virtual void Draw() = 0;
+    virtual void Draw(bool force) = 0;
 
 protected:
     Adafruit_SSD1306 *display;
