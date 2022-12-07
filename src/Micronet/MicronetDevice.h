@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Configuration handler                                         *
+ * Purpose:  Implement Micronet Device behavior                            *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,61 +24,64 @@
  ***************************************************************************
  */
 
-#ifndef CONFIGURATION_H_
-#define CONFIGURATION_H_
+#ifndef MICRONETDEVICE_H_
+#define MICRONETDEVICE_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include <stdint.h>
+#include "Micronet.h"
+#include "MicronetCodec.h"
+#include "MicronetMessageFifo.h"
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
+#define NUMBER_OF_VIRTUAL_DEVICES 3
+
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
+
+typedef struct {
+	bool connected;
+	MicronetCodec::NetworkMap networkMap;
+	uint32_t deviceId;
+	uint32_t networkId;
+	uint32_t dataFields;
+} MicronetDeviceStatus_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
-class Configuration
+class MicronetDevice
 {
 public:
-	Configuration();
-	virtual ~Configuration();
+	MicronetDevice(MicronetCodec *micronetCodec);
+	virtual ~MicronetDevice();
 
-	void Init();
-	void LoadFromEeprom();
-	void SaveToEeprom();
+	void SetDeviceId(uint32_t deviceId);
+	void SetNetworkId(uint32_t networkId);
+	void SetDataFields(uint32_t dataMask);
+	void AddDataFields(uint32_t dataMask);
+	NavigationData *GetNavigationData();
+	void ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
 
-	// The following parameters are NOT loaded/saved from/to EEPROM
-	bool navCompassAvailable;
-	bool displayAvailable;
-
-	// The following parameters are loaded/saved from/to EEPROM
-	uint32_t networkId;
+private:
+	MicronetCodec *micronetCodec;
+	MicronetCodec::NetworkMap networkMap;
 	uint32_t deviceId;
-	float waterSpeedFactor_per;
-	float waterTemperatureOffset_C;
-	float depthOffset_m;
-	float windSpeedFactor_per;
-	float windDirectionOffset_deg;
-	float headingOffset_deg;
-	float magneticVariation_deg;
-	float windShift;
-	float xMagOffset;
-	float yMagOffset;
-	float zMagOffset;
-	float rfFrequencyOffset_MHz;
-	int8_t timeZone_h;
+	uint32_t networkId;
+	uint32_t dataFields;
+	uint32_t splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
+	uint8_t latestSignalStrength;
+
+	void SplitDataFields();
+	uint8_t GetShortestSlave();
 };
 
-/***************************************************************************/
-/*                              Prototypes                                 */
-/***************************************************************************/
-
-#endif /* CONFIGURATION_H_ */
+#endif /* MICRONETDEVICE_H_ */

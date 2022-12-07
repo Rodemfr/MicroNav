@@ -30,8 +30,8 @@
 
 #include "BoardConfig.h"
 #include "Version.h"
-#include "Panel/PanelManager.h"
-#include "Panel/PanelResources.h"
+#include "PanelManager.h"
+#include "PanelResources.h"
 
 #include <Arduino.h>
 #include <SPI.h>

@@ -27,21 +27,21 @@
 #ifndef GNSSDECODER_H_
 #define GNSSDECODER_H_
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "MenuManager.h"
-#include "MicronetMessageFifo.h"
-#include "MicronetCodec.h"
+#include "Micronet/MicronetMessageFifo.h"
+#include "Micronet/MicronetCodec.h"
+#include "Micronet/MicronetDevice.h"
 #include "Configuration.h"
-#include "DataBridge.h"
+#include "NmeaBridge.h"
 #include "NavigationData.h"
 #include "NavCompass.h"
 #include "RfDriver.h"
 #include "M8NDriver.h"
-#include "Panel/PanelManager.h"
-#include "MicronetSlaveDevice.h"
+#include "PanelManager.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -55,7 +55,7 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
-extern RfDriver gRfReceiver;
+extern RfDriver gRfDriver;
 extern MenuManager gMenuManager;
 extern MicronetMessageFifo gRxMessageFifo;
 extern Configuration gConfiguration;

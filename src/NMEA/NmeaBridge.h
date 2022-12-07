@@ -24,8 +24,8 @@
  ***************************************************************************
  */
 
-#ifndef DATABRIDGE_H_
-#define DATABRIDGE_H_
+#ifndef NMEABRIDGE_H_
+#define NMEABRIDGE_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
@@ -79,11 +79,11 @@ typedef struct {
 
 #define NMEA_SENTENCE_MIN_PERIOD_MS 500
 
-class DataBridge
+class NmeaBridge
 {
 public:
-	DataBridge(MicronetCodec *micronetCodec);
-	virtual ~DataBridge();
+	NmeaBridge(MicronetCodec *micronetCodec);
+	virtual ~NmeaBridge();
 
 	void PushNmeaChar(char c, LinkId_t sourceLink);
 	void UpdateCompassData(float heading_deg);
@@ -134,4 +134,4 @@ private:
 /*                              Prototypes                                 */
 /***************************************************************************/
 
-#endif /* DATABRIDGE_H_ */
+#endif /* NMEABRIDGE_H_ */

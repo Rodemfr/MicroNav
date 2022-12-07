@@ -29,7 +29,7 @@
  /***************************************************************************/
 
 #include "BoardConfig.h"
-#include "DataBridge.h"
+#include "NmeaBridge.h"
 #include "Globals.h"
 
 #include <Arduino.h>
@@ -39,7 +39,7 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-const uint8_t DataBridge::asciiTable[128] =
+const uint8_t NmeaBridge::asciiTable[128] =
 { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -77,7 +77,7 @@ const uint8_t DataBridge::asciiTable[128] =
 /*                              Functions                                  */
 /***************************************************************************/
 
-DataBridge::DataBridge(MicronetCodec* micronetCodec)
+NmeaBridge::NmeaBridge(MicronetCodec* micronetCodec)
 {
 	nmeaExtWriteIndex = 0;
 	nmeaExtBuffer[0] = 0;
@@ -97,11 +97,11 @@ DataBridge::DataBridge(MicronetCodec* micronetCodec)
 	compassSourceLink = COMPASS_SOURCE_LINK;
 }
 
-DataBridge::~DataBridge()
+NmeaBridge::~NmeaBridge()
 {
 }
 
-void DataBridge::PushNmeaChar(char c, LinkId_t sourceLink)
+void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 {
 	char* nmeaBuffer = nullptr;
 	int* nmeaWriteIndex = 0;
@@ -224,7 +224,7 @@ void DataBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 	}
 }
 
-void DataBridge::UpdateCompassData(float heading_deg)
+void NmeaBridge::UpdateCompassData(float heading_deg)
 {
 	if (COMPASS_SOURCE_LINK == LINK_COMPASS)
 	{
@@ -239,7 +239,7 @@ void DataBridge::UpdateCompassData(float heading_deg)
 	}
 }
 
-void DataBridge::UpdateMicronetData()
+void NmeaBridge::UpdateMicronetData()
 {
 	EncodeMWV_R();
 	EncodeMWV_T();
@@ -251,7 +251,7 @@ void DataBridge::UpdateMicronetData()
 	EncodeXDR();
 }
 
-bool DataBridge::IsSentenceValid(char* nmeaBuffer)
+bool NmeaBridge::IsSentenceValid(char* nmeaBuffer)
 {
 	if (nmeaBuffer[0] != '$')
 		return false;
@@ -275,7 +275,7 @@ bool DataBridge::IsSentenceValid(char* nmeaBuffer)
 	return true;
 }
 
-NmeaId_t DataBridge::SentenceId(char* nmeaBuffer)
+NmeaId_t NmeaBridge::SentenceId(char* nmeaBuffer)
 {
 	uint32_t sId = ((uint8_t)nmeaBuffer[3]) << 16;
 	sId |= ((uint8_t)nmeaBuffer[4]) << 8;
@@ -322,7 +322,7 @@ NmeaId_t DataBridge::SentenceId(char* nmeaBuffer)
 	return nmeaSentence;
 }
 
-void DataBridge::DecodeRMBSentence(char* sentence)
+void NmeaBridge::DecodeRMBSentence(char* sentence)
 {
 	float value;
 
@@ -420,7 +420,7 @@ void DataBridge::DecodeRMBSentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeRMCSentence(char* sentence)
+void NmeaBridge::DecodeRMCSentence(char* sentence)
 {
 	sentence += 7;
 
@@ -447,7 +447,7 @@ void DataBridge::DecodeRMCSentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeGGASentence(char* sentence)
+void NmeaBridge::DecodeGGASentence(char* sentence)
 {
 	float degs, mins;
 
@@ -488,7 +488,7 @@ void DataBridge::DecodeGGASentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeVTGSentence(char* sentence)
+void NmeaBridge::DecodeVTGSentence(char* sentence)
 {
 	float value;
 	int comaCount = 0;
@@ -538,7 +538,7 @@ void DataBridge::DecodeVTGSentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeMWVSentence(char* sentence)
+void NmeaBridge::DecodeMWVSentence(char* sentence)
 {
 	float value;
 	float awa = -9999.0;
@@ -597,7 +597,7 @@ void DataBridge::DecodeMWVSentence(char* sentence)
 	micronetCodec->CalculateTrueWind();
 }
 
-void DataBridge::DecodeDPTSentence(char* sentence)
+void NmeaBridge::DecodeDPTSentence(char* sentence)
 {
 	float value;
 	float depth;
@@ -621,7 +621,7 @@ void DataBridge::DecodeDPTSentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeVHWSentence(char* sentence)
+void NmeaBridge::DecodeVHWSentence(char* sentence)
 {
 	float value;
 
@@ -662,7 +662,7 @@ void DataBridge::DecodeVHWSentence(char* sentence)
 	}
 }
 
-void DataBridge::DecodeHDGSentence(char* sentence)
+void NmeaBridge::DecodeHDGSentence(char* sentence)
 {
 	float value;
 
@@ -679,7 +679,7 @@ void DataBridge::DecodeHDGSentence(char* sentence)
 	micronetCodec->navData.magHdg_deg.timeStamp = millis();
 }
 
-int16_t DataBridge::NibbleValue(char c)
+int16_t NmeaBridge::NibbleValue(char c)
 {
 	if ((c >= '0') && (c <= '9'))
 	{
@@ -697,7 +697,7 @@ int16_t DataBridge::NibbleValue(char c)
 	return -1;
 }
 
-void DataBridge::EncodeMWV_R()
+void NmeaBridge::EncodeMWV_R()
 {
 	if (WIND_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -721,7 +721,7 @@ void DataBridge::EncodeMWV_R()
 	}
 }
 
-void DataBridge::EncodeMWV_T()
+void NmeaBridge::EncodeMWV_T()
 {
 	if (WIND_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -745,7 +745,7 @@ void DataBridge::EncodeMWV_T()
 	}
 }
 
-void DataBridge::EncodeDPT()
+void NmeaBridge::EncodeDPT()
 {
 	if (DEPTH_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -765,7 +765,7 @@ void DataBridge::EncodeDPT()
 	}
 }
 
-void DataBridge::EncodeMTW()
+void NmeaBridge::EncodeMTW()
 {
 	if (SEATEMP_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -785,7 +785,7 @@ void DataBridge::EncodeMTW()
 	}
 }
 
-void DataBridge::EncodeVLW()
+void NmeaBridge::EncodeVLW()
 {
 	if (SPEED_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -806,7 +806,7 @@ void DataBridge::EncodeVLW()
 	}
 }
 
-void DataBridge::EncodeVHW()
+void NmeaBridge::EncodeVHW()
 {
 	if (SPEED_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -838,7 +838,7 @@ void DataBridge::EncodeVHW()
 	}
 }
 
-void DataBridge::EncodeHDG()
+void NmeaBridge::EncodeHDG()
 {
 	if ((COMPASS_SOURCE_LINK == LINK_MICRONET) || (COMPASS_SOURCE_LINK == LINK_COMPASS))
 	{
@@ -858,7 +858,7 @@ void DataBridge::EncodeHDG()
 		}
 	}
 }
-void DataBridge::EncodeXDR()
+void NmeaBridge::EncodeXDR()
 {
 	if (VOLTAGE_SOURCE_LINK == LINK_MICRONET)
 	{
@@ -878,7 +878,7 @@ void DataBridge::EncodeXDR()
 	}
 }
 
-uint8_t DataBridge::AddNmeaChecksum(char* sentence)
+uint8_t NmeaBridge::AddNmeaChecksum(char* sentence)
 {
 	uint8_t crc = 0;
 	char crcString[8];

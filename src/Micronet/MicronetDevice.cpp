@@ -28,7 +28,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "MicronetSlaveDevice.h"
+#include "MicronetDevice.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -50,42 +50,42 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-MicronetSlaveDevice::MicronetSlaveDevice(MicronetCodec *micronetCodec) :
+MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) :
 		deviceId(0), networkId(0), dataFields(0), latestSignalStrength(0)
 {
 	memset(&networkMap, 0, sizeof(networkMap));
 	this->micronetCodec = micronetCodec;
 }
 
-MicronetSlaveDevice::~MicronetSlaveDevice()
+MicronetDevice::~MicronetDevice()
 {
 }
 
-void MicronetSlaveDevice::SetDeviceId(uint32_t deviceId)
+void MicronetDevice::SetDeviceId(uint32_t deviceId)
 {
 	this->deviceId = deviceId;
 }
 
-void MicronetSlaveDevice::SetNetworkId(uint32_t networkId)
+void MicronetDevice::SetNetworkId(uint32_t networkId)
 {
 	this->networkId = networkId;
 }
 
-void MicronetSlaveDevice::SetDataFields(uint32_t dataFields)
+void MicronetDevice::SetDataFields(uint32_t dataFields)
 {
 	this->dataFields = dataFields;
 
 	SplitDataFields();
 }
 
-void MicronetSlaveDevice::AddDataFields(uint32_t dataFields)
+void MicronetDevice::AddDataFields(uint32_t dataFields)
 {
 	this->dataFields |= dataFields;
 
 	SplitDataFields();
 }
 
-void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo)
+void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo)
 {
 	TxSlotDesc_t txSlot;
 	MicronetMessage_t txMessage;
@@ -111,7 +111,7 @@ void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMes
 
 			latestSignalStrength = micronetCodec->CalculateSignalStrength(message);
 
-			for (int i = 0; i < NUMBER_OF_VIRTUAL_SLAVES; i++)
+			for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
 			{
 				txSlot = micronetCodec->GetSyncTransmissionSlot(&networkMap, deviceId + i);
 				if (txSlot.start_us != 0)
@@ -141,7 +141,7 @@ void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMes
 		{
 			if (micronetCodec->DecodeMessage(message))
 			{
-				for (int i = 0; i < NUMBER_OF_VIRTUAL_SLAVES; i++)
+				for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
 				{
 					txSlot = micronetCodec->GetAckTransmissionSlot(&networkMap, deviceId + i);
 					micronetCodec->EncodeAckParamMessage(&txMessage, latestSignalStrength, networkId, deviceId + i);
@@ -156,10 +156,10 @@ void MicronetSlaveDevice::ProcessMessage(MicronetMessage_t *message, MicronetMes
 
 // Distribute requested data fields to the virtual slave devices
 // This distribution is made to balance the size of the data message of each slave
-void MicronetSlaveDevice::SplitDataFields()
+void MicronetDevice::SplitDataFields()
 {
 	// Clear current split data fields
-	for (int i = 0; i < NUMBER_OF_VIRTUAL_SLAVES; i++)
+	for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
 	{
 		splitDataFields[i] = 0;
 	}
@@ -175,12 +175,12 @@ void MicronetSlaveDevice::SplitDataFields()
 }
 
 // Returns the index of the virtual slave with the shortest data message
-uint8_t MicronetSlaveDevice::GetShortestSlave()
+uint8_t MicronetDevice::GetShortestSlave()
 {
 	uint8_t minSlaveSize = 255;
 	uint32_t minSlaveIndex = 0;
 
-	for (int i = 0; i < NUMBER_OF_VIRTUAL_SLAVES; i++)
+	for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
 	{
 		uint8_t size = micronetCodec->GetDataMessageLength(splitDataFields[i]);
 		if (size < minSlaveSize)

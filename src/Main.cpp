@@ -36,7 +36,7 @@
 #include "MicronetCodec.h"
 #include "MicronetMessageFifo.h"
 #include "NavCompass.h"
-#include "Panel/PanelManager.h"
+#include "PanelManager.h"
 #include "Version.h"
 
 #include <Arduino.h>
@@ -71,9 +71,7 @@ void MenuConvertToNmea();
 void MenuScanTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuTestRfQuality();
-void SaveCalibration(MicronetCodec& micronetCodec);
-void LoadCalibration(MicronetCodec& micronetCodec);
-void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice);
+void ConfigureSlaveDevice(MicronetDevice& micronetDevice);
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -146,7 +144,7 @@ void setup()
 
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
-  if (!gRfReceiver.Init(&gRxMessageFifo,
+  if (!gRfDriver.Init(&gRxMessageFifo,
     gConfiguration.rfFrequencyOffset_MHz))
   {
 
@@ -189,7 +187,7 @@ void setup()
   gPanelDriver.SetNavigationData(&gMicronetCodec.navData);
 
   // Start listening
-  gRfReceiver.Start();
+  gRfDriver.Start();
 
   // Display serial menu
   gMenuManager.PrintMenu();
@@ -593,8 +591,8 @@ void MenuConvertToNmea()
   MicronetMessage_t* rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
-  DataBridge dataBridge(&gMicronetCodec);
-  MicronetSlaveDevice micronetDevice(&gMicronetCodec);
+  NmeaBridge dataBridge(&gMicronetCodec);
+  MicronetDevice micronetDevice(&gMicronetCodec);
 
   // Check that we have been attached to a network
   if (gConfiguration.networkId == 0)
@@ -611,14 +609,14 @@ void MenuConvertToNmea()
   CONSOLE.println("");
 
   // Load sensor calibration data into Micronet codec
-  LoadCalibration(gMicronetCodec);
+  gConfiguration.LoadCalibration(&gMicronetCodec);
 
   // Configure Micronet device according to board configuration
   ConfigureSlaveDevice(micronetDevice);
 
   // Enable frequency tracking to keep master's frequency as reference in case
   // of XTAL/PLL drift
-  gRfReceiver.EnableFrequencyTracking(gConfiguration.networkId);
+  gRfDriver.EnableFrequencyTracking(gConfiguration.networkId);
 
   gRxMessageFifo.ResetFifo();
 
@@ -628,14 +626,14 @@ void MenuConvertToNmea()
     {
       micronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
 
-      gRfReceiver.Transmit(&txMessageFifo);
+      gRfDriver.Transmit(&txMessageFifo);
 
       dataBridge.UpdateMicronetData();
 
       if (gMicronetCodec.navData.calibrationUpdated)
       {
         gMicronetCodec.navData.calibrationUpdated = false;
-        SaveCalibration(gMicronetCodec);
+        gConfiguration.SaveCalibration(gMicronetCodec);
       }
 
       gRxMessageFifo.DeleteMessage();
@@ -693,7 +691,7 @@ void MenuConvertToNmea()
 
   } while (!exitNmeaLoop);
 
-  gRfReceiver.DisableFrequencyTracking();
+  gRfDriver.DisableFrequencyTracking();
 }
 
 void MenuScanTraffic()
@@ -871,7 +869,7 @@ void MenuTestRfQuality()
           gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.deviceId);
           txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
           txMessage.startTime_us = txSlot.start_us;
-          gRfReceiver.Transmit(&txMessage);
+          gRfDriver.Transmit(&txMessage);
           memset(receivedDid, 0, sizeof(receivedDid));
         }
 
@@ -982,35 +980,7 @@ void MenuTestRfQuality()
   } while (!exitTestLoop);
 }
 
-void SaveCalibration(MicronetCodec& micronetCodec)
-{
-  gConfiguration.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
-  gConfiguration.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
-  gConfiguration.depthOffset_m = micronetCodec.navData.depthOffset_m;
-  gConfiguration.windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
-  gConfiguration.windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
-  gConfiguration.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
-  gConfiguration.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
-  gConfiguration.windShift = micronetCodec.navData.windShift_min;
-  gConfiguration.timeZone_h = micronetCodec.navData.timeZone_h;
-
-  gConfiguration.SaveToEeprom();
-}
-
-void LoadCalibration(MicronetCodec& micronetCodec)
-{
-  micronetCodec.navData.waterSpeedFactor_per = gConfiguration.waterSpeedFactor_per;
-  micronetCodec.navData.waterTemperatureOffset_degc = gConfiguration.waterTemperatureOffset_C;
-  micronetCodec.navData.depthOffset_m = gConfiguration.depthOffset_m;
-  micronetCodec.navData.windSpeedFactor_per = gConfiguration.windSpeedFactor_per;
-  micronetCodec.navData.windDirectionOffset_deg = gConfiguration.windDirectionOffset_deg;
-  micronetCodec.navData.headingOffset_deg = gConfiguration.headingOffset_deg;
-  micronetCodec.navData.magneticVariation_deg = gConfiguration.magneticVariation_deg;
-  micronetCodec.navData.windShift_min = gConfiguration.windShift;
-  micronetCodec.navData.timeZone_h = gConfiguration.timeZone_h;
-}
-
-void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
+void ConfigureSlaveDevice(MicronetDevice& micronetDevice)
 {
   // Configure Micronet's slave devices
   micronetDevice.SetNetworkId(gConfiguration.networkId);
