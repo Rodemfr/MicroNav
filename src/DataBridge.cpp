@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Navigation data router                                        *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -850,15 +850,14 @@ void DataBridge::EncodeHDG()
 		if (update)
 		{
 			char sentence[NMEA_SENTENCE_MAX_LENGTH];
-			sprintf(sentence, "$INHDG,%.0f,%.0f,%c,,", micronetCodec->navData.magHdg_deg.value, fabsf(micronetCodec->navData.magneticVariation_deg),
-				(micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W' : 'E');
+			sprintf(sentence, "$INHDG,%.0f,,,%.0f,%c", micronetCodec->navData.magHdg_deg.value, fabsf(micronetCodec->navData.magneticVariation_deg),
+					(micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W' : 'E');
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.hdg = millis();
 			NMEA_EXT.println(sentence);
 		}
 	}
 }
-
 void DataBridge::EncodeXDR()
 {
 	if (VOLTAGE_SOURCE_LINK == LINK_MICRONET)
