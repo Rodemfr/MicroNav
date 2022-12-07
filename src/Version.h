@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Version numbers of the SW                                     *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -38,7 +38,7 @@
 // MicroNav SW version
 #define SW_MAJOR_VERSION 0
 #define SW_MINOR_VERSION 1
-#define SW_PATCH_VERSION 3
+#define SW_PATCH_VERSION 4
 
 /***************************************************************************/
 /*                                Types                                    */

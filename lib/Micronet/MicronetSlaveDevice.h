@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Implement Micronet Device behavior                            *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -45,6 +45,14 @@
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
+
+typedef struct {
+	bool connected;
+	MicronetCodec::NetworkMap networkMap;
+	uint32_t deviceId;
+	uint32_t networkId;
+	uint32_t dataFields;
+} MicronetDeviceStatus_t;
 
 /***************************************************************************/
 /*                               Classes                                   */

@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Clock page handler                                            *
+ * Purpose:  Handler of the Clock page                                     *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************

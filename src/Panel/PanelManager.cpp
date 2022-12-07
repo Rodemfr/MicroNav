@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Driver for T-BEAM 1.1 OLED Panel                              *
+ * Purpose:  Driver for T-BEAM 1.1 OLED Panel and button                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,6 +28,7 @@
  /*                              Includes                                   */
  /***************************************************************************/
 
+#include "BoardConfig.h"
 #include "Version.h"
 #include "Panel/PanelManager.h"
 #include "Panel/PanelResources.h"
@@ -63,6 +64,7 @@
 /***************************************************************************/
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+PanelManager* PanelManager::objectPtr;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -95,6 +97,11 @@ bool PanelManager::Init()
         commandEventGroup = xEventGroupCreate();
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void*)this, 5, &commandTaskHandle);
     }
+
+    // Register button's ISR
+    pinMode(BUTTON_PIN, INPUT);
+    objectPtr = this;
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), ButtonHighIsr, FALLING);
 
     DrawPage();
 
@@ -182,5 +189,18 @@ void PanelManager::CommandCallback()
         currentPage->SetNavData(navData);
         portEXIT_CRITICAL(&mutex);
         currentPage->Draw(commandFlags & COMMAND_EVENT_REFRESH);
+    }
+}
+
+void PanelManager::ButtonHighIsr()
+{
+    static uint32_t lastBtnHState = 0;
+    uint32_t now = millis();
+
+    if (now - lastBtnHState > 330)
+    {
+        lastBtnHState = now;
+        objectPtr->NextPageISR();
+        objectPtr->DrawPageISR();
     }
 }

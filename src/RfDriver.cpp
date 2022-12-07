@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Driver for CC1101                                             *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Scheduler of RF communications                                *
  * Author:   Ronan Demoment heavily based on ELECHOUSE's driver            *
  *                                                                         *
  ***************************************************************************

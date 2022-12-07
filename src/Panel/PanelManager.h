@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Driver for T-BEAM 1.1 OLED Panel                              *
+ * Purpose:  Driver for T-BEAM 1.1 OLED Panel and button                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -71,21 +71,24 @@ public:
     void DrawPageISR();
     void NextPage();
     void NextPageISR();
-    void SetNavigationData(NavigationData *navData);
+    void SetNavigationData(NavigationData* navData);
 
 private:
     bool displayAvailable;
     uint32_t pageNumber;
-    PageHandler *currentPage;
+    PageHandler* currentPage;
     TaskHandle_t commandTaskHandle;
     EventGroupHandle_t commandEventGroup;
     LogoPage logoPage;
     ClockPage clockPage;
     NetworkPage networkPage;
     portMUX_TYPE mutex;
-    NavigationData *navData;
+    NavigationData* navData;
 
+    static PanelManager* objectPtr;
     static void CommandProcessingTask(void* parameter);
+    static void ButtonHighIsr();
+
     void CommandCallback();
 };
 

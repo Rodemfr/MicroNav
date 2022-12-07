@@ -1,13 +1,40 @@
-/*
- * LSM303DLHCDriver.cpp
- *
- *  Created on: 11 sept. 2021
- *      Author: Ronan
+/***************************************************************************
+ *                                                                         *
+ * Project:  MicroNav                                                      *
+ * Purpose:  Driver for LSM303DLHC                                         *
+ * Author:   Ronan Demoment                                                *
+ *                                                                         *
+ ***************************************************************************
+ *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************
  */
+
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "LSM303DLHCDriver.h"
 #include "BoardConfig.h"
 #include <Wire.h>
+
+/***************************************************************************/
+/*                              Constants                                  */
+/***************************************************************************/
 
 #define LSM303DLHC_MAG_ADDR   0x1E
 #define LSM303DLHC_ACC_ADDR   0x19
@@ -54,6 +81,22 @@
 #define WHO_AM_I_M        0x0f
 #define TEMP_OUT_H_M      0x31
 #define TEMP_OUT_L_M      0x32
+
+/***************************************************************************/
+/*                             Local types                                 */
+/***************************************************************************/
+
+/***************************************************************************/
+/*                           Local prototypes                              */
+/***************************************************************************/
+
+/***************************************************************************/
+/*                               Globals                                   */
+/***************************************************************************/
+
+/***************************************************************************/
+/*                              Functions                                  */
+/***************************************************************************/
 
 LSM303DLHCDriver::LSM303DLHCDriver() :
 		accAddr(LSM303DLHC_ACC_ADDR), magAddr(LSM303DLHC_MAG_ADDR), magX(0), magY(0), magZ(0), accX(0), accY(0), accZ(0), LSB_per_Gauss_XY(1100.0f), LSB_per_Gauss_Z(

@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  NMEA/Micronet bridge                                          *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -58,24 +58,22 @@
 /*                           Local prototypes                              */
 /***************************************************************************/
 
-void RfIsr();
 void PrintByte(uint8_t data);
 void PrintInt(uint32_t data);
 void PrintRawMessage(MicronetMessage_t* message, uint32_t lastMasterRequest_us);
 void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap);
 void PrintMessageFifo(MicronetMessageFifo& messageFifo);
+
 void MenuAbout();
 void MenuScanNetworks();
 void MenuAttachNetwork();
 void MenuConvertToNmea();
-void MenuScanAllMicronetTraffic();
+void MenuScanTraffic();
 void MenuCalibrateMagnetoMeter();
-void MenuCalibrateRfFrequency();
 void MenuTestRfQuality();
 void SaveCalibration(MicronetCodec& micronetCodec);
 void LoadCalibration(MicronetCodec& micronetCodec);
 void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice);
-void ButtonHighIsr();
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -86,13 +84,12 @@ AXP20X_Class pmu;
 bool firstLoop;
 
 MenuEntry_t mainMenu[] = {
-    {"MicronetToNMEA", nullptr},
-    {"General info on MicronetToNMEA", MenuAbout},
+    {"MicroNav", nullptr},
+    {"General info on MicroNav", MenuAbout},
     {"Scan Micronet networks", MenuScanNetworks},
     {"Attach converter to a network", MenuAttachNetwork},
     {"Start NMEA conversion", MenuConvertToNmea},
-    {"Scan surrounding Micronet traffic", MenuScanAllMicronetTraffic},
-    {"Calibrate RF frequency", MenuCalibrateRfFrequency},
+    {"Scan surrounding Micronet traffic", MenuScanTraffic},
     {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
     {"Test RF quality", MenuTestRfQuality},
     {nullptr, nullptr} };
@@ -196,10 +193,6 @@ void setup()
 
   // Display serial menu
   gMenuManager.PrintMenu();
-
-  // Register button's ISR
-  pinMode(BUTTON_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), ButtonHighIsr, HIGH);
 
   // For the main loop to know when it is executing for the first time
   firstLoop = true;
@@ -368,7 +361,7 @@ void PrintMessageFifo(MicronetMessageFifo& messageFifo)
 
 void MenuAbout()
 {
-  CONSOLE.print("MicronetToNMEA, Version ");
+  CONSOLE.print("MicroNav, Version ");
   CONSOLE.print(SW_MAJOR_VERSION, DEC);
   CONSOLE.print(".");
   CONSOLE.println(SW_MINOR_VERSION, DEC);
@@ -698,17 +691,12 @@ void MenuConvertToNmea()
 
     yield();
 
-#if defined(ARDUINO_TEENSY35) || defined(ARDUINO_TEENSY36)
-    // Enter sleep mode to save power. CPU will be waken-up on next interrupt
-    asm("wfi\n");
-#endif
-
   } while (!exitNmeaLoop);
 
   gRfReceiver.DisableFrequencyTracking();
 }
 
-void MenuScanAllMicronetTraffic()
+void MenuScanTraffic()
 {
   bool exitSniffLoop = false;
   uint32_t lastMasterRequest_us = 0;
@@ -728,13 +716,12 @@ void MenuScanAllMicronetTraffic()
     {
       if (gMicronetCodec.VerifyHeaderCrc(message))
       {
-        if (message->data[MICRONET_MI_OFFSET] ==
-          MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        if (message->data[MICRONET_MI_OFFSET] == MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
           CONSOLE.println("");
-          lastMasterRequest_us = message->endTime_us;
-          gMicronetCodec.GetNetworkMap(message, &networkMap);
-          PrintNetworkMap(&networkMap);
+          // lastMasterRequest_us = message->endTime_us;
+          // gMicronetCodec.GetNetworkMap(message, &networkMap);
+          // PrintNetworkMap(&networkMap);
         }
         PrintRawMessage(message, lastMasterRequest_us);
       }
@@ -851,140 +838,6 @@ void MenuCalibrateMagnetoMeter()
   {
     CONSOLE.println("Configuration discarded");
   }
-}
-
-void MenuCalibrateRfFrequency()
-{
-#define FREQUENCY_SWEEP_RANGE_KHZ 300
-#define FREQUENCY_SWEEP_STEP_KHZ 3
-
-  bool exitTuneLoop;
-  bool updateFreq;
-  uint32_t lastMessageTime = millis();
-  float currentFreq_MHz =
-    MICRONET_RF_CENTER_FREQUENCY_MHZ - (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f);
-  float firstWorkingFreq_MHz = 100000;
-  float lastWorkingFreq_MHz = 0;
-  float range_kHz, centerFrequency_MHz;
-  char c;
-
-  CONSOLE.println("");
-  CONSOLE.println("To tune RF frequency, you must start your Micronet network and");
-  CONSOLE.println("put MicronetToNMEA HW close to your Micronet main display (less than one meter).");
-  CONSOLE.println("You must not move any of the devices during the tuning phase.");
-  CONSOLE.println("Tuning phase will last about two minutes.");
-  CONSOLE.println("Press any key when you are ready to start.");
-
-  while (CONSOLE.available() == 0)
-  {
-    yield();
-  }
-
-  CONSOLE.println("");
-  CONSOLE.println("Starting Frequency tuning");
-  CONSOLE.println("Press ESC key at any time to stop tuning and come back to menu.");
-  CONSOLE.println("");
-
-  gRfReceiver.DisableFrequencyTracking();
-  gRfReceiver.SetFrequencyOffset(0);
-  gRfReceiver.SetBandwidth(RfDriver::RF_BANDWIDTH_LOW);
-  gRfReceiver.SetFrequency(currentFreq_MHz);
-
-  updateFreq = false;
-  exitTuneLoop = false;
-
-  gRxMessageFifo.ResetFifo();
-  do
-  {
-    MicronetMessage_t* rxMessage;
-    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
-    {
-      if (gMicronetCodec.GetMessageId(rxMessage) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
-      {
-        lastMessageTime = millis();
-        CONSOLE.print("*");
-        updateFreq = true;
-        if (currentFreq_MHz < firstWorkingFreq_MHz) firstWorkingFreq_MHz = currentFreq_MHz;
-        if (currentFreq_MHz > lastWorkingFreq_MHz) lastWorkingFreq_MHz = currentFreq_MHz;
-      }
-      gRxMessageFifo.DeleteMessage();
-    }
-
-    if (millis() - lastMessageTime > 1250)
-    {
-      lastMessageTime = millis();
-      CONSOLE.print(".");
-      updateFreq = true;
-    }
-
-    if (updateFreq)
-    {
-      lastMessageTime = millis();
-      updateFreq = false;
-      if (currentFreq_MHz < MICRONET_RF_CENTER_FREQUENCY_MHZ +
-        (FREQUENCY_SWEEP_RANGE_KHZ / 2000.0f))
-      {
-        currentFreq_MHz += (FREQUENCY_SWEEP_STEP_KHZ / 1000.0f);
-        gRfReceiver.SetFrequency(currentFreq_MHz);
-      }
-      else
-      {
-        centerFrequency_MHz =
-          ((lastWorkingFreq_MHz + firstWorkingFreq_MHz) / 2);
-        range_kHz = (lastWorkingFreq_MHz - firstWorkingFreq_MHz) * 1000;
-        if ((range_kHz > 0) && (range_kHz < FREQUENCY_SWEEP_RANGE_KHZ))
-        {
-          CONSOLE.println("");
-          CONSOLE.print("Frequency = ");
-          CONSOLE.print(centerFrequency_MHz * 1000);
-          CONSOLE.println("kHz");
-          CONSOLE.print("Range = ");
-          CONSOLE.print(range_kHz);
-          CONSOLE.println("kHz");
-          CONSOLE.print("Deviation to real frequency = ");
-          CONSOLE.print((centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) * 1000);
-          CONSOLE.print("kHz (");
-          CONSOLE.print((int)(1000000.0 * (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ) / MICRONET_RF_CENTER_FREQUENCY_MHZ));
-          CONSOLE.println(" ppm)");
-
-          CONSOLE.println("Do you want to save the new RF calibration values (y/n) ?");
-
-          while (CONSOLE.available() == 0)
-          {
-          };
-
-          c = CONSOLE.read();
-          if ((c == 'y') || (c == 'Y'))
-          {
-            gConfiguration.rfFrequencyOffset_MHz = (centerFrequency_MHz - MICRONET_RF_CENTER_FREQUENCY_MHZ);
-            gConfiguration.SaveToEeprom();
-            CONSOLE.println("Configuration saved");
-          }
-          else
-          {
-            CONSOLE.println("Configuration discarded");
-          }
-        }
-
-        exitTuneLoop = true;
-      }
-    }
-
-    while (CONSOLE.available() > 0)
-    {
-      if (CONSOLE.read() == 0x1b)
-      {
-        CONSOLE.println("\r\nESC key pressed, stopping frequency tuning.");
-        exitTuneLoop = true;
-      }
-    }
-
-    yield();
-  } while (!exitTuneLoop);
-
-  gRfReceiver.SetBandwidth(RfDriver::RF_BANDWIDTH_HIGH);
-  gRfReceiver.SetFrequencyOffset(gConfiguration.rfFrequencyOffset_MHz);
-  gRfReceiver.SetFrequency(MICRONET_RF_CENTER_FREQUENCY_MHZ);
 }
 
 void MenuTestRfQuality()
@@ -1185,18 +1038,5 @@ void ConfigureSlaveDevice(MicronetSlaveDevice& micronetDevice)
   if ((MICRONET_WIND_REPEATER == 1) || (WIND_SOURCE_LINK != LINK_MICRONET))
   {
     micronetDevice.AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
-  }
-}
-
-void ButtonHighIsr()
-{
-  static uint32_t lastBtnHState = 0;
-  uint32_t now = millis();
-
-  if (now - lastBtnHState > 150)
-  {
-    lastBtnHState = now;
-    gPanelDriver.NextPageISR();
-    gPanelDriver.DrawPageISR();
   }
 }

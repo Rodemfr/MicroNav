@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Logo Page Handler                              *
+ * Purpose:  Handler of the Logo page                                      *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -87,8 +87,12 @@ void LogoPage::Draw(bool force)
         display->setFont(nullptr);
         snprintf(versionStr, sizeof(versionStr), "v%d.%d.%d", swMajorVersion, swMinorVersion, swPatchVersion);
         display->getTextBounds(String(versionStr), 0, 0, &xVersion, &yVersion, &wVersion, &hVersion);
-        display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 3);
+        display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 2);
         display->print(versionStr);
+        display->setCursor(0, SCREEN_HEIGHT - 16);
+        display->println("NId  814a7ec2");
+        display->setCursor(0, SCREEN_HEIGHT - 8);
+        display->println("NMEA USB");
 
         display->display();
     }

@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Logo Page Handler                              *
+ * Purpose:  Page Handler abstract class                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************

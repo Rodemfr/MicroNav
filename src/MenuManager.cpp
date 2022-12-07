@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
+ * Project:  MicroNav                                                      *
  * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
  * Author:   Ronan Demoment                                                *
  *                                                                         *

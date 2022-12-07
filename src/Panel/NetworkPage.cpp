@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Network page handler                                          *
+ * Purpose:  Handler of the Network page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************

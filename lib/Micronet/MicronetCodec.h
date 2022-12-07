@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
- * Project:  MicronetToNMEA                                                *
- * Purpose:  Decode data from Micronet devices send it on an NMEA network  *
+ * Project:  MicroNav                                                      *
+ * Purpose:  API to encode / decode Micronet message                       *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -141,6 +141,7 @@ private:
 
 	void DecodeSendDataMessage(MicronetMessage_t *message);
 	void DecodeSetParameterMessage(MicronetMessage_t *message);
+	void DecodePageFF(MicronetMessage_t *message);
 	int DecodeDataField(MicronetMessage_t *message, int offset);
 	void UpdateMicronetData(uint8_t fieldId, int8_t value);
 	void UpdateMicronetData(uint8_t fieldId, int16_t value);
