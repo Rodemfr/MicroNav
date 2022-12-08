@@ -59,7 +59,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-NetworkPage::NetworkPage()
+NetworkPage::NetworkPage(): deviceId(0)
 {
 }
 
@@ -72,17 +72,14 @@ void NetworkPage::Draw(bool force)
     if (display != nullptr)
     {
         display->clearDisplay();
-        DrawDeviceIcon(T000_BITMAP, 0, 5);
-        DrawDeviceIcon(T110_BITMAP, 1, 4);
-        DrawDeviceIcon(T111_BITMAP, 2, 5);
-        DrawDeviceIcon(T112_BITMAP, 3, 4);
-        DrawDeviceIcon(T113_BITMAP, 4, 5);
-        DrawDeviceIcon(T120_BITMAP, 5, 4);
-        DrawDeviceIcon(T121_BITMAP, 6, 5);
-        DrawDeviceIcon(T210_BITMAP, 7, 4);
-        DrawDeviceIcon(T215_BITMAP, 8, 5);
-        DrawDeviceIcon(T060_BITMAP, 9, 4);
-        DrawDeviceIcon(T075_BITMAP, 10, 5);
+        DrawDeviceIcon(GetIconById(networkMap.masterDevice), 0, 5);
+        for (int i = 0; i < networkMap.nbSyncSlots; i++)
+        {
+            if ((networkMap.syncSlot[i].deviceId >> 24) != MICRONET_DEVICE_TYPE_NMEA_CONVERTER)
+            {
+                DrawDeviceIcon(GetIconById(networkMap.syncSlot[i].deviceId), i + 1, 5);
+            }
+        }
         display->display();
     }
 }
@@ -101,7 +98,61 @@ void NetworkPage::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_
     }
 }
 
-void NetworkPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+unsigned char const* NetworkPage::GetIconById(uint32_t deviceId)
 {
-    this->networkStatus = networkStatus;
+    unsigned char const* bitmapPtr = T000_BITMAP;
+
+    switch (deviceId >> 24)
+    {
+    case MICRONET_DEVICE_TYPE_HULL_TRANSMITTER:
+        bitmapPtr = T121_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_WIND_TRANSDUCER:
+        bitmapPtr = T120_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_NMEA_CONVERTER:
+        bitmapPtr = T000_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_MAST_ROTATION:
+        bitmapPtr = T000_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_MOB:
+        bitmapPtr = T000_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_SDPOD:
+        bitmapPtr = T000_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_DUAL_DISPLAY:
+        bitmapPtr = T111_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_ANALOG_WIND_DISPLAY:
+        bitmapPtr = T112_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_DUAL_MAXI_DISPLAY:
+        bitmapPtr = T215_BITMAP;
+        break;
+    case MICRONET_DEVICE_TYPE_REMOTE_DISPLAY:
+        bitmapPtr = T210_BITMAP;
+        break;
+    }
+
+    if (bitmapPtr == T000_BITMAP)
+    {
+        Serial.println(deviceId, HEX);
+    }
+
+    return bitmapPtr;
+}
+
+void NetworkPage::SetNetworkStatus(MicronetNetworkState_t& networkStatus)
+{
+    deviceId = networkStatus.deviceId;
+    this->networkMap.networkId = networkStatus.networkMap.networkId;
+    this->networkMap.nbDevices = networkStatus.networkMap.nbDevices;
+    this->networkMap.masterDevice = networkStatus.networkMap.masterDevice;
+    this->networkMap.nbSyncSlots = networkStatus.networkMap.nbSyncSlots;
+    for (int i = 0; i < this->networkMap.nbSyncSlots; i++)
+    {
+        this->networkMap.syncSlot[i] = networkStatus.networkMap.syncSlot[i];
+    }
 }

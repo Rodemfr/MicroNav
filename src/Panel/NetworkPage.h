@@ -56,9 +56,11 @@ public:
     void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
 private:
-    MicronetNetworkState_t networkStatus;
+    uint32_t deviceId;
+    MicronetCodec::NetworkMap networkMap;
 
     void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
+    unsigned char const *GetIconById(uint32_t deviceId);
 };
 
 #endif
