@@ -36,6 +36,7 @@
 #include "ClockPage.h"
 #include "NetworkPage.h"
 #include "NavigationData.h"
+#include "MicronetDevice.h"
 
 #include <Arduino.h>
 
@@ -72,6 +73,7 @@ public:
     void NextPage();
     void NextPageISR();
     void SetNavigationData(NavigationData* navData);
+    void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
 private:
     bool displayAvailable;
@@ -84,6 +86,7 @@ private:
     NetworkPage networkPage;
     portMUX_TYPE mutex;
     NavigationData* navData;
+    MicronetNetworkState_t networkStatus;
 
     static PanelManager* objectPtr;
     static void CommandProcessingTask(void* parameter);

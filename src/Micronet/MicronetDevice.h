@@ -47,12 +47,22 @@
 /***************************************************************************/
 
 typedef struct {
+	uint32_t deviceId;
+	uint8_t radioLevel;
+	uint32_t lastCommMs;
+} MicronetDeviceInfo_t;
+
+typedef struct {
 	bool connected;
-	MicronetCodec::NetworkMap networkMap;
 	uint32_t deviceId;
 	uint32_t networkId;
+	uint32_t nbDevicesInRange;
+	uint32_t lastCommMs;
+	MicronetCodec::NetworkMap networkMap;
 	uint32_t dataFields;
-} MicronetDeviceStatus_t;
+	uint32_t splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
+	MicronetDeviceInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
+} MicronetNetworkState_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
@@ -68,20 +78,16 @@ public:
 	void SetNetworkId(uint32_t networkId);
 	void SetDataFields(uint32_t dataMask);
 	void AddDataFields(uint32_t dataMask);
-	NavigationData *GetNavigationData();
 	void ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
+	MicronetNetworkState_t &GetNetworkStatus();
 
 private:
 	MicronetCodec *micronetCodec;
-	MicronetCodec::NetworkMap networkMap;
-	uint32_t deviceId;
-	uint32_t networkId;
-	uint32_t dataFields;
-	uint32_t splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
 	uint8_t latestSignalStrength;
+	MicronetNetworkState_t networkState;
 
 	void SplitDataFields();
-	uint8_t GetShortestSlave();
+	uint8_t GetShortestDevice();
 };
 
 #endif /* MICRONETDEVICE_H_ */

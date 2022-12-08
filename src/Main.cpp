@@ -625,10 +625,10 @@ void MenuConvertToNmea()
     if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
     {
       micronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
-
       gRfDriver.Transmit(&txMessageFifo);
 
       dataBridge.UpdateMicronetData();
+      gPanelDriver.SetNetworkStatus(micronetDevice.GetNetworkStatus());
 
       if (gMicronetCodec.navData.calibrationUpdated)
       {

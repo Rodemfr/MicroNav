@@ -32,6 +32,7 @@
  /***************************************************************************/
 
 #include "PageHandler.h"
+#include "NavigationData.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -52,10 +53,12 @@ public:
     virtual ~ClockPage();
 
     void Draw(bool force);
+    void SetNavData(NavigationData *navData);
 
 private:
     bool prevNavDataValid, prevTimeValid, prevDateValid;
     uint8_t prevHour, prevMinute, prevDay, prevMonth, prevYear;
+    NavigationData *navData;
 };
 
 #endif

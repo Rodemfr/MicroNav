@@ -32,6 +32,7 @@
  /***************************************************************************/
 
 #include "PageHandler.h"
+#include "MicronetDevice.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -53,10 +54,12 @@ public:
 
     void SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint32_t swPatchVersion);
     void Draw(bool force);
+    void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
 private:
     uint8_t swMajorVersion, swMinorVersion;
     uint32_t swPatchVersion;
+    MicronetNetworkState_t networkStatus;
 };
 
 #endif

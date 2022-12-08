@@ -30,6 +30,7 @@
 
 #include "NetworkPage.h"
 #include "PanelResources.h"
+#include "MicronetDevice.h"
 
 #include <Arduino.h>
 #include <Adafruit_GFX.h>
@@ -98,4 +99,9 @@ void NetworkPage::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_
     {
         display->fillRect(xPos + 26, yPos + 4, 6, 3 * (5 - radioLevel), 0);
     }
+}
+
+void NetworkPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+{
+    this->networkStatus = networkStatus;
 }

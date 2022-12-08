@@ -203,3 +203,8 @@ void ClockPage::Draw(bool force)
         display->display();
     }
 }
+
+void ClockPage::SetNavData(NavigationData* navData)
+{
+    this->navData = navData;
+}

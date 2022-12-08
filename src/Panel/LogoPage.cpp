@@ -30,6 +30,7 @@
 
 #include "LogoPage.h"
 #include "PanelResources.h"
+#include "MicronetDevice.h"
 
 #include <Arduino.h>
 #include <Adafruit_GFX.h>
@@ -73,6 +74,7 @@ void LogoPage::SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint
 void LogoPage::Draw(bool force)
 {
     char versionStr[10];
+    char networkIdStr[9];
     int16_t xVersion, yVersion;
     uint16_t wVersion, hVersion;
 
@@ -90,10 +92,17 @@ void LogoPage::Draw(bool force)
         display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 2);
         display->print(versionStr);
         display->setCursor(0, SCREEN_HEIGHT - 16);
-        display->println("NId  814a7ec2");
+        display->print("NID  ");
+        snprintf(networkIdStr, sizeof(networkIdStr), "%08x", networkStatus.networkId);
+        display->print(networkIdStr);
         display->setCursor(0, SCREEN_HEIGHT - 8);
-        display->println("NMEA USB");
+        display->print("NMEA USB");
 
         display->display();
     }
+}
+
+void LogoPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+{
+    this->networkStatus = networkStatus;
 }

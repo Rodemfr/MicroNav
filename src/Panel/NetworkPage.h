@@ -32,6 +32,7 @@
  /***************************************************************************/
 
 #include "PageHandler.h"
+#include "MicronetDevice.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -52,8 +53,11 @@ public:
     virtual ~NetworkPage();
 
     void Draw(bool force);
+    void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
 private:
+    MicronetNetworkState_t networkStatus;
+
     void DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel);
 };
 

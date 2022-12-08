@@ -72,6 +72,7 @@ PanelManager* PanelManager::objectPtr;
 
 PanelManager::PanelManager(): displayAvailable(false), pageNumber(0), currentPage((PageHandler*)&logoPage)
 {
+    memset(&networkStatus, 0, sizeof(networkStatus));
 }
 
 PanelManager::~PanelManager()
@@ -157,8 +158,17 @@ void PanelManager::NextPageISR()
 
 void PanelManager::SetNavigationData(NavigationData* navData)
 {
+    // FIXME : Work on a copy of data instead of a direct pointer
     portENTER_CRITICAL(&mutex);
-    this->navData = navData;
+    clockPage.SetNavData(navData);
+    portEXIT_CRITICAL(&mutex);
+}
+
+void PanelManager::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+{
+    portENTER_CRITICAL(&mutex);
+    networkPage.SetNetworkStatus(networkStatus);
+    logoPage.SetNetworkStatus(networkStatus);
     portEXIT_CRITICAL(&mutex);
 }
 
@@ -186,8 +196,8 @@ void PanelManager::CommandCallback()
             currentPage = (PageHandler*)&clockPage;
             break;
         }
-        currentPage->SetNavData(navData);
         portEXIT_CRITICAL(&mutex);
+
         currentPage->Draw(commandFlags & COMMAND_EVENT_REFRESH);
     }
 }
