@@ -56,11 +56,11 @@ typedef struct {
 	bool connected;
 	uint32_t deviceId;
 	uint32_t networkId;
-	uint32_t nbDevicesInRange;
-	uint32_t lastCommMs;
 	MicronetCodec::NetworkMap networkMap;
+	uint32_t lastMasterCommMs;
 	uint32_t dataFields;
 	uint32_t splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
+	uint32_t nbDevicesInRange;
 	MicronetDeviceInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
 } MicronetNetworkState_t;
 
@@ -80,14 +80,19 @@ public:
 	void AddDataFields(uint32_t dataMask);
 	void ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
 	MicronetNetworkState_t &GetNetworkStatus();
+	void Yield();
 
 private:
 	MicronetCodec *micronetCodec;
 	uint8_t latestSignalStrength;
 	MicronetNetworkState_t networkState;
+	uint32_t pingTimeStamp;
 
 	void SplitDataFields();
 	uint8_t GetShortestDevice();
+	void UpdateDevicesInRange(MicronetMessage_t *message);
+	void RemoveLostDevices();
+	void PingNetwork(MicronetMessageFifo* messageFifo);
 };
 
 #endif /* MICRONETDEVICE_H_ */

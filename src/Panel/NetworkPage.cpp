@@ -59,7 +59,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-NetworkPage::NetworkPage(): deviceId(0)
+NetworkPage::NetworkPage(): deviceId(0), networkConnected(false)
 {
 }
 
@@ -69,16 +69,28 @@ NetworkPage::~NetworkPage()
 
 void NetworkPage::Draw(bool force)
 {
+    static const char noNetStr[] = "No Network";
+    int16_t xStr, yStr;
+    uint16_t wStr, hStr;
+
     if (display != nullptr)
     {
         display->clearDisplay();
-        DrawDeviceIcon(GetIconById(networkMap.masterDevice), 0, 5);
-        for (int i = 0; i < networkMap.nbSyncSlots; i++)
+        if (networkConnected)
         {
-            if ((networkMap.syncSlot[i].deviceId >> 24) != MICRONET_DEVICE_TYPE_NMEA_CONVERTER)
+            for (int i = 0; i < nbDevicesInRange; i++)
             {
-                DrawDeviceIcon(GetIconById(networkMap.syncSlot[i].deviceId), i + 1, 5);
+                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, (devicesInRange[i].radioLevel + 1) / 2);
             }
+        }
+        else
+        {
+            display->setTextColor(SSD1306_WHITE);
+            display->setTextSize(1);
+            display->setFont(&FreeSansBold9pt);
+            display->getTextBounds(String(noNetStr), 0, 0, &xStr, &yStr, &wStr, &hStr);
+            display->setCursor((SCREEN_WIDTH - wStr) / 2, (SCREEN_HEIGHT - yStr) / 2);
+            display->println(noNetStr);
         }
         display->display();
     }
@@ -136,16 +148,12 @@ unsigned char const* NetworkPage::GetIconById(uint32_t deviceId)
         break;
     }
 
-    if (bitmapPtr == T000_BITMAP)
-    {
-        Serial.println(deviceId, HEX);
-    }
-
     return bitmapPtr;
 }
 
 void NetworkPage::SetNetworkStatus(MicronetNetworkState_t& networkStatus)
 {
+    networkConnected = networkStatus.connected;
     deviceId = networkStatus.deviceId;
     this->networkMap.networkId = networkStatus.networkMap.networkId;
     this->networkMap.nbDevices = networkStatus.networkMap.nbDevices;
@@ -154,5 +162,10 @@ void NetworkPage::SetNetworkStatus(MicronetNetworkState_t& networkStatus)
     for (int i = 0; i < this->networkMap.nbSyncSlots; i++)
     {
         this->networkMap.syncSlot[i] = networkStatus.networkMap.syncSlot[i];
+    }
+    nbDevicesInRange = networkStatus.nbDevicesInRange;
+    for (int i = 0; i < nbDevicesInRange; i++)
+    {
+        devicesInRange[i] = networkStatus.devicesInRange[i];
     }
 }

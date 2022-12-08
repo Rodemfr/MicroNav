@@ -1175,23 +1175,23 @@ uint8_t MicronetCodec::CalculateSignalStrength(MicronetMessage_t* message)
 {
 	int16_t rssi = message->rssi;
 
-	if (rssi < -95)
+	if (rssi < -90)
 		return 0;
-	else if (rssi < -90)
-		return 1;
 	else if (rssi < -85)
-		return 2;
+		return 1;
 	else if (rssi < -80)
-		return 3;
+		return 2;
 	else if (rssi < -75)
-		return 4;
+		return 3;
 	else if (rssi < -70)
-		return 5;
+		return 4;
 	else if (rssi < -65)
-		return 6;
+		return 5;
 	else if (rssi < -60)
-		return 7;
+		return 6;
 	else if (rssi < -55)
+		return 7;
+	else if (rssi < -50)
 		return 8;
 	else
 		return 9;

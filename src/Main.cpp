@@ -667,11 +667,6 @@ void MenuConvertToNmea()
         dataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
       }
     }
-    else
-    {
-      // TODO : Remove debug code
-      dataBridge.UpdateCompassData((millis() / 1000) % 360);
-    }
 
     if ((void*)(&CONSOLE) != (void*)(&NMEA_EXT))
     {
@@ -687,6 +682,7 @@ void MenuConvertToNmea()
 
     gMicronetCodec.navData.UpdateValidity();
 
+    micronetDevice.Yield();
     yield();
 
   } while (!exitNmeaLoop);
