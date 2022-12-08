@@ -31,6 +31,7 @@
 #include "LogoPage.h"
 #include "PanelResources.h"
 #include "MicronetDevice.h"
+#include "Globals.h"
 
 #include <Arduino.h>
 #include <Adafruit_GFX.h>
@@ -93,16 +94,17 @@ void LogoPage::Draw(bool force)
         display->print(versionStr);
         display->setCursor(0, SCREEN_HEIGHT - 16);
         display->print("NID  ");
-        snprintf(networkIdStr, sizeof(networkIdStr), "%08x", networkStatus.networkId);
-        display->print(networkIdStr);
+        if (gConfiguration.networkId != 0)
+        {
+            snprintf(networkIdStr, sizeof(networkIdStr), "%08x", gConfiguration.networkId);
+            display->print(networkIdStr);
+        }
+        else {
+            display->print("-");
+        }
         display->setCursor(0, SCREEN_HEIGHT - 8);
         display->print("NMEA USB");
 
         display->display();
     }
-}
-
-void LogoPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
-{
-    this->networkStatus = networkStatus;
 }

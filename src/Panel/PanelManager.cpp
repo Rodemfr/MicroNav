@@ -168,7 +168,6 @@ void PanelManager::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
 {
     portENTER_CRITICAL(&mutex);
     networkPage.SetNetworkStatus(networkStatus);
-    logoPage.SetNetworkStatus(networkStatus);
     portEXIT_CRITICAL(&mutex);
 }
 
