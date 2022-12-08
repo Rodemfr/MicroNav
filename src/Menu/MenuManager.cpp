@@ -30,6 +30,7 @@
 
 #include "BoardConfig.h"
 #include "MenuManager.h"
+#include "Globals.h"
 
 #include <Arduino.h>
 

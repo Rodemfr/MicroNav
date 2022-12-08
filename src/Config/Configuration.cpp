@@ -24,11 +24,12 @@
  ***************************************************************************
  */
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
 #include "Configuration.h"
+#include "BoardConfig.h"
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -83,6 +84,19 @@ typedef struct
 void Configuration::Init()
 {
 	EEPROM.begin(CONFIGURATION_EEPROM_SIZE);
+
+	if ((void*)(&NMEA_EXT) == (void*)(&BT_NMEA))
+	{
+		serialType = SERIAL_TYPE_BT;
+	}
+	else if ((void*)(&NMEA_EXT) == (void*)(&WIRED_NMEA))
+	{
+		serialType = SERIAL_TYPE_WIRED;
+	}
+	else if ((void*)(&NMEA_EXT) == (void*)(&USB_NMEA))
+	{
+		serialType = SERIAL_TYPE_USB;
+	}
 }
 
 Configuration::Configuration()
@@ -90,6 +104,7 @@ Configuration::Configuration()
 	// Set default configuration
 	navCompassAvailable = false;
 	displayAvailable = false;
+	serialType = SERIAL_TYPE_USB;
 	networkId = 0;
 	waterSpeedFactor_per = 1.0f;
 	waterTemperatureOffset_C = 0;
@@ -113,10 +128,10 @@ Configuration::~Configuration()
 
 void Configuration::LoadFromEeprom()
 {
-	ConfigBlock_t configBlock = {0};
+	ConfigBlock_t configBlock = { 0 };
 
 	EEPROM.get(0, configBlock);
-	uint8_t *pConfig = (uint8_t*) (&configBlock);
+	uint8_t* pConfig = (uint8_t*)(&configBlock);
 
 	if (configBlock.magicWord == CONFIG_MAGIC_NUMBER)
 	{
@@ -149,11 +164,11 @@ void Configuration::LoadFromEeprom()
 
 void Configuration::SaveToEeprom()
 {
-	ConfigBlock_t eepromBlock = {0};
-	ConfigBlock_t configBlock = {0};
+	ConfigBlock_t eepromBlock = { 0 };
+	ConfigBlock_t configBlock = { 0 };
 
-	uint8_t *pEepromBlock = (uint8_t*) (&eepromBlock);
-	uint8_t *pConfig = (uint8_t*) (&configBlock);
+	uint8_t* pEepromBlock = (uint8_t*)(&eepromBlock);
+	uint8_t* pConfig = (uint8_t*)(&configBlock);
 	uint8_t checksum = 0;
 
 	EEPROM.get(0, eepromBlock);
@@ -194,29 +209,29 @@ void Configuration::SaveToEeprom()
 
 void Configuration::SaveCalibration(MicronetCodec& micronetCodec)
 {
-  waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
-  waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
-  depthOffset_m = micronetCodec.navData.depthOffset_m;
-  windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
-  windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
-  headingOffset_deg = micronetCodec.navData.headingOffset_deg;
-  magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
-  windShift = micronetCodec.navData.windShift_min;
-  timeZone_h = micronetCodec.navData.timeZone_h;
+	waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
+	waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
+	depthOffset_m = micronetCodec.navData.depthOffset_m;
+	windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
+	windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
+	headingOffset_deg = micronetCodec.navData.headingOffset_deg;
+	magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
+	windShift = micronetCodec.navData.windShift_min;
+	timeZone_h = micronetCodec.navData.timeZone_h;
 
-  SaveToEeprom();
+	SaveToEeprom();
 }
 
 void Configuration::LoadCalibration(MicronetCodec* micronetCodec)
 {
-  micronetCodec->navData.waterSpeedFactor_per = waterSpeedFactor_per;
-  micronetCodec->navData.waterTemperatureOffset_degc = waterTemperatureOffset_C;
-  micronetCodec->navData.depthOffset_m = depthOffset_m;
-  micronetCodec->navData.windSpeedFactor_per = windSpeedFactor_per;
-  micronetCodec->navData.windDirectionOffset_deg = windDirectionOffset_deg;
-  micronetCodec->navData.headingOffset_deg = headingOffset_deg;
-  micronetCodec->navData.magneticVariation_deg = magneticVariation_deg;
-  micronetCodec->navData.windShift_min = windShift;
-  micronetCodec->navData.timeZone_h = timeZone_h;
+	micronetCodec->navData.waterSpeedFactor_per = waterSpeedFactor_per;
+	micronetCodec->navData.waterTemperatureOffset_degc = waterTemperatureOffset_C;
+	micronetCodec->navData.depthOffset_m = depthOffset_m;
+	micronetCodec->navData.windSpeedFactor_per = windSpeedFactor_per;
+	micronetCodec->navData.windDirectionOffset_deg = windDirectionOffset_deg;
+	micronetCodec->navData.headingOffset_deg = headingOffset_deg;
+	micronetCodec->navData.magneticVariation_deg = magneticVariation_deg;
+	micronetCodec->navData.windShift_min = windShift;
+	micronetCodec->navData.timeZone_h = timeZone_h;
 }
 

@@ -110,7 +110,7 @@ void setup()
   }
   else
   {
-    Serial.println("AXP192 Configuration failed");
+    CONSOLE.println("AXP192 Configuration failed");
   }
 
   // Load configuration from EEPROM
@@ -119,6 +119,8 @@ void setup()
 
   // Init USB serial link
   USB_NMEA.begin(USB_BAUDRATE);
+
+  BT_NMEA.begin(String("MicroNav"));
 
   CONSOLE.print("MicroNav v");
   CONSOLE.print(SW_MAJOR_VERSION);

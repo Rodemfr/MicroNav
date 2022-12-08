@@ -103,7 +103,24 @@ void LogoPage::Draw(bool force)
             display->print("-");
         }
         display->setCursor(0, SCREEN_HEIGHT - 8);
-        display->print("NMEA USB");
+        switch (gConfiguration.serialType)
+        {
+        case SERIAL_TYPE_USB:
+            display->print("NMEA USB");
+            break;
+        case SERIAL_TYPE_BT:
+            display->print("NMEA Bluetooth");
+            break;
+        case SERIAL_TYPE_WIRED:
+            display->print("NMEA RS232");
+            break;
+        case SERIAL_TYPE_WIFI:
+            display->print("NMEA WiFi");
+            break;
+        default:
+            display->print("NMEA Default");
+            break;
+        }
 
         display->display();
     }

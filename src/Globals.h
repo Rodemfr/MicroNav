@@ -43,6 +43,8 @@
 #include "M8NDriver.h"
 #include "PanelManager.h"
 
+#include <BluetoothSerial.h>
+
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
@@ -63,6 +65,7 @@ extern NavCompass gNavCompass;
 extern M8NDriver gM8nDriver;
 extern PanelManager gPanelDriver;
 extern MicronetCodec gMicronetCodec;
+extern BluetoothSerial gBtSerial;
 
 /***************************************************************************/
 /*                              Prototypes                                 */

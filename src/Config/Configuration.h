@@ -43,6 +43,13 @@
 /*                                Types                                    */
 /***************************************************************************/
 
+typedef enum {
+	SERIAL_TYPE_USB = 0,
+	SERIAL_TYPE_WIRED,
+	SERIAL_TYPE_BT,
+	SERIAL_TYPE_WIFI
+} SerialType_t;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -62,6 +69,7 @@ public:
 	// The following parameters are NOT loaded/saved from/to EEPROM
 	bool navCompassAvailable;
 	bool displayAvailable;
+	SerialType_t serialType;
 
 	// The following parameters are loaded/saved from/to EEPROM
 	uint32_t networkId;

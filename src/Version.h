@@ -37,8 +37,8 @@
 
 // MicroNav SW version
 #define SW_MAJOR_VERSION 0
-#define SW_MINOR_VERSION 1
-#define SW_PATCH_VERSION 5
+#define SW_MINOR_VERSION 2
+#define SW_PATCH_VERSION 0
 
 /***************************************************************************/
 /*                                Types                                    */

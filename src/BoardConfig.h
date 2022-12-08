@@ -31,6 +31,8 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "Globals.h"
+
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
@@ -65,6 +67,9 @@
 #define USB_NMEA     Serial
 #define USB_BAUDRATE 115200
 
+// Bluettooh serial
+#define BT_NMEA gBtSerial
+
 // Wired UART params
 #define WIRED_NMEA     Serial1
 #define WIRED_BAUDRATE 115200
@@ -72,8 +77,8 @@
 #define WIRED_TX_PIN   14
 
 // The console to use for menu and NMEA output
-#define CONSOLE  USB_NMEA
-#define NMEA_EXT USB_NMEA
+#define CONSOLE  BT_NMEA
+#define NMEA_EXT BT_NMEA
 
 // Button for user interaction
 #define BUTTON_PIN      38
@@ -85,7 +90,7 @@
 #define PMU_IRQ     35
 
 // Defines with data comes from which link
-// LINK_NMEA_EXT  -> data comes from external NMEA link (WIRED_NMEA)
+// LINK_NMEA_EXT  -> data comes from external NMEA link (NMEA_EXT)
 // LINK_NMEA_GNSS -> data comes from GNSS NMEA link (GNSS_SERIAL)
 // LINK_MICRONET  -> data comes from Micronet network
 // LINK_COMPASS   -> data comes from LSM303 (NAVCOMPASS_I2C)
@@ -96,7 +101,7 @@
 #define SPEED_SOURCE_LINK   LINK_MICRONET  // Speed data (SPD, LOG)
 #define VOLTAGE_SOURCE_LINK LINK_MICRONET  // Battery voltage data (XDG)
 #define SEATEMP_SOURCE_LINK LINK_MICRONET  // Temperature data (STP)
-#define COMPASS_SOURCE_LINK LINK_COMPASS  // Heading data (HDG)
+#define COMPASS_SOURCE_LINK LINK_MICRONET  // Heading data (HDG)
 
 // Navigation softwares can send a wrong RMB sentence and invert "FROM" and "TO" fields
 // If you see your Micronet display showing the "FROM" waypoint name instead of the "TO"
