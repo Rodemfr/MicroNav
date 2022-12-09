@@ -62,3 +62,8 @@ void PageHandler::SetDisplay(Adafruit_SSD1306* display)
 {
     this->display = display;
 }
+
+PageAction_t PageHandler::OnButtonPressed(bool longPress)
+{
+    return (longPress?PAGE_ACTION_NONE:PAGE_ACTION_NEXT_PAGE);
+}

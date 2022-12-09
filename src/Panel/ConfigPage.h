@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Config page                                      *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,15 +24,14 @@
  ***************************************************************************
  */
 
-#ifndef PAGEHANDLER_H_
-#define PAGEHANDLER_H_
+#ifndef CONFIGPAGE_H_
+#define CONFIGPAGE_H_
 
-/***************************************************************************/
-/*                              Includes                                   */
-/***************************************************************************/
+ /***************************************************************************/
+ /*                              Includes                                   */
+ /***************************************************************************/
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "PageHandler.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -42,28 +41,50 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum {
-    PAGE_ACTION_NONE = 0,
-    PAGE_ACTION_NEXT_PAGE,
-    PAGE_ACTION_REFRESH
-} PageAction_t;
-
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
-class PageHandler
+class ConfigPage1 : public PageHandler
 {
 public:
-    PageHandler();
-    virtual ~PageHandler() = 0;
+    ConfigPage1();
+    virtual ~ConfigPage1();
 
-    void SetDisplay(Adafruit_SSD1306 *display);
-    virtual void Draw(bool force) = 0;
-    virtual PageAction_t OnButtonPressed(bool longPress);
+    void Draw(bool force);
+    PageAction_t OnButtonPressed(bool longPress);
 
-protected:
-    Adafruit_SSD1306 *display;
+private:
+    uint8_t swMajorVersion, swMinorVersion;
+    uint32_t swPatchVersion;
+    bool editMode;
+    uint32_t editPosition;
+
+    uint32_t configFreqSel;
+    uint32_t configNmeaSel;
+    uint32_t configCompassSel;
+    uint32_t configGnssSel;
+    uint32_t configWindSel;
+    uint32_t configDepthSel;
+    uint32_t configSpeedSel;
+
+    char const *ConfigString(uint32_t index);
+    char const *ConfigFreqString();
+    char const *ConfigNmeaString();
+    char const *ConfigCompassString();
+    char const *ConfigGnssString();
+    char const *ConfigWindString();
+    char const *ConfigDepthString();
+    char const *ConfigSpeedString();
+
+    void ConfigCycle(uint32_t index);
+    void ConfigFreqCycle();
+    void ConfigNmeaCycle();
+    void ConfigCompassCycle();
+    void ConfigGnssCycle();
+    void ConfigWindCycle();
+    void ConfigDepthCycle();
+    void ConfigSpeedCycle();
 };
 
 #endif

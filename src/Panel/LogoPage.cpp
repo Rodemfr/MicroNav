@@ -83,44 +83,15 @@ void LogoPage::Draw(bool force)
     if (display != nullptr)
     {
         display->clearDisplay();
-        display->drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
+        display->drawBitmap(0, (SCREEN_HEIGHT - LOGO_HEIGHT) / 2 - 4, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
 
         display->setTextColor(SSD1306_WHITE);
         display->setTextSize(1);
         display->setFont(nullptr);
         snprintf(versionStr, sizeof(versionStr), "v%d.%d.%d", swMajorVersion, swMinorVersion, swPatchVersion);
         display->getTextBounds(String(versionStr), 0, 0, &xVersion, &yVersion, &wVersion, &hVersion);
-        display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 2);
+        display->setCursor(SCREEN_WIDTH - wVersion, (SCREEN_HEIGHT - LOGO_HEIGHT) / 2 - 4 + LOGO_HEIGHT - yVersion + 2);
         display->print(versionStr);
-        display->setCursor(0, SCREEN_HEIGHT - 16);
-        display->print("NID  ");
-        if (gConfiguration.networkId != 0)
-        {
-            snprintf(networkIdStr, sizeof(networkIdStr), "%08x", gConfiguration.networkId);
-            display->print(networkIdStr);
-        }
-        else {
-            display->print("-");
-        }
-        display->setCursor(0, SCREEN_HEIGHT - 8);
-        switch (gConfiguration.serialType)
-        {
-        case SERIAL_TYPE_USB:
-            display->print("NMEA USB");
-            break;
-        case SERIAL_TYPE_BT:
-            display->print("NMEA Bluetooth");
-            break;
-        case SERIAL_TYPE_WIRED:
-            display->print("NMEA RS232");
-            break;
-        case SERIAL_TYPE_WIFI:
-            display->print("NMEA WiFi");
-            break;
-        default:
-            display->print("NMEA Default");
-            break;
-        }
 
         display->display();
     }

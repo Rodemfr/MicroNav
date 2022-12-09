@@ -35,6 +35,7 @@
 #include "LogoPage.h"
 #include "ClockPage.h"
 #include "NetworkPage.h"
+#include "ConfigPage.h"
 #include "NavigationData.h"
 #include "MicronetDevice.h"
 
@@ -48,6 +49,7 @@ enum {
     PAGE_LOGO = 0,
     PAGE_CLOCK,
     PAGE_NETWORK,
+    PAGE_CONFIG,
     PAGE_MAX_PAGES
 } PanelPages_t;
 
@@ -84,6 +86,7 @@ private:
     LogoPage logoPage;
     ClockPage clockPage;
     NetworkPage networkPage;
+    ConfigPage1 configPage;
     portMUX_TYPE commandMutex;
     portMUX_TYPE buttonMutex;
     NavigationData* navData;

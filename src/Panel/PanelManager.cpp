@@ -52,8 +52,8 @@
 
 #define TASK_WAKEUP_PERIOD      200
 #define DISPLAY_UPDATE_PERIOD   1000
-#define BUTTON_LONG_PRESS_DELAY 2000
-#define BUTTON_SHORT_PRESS_MIN  150
+#define BUTTON_LONG_PRESS_DELAY 1500
+#define BUTTON_SHORT_PRESS_MIN  250
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -95,6 +95,7 @@ bool PanelManager::Init()
         logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
         clockPage.SetDisplay(&display);
         networkPage.SetDisplay(&display);
+        configPage.SetDisplay(&display);
 
         pageNumber = 0;
 
@@ -204,9 +205,20 @@ void PanelManager::CommandCallback()
         if ((localButtonPressed == true) && ((now - localLastPress) > BUTTON_LONG_PRESS_DELAY) && !longPress)
         {
             longPress = true;
+            switch (currentPage->OnButtonPressed(true))
+            {
+            case PAGE_ACTION_NEXT_PAGE:
+                NextPage();
+                commandFlags |= COMMAND_EVENT_REFRESH;
+                break;
+            case PAGE_ACTION_REFRESH:
+                commandFlags |= COMMAND_EVENT_REFRESH;
+                break;
+            }
         }
 
-        if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) && ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN))
+        if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) && (localButtonPressed == false) &&
+            ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN))
         {
             if (longPress)
             {
@@ -215,8 +227,16 @@ void PanelManager::CommandCallback()
             else
             {
                 // Short press
-                NextPage();
-                commandFlags |= COMMAND_EVENT_REFRESH;
+                switch (currentPage->OnButtonPressed(false))
+                {
+                case PAGE_ACTION_NEXT_PAGE:
+                    NextPage();
+                    commandFlags |= COMMAND_EVENT_REFRESH;
+                    break;
+                case PAGE_ACTION_REFRESH:
+                    commandFlags |= COMMAND_EVENT_REFRESH;
+                    break;
+                }
             }
         }
 
@@ -234,6 +254,9 @@ void PanelManager::CommandCallback()
                 break;
             case PAGE_CLOCK:
                 currentPage = (PageHandler*)&clockPage;
+                break;
+            case PAGE_CONFIG:
+                currentPage = (PageHandler*)&configPage;
                 break;
             }
             portEXIT_CRITICAL(&commandMutex);
