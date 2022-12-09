@@ -4,14 +4,14 @@
 
 ## Description
 
-MicroNav is a ESP32/Arduino project aiming at converting data from Raymarine/Tacktick wireless network called "Micronet" to a standard NMEA0183 stream, easily useable by your laptop or tablet software.
+MicroNav is a ESP32/Arduino project aiming at converting data from Raymarine/Tacktick wireless network called *Micronet* to a standard NMEA0183 stream, easily useable by your laptop or tablet software.
 
-MicroNav is the successor of [MicronetToNMEA](https://github.com/Rodemfr/MicronetToNMEA) project. It is aimed at using a hardware platform easier to find, cheaper and with less soldering work.
+MicroNav is the successor of [MicronetToNMEA](https://github.com/Rodemfr/MicronetToNMEA) project. It aims at using a simpler, cheaper hardware platform with less soldering work.
 
 MicroNav can :
 
-- Send T-Beam's GPS data to you Micronet network (Position, COG, SOG, Date, Time) and to the NMEA link (GGA, RMC, VTG)
-- Send Navigation data from a navigation software to Micronet network (BTW, DTW, XTE, WP Name)
+- Send T-Beam's GPS data to your Micronet network (Position, COG, SOG, DATE, TIME) and to the NMEA link (GGA, RMC, VTG)
+- Send Navigation/guidance data from a navigation software (OpenCPN, AvNav, qtVlm) to Micronet network (BTW, DTW, XTE, WPNAME)
 - Send Micronet's data to the NMEA link (MWV, DPT, MTW, VLW, VHW, HDG, XDR)
 - Send Magnetic heading from LSM303DLHC to Micronet network and NMEA link
 - Be configured to match your boat configuration : you can select which set of data is received from which link (NMEA, Micronet, GPS or LSM303)
@@ -75,8 +75,10 @@ Fully operational:
 Not tested:
 - Micronet RX/TX with SX1276 at 915Mhz
 
-Not working/developped:
+Not working:
 - LSM303DLHC Driver (Magnetic heading)
+
+Not developped:
 - NMEA through WiFi
-- Interactive configuration through OLED display & button
-- Power saving & battery handling
+- Interactive configuration using OLED display & button
+- Power saving , power off & battery handling
