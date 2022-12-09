@@ -630,7 +630,6 @@ void MenuConvertToNmea()
       gRfDriver.Transmit(&txMessageFifo);
 
       dataBridge.UpdateMicronetData();
-      gPanelDriver.SetNetworkStatus(micronetDevice.GetNetworkStatus());
 
       if (gMicronetCodec.navData.calibrationUpdated)
       {
@@ -685,6 +684,7 @@ void MenuConvertToNmea()
     gMicronetCodec.navData.UpdateValidity();
 
     micronetDevice.Yield();
+    gPanelDriver.SetNetworkStatus(micronetDevice.GetNetworkStatus());
     yield();
 
   } while (!exitNmeaLoop);
