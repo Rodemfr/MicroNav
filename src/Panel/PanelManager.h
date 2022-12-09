@@ -84,13 +84,18 @@ private:
     LogoPage logoPage;
     ClockPage clockPage;
     NetworkPage networkPage;
-    portMUX_TYPE mutex;
+    portMUX_TYPE commandMutex;
+    portMUX_TYPE buttonMutex;
     NavigationData* navData;
     MicronetNetworkState_t networkStatus;
+    uint32_t lastRelease = 0;
+    uint32_t lastPress = 0;
+    bool buttonPressed = false;
 
     static PanelManager* objectPtr;
     static void CommandProcessingTask(void* parameter);
-    static void ButtonHighIsr();
+    static void StaticButtonIsr();
+    void ButtonIsr();
 
     void CommandCallback();
 };
