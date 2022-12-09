@@ -1,6 +1,6 @@
-# MicroNav
-**A Micronet / NMEA bridge for TTGO T-Beam V1.1 boards**
+![](images/micronav.png)
 
+**A Micronet / NMEA bridge for TTGO T-Beam V1.1 boards**
 
 ## Description
 
