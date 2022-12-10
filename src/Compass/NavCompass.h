@@ -2,7 +2,9 @@
  *                                                                         *
  * Project:  MicroNav                                                      *
  * Purpose:  Compass handler                                               *
- * Author:   Ronan Demoment                                                *
+ * Author:   Ronan Demoment, Dietmar Warning                               *
+ *           Heading algorithm heavily based on pololu's code :            *
+ *           https://github.com/pololu/lsm303-arduino                      *
  *                                                                         *
  ***************************************************************************
  *   Copyright (C) 2021 by Ronan Demoment                                  *
@@ -27,14 +29,30 @@
 #ifndef NAVCOMPASS_H_
 #define NAVCOMPASS_H_
 
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
+
 #include "NavCompassDriver.h"
 
 #include <stdint.h>
 #include <string>
 
+/***************************************************************************/
+/*                              Constants                                  */
+/***************************************************************************/
+
+#define HEADING_HISTORY_LENGTH 4
+
+/***************************************************************************/
+/*                                Types                                    */
+/***************************************************************************/
+
 using string = std::string;
 
-#define HEADING_HISTORY_LENGTH 8
+/***************************************************************************/
+/*                               Classes                                   */
+/***************************************************************************/
 
 class NavCompass
 {
@@ -53,6 +71,10 @@ private:
 	uint32_t headingIndex;
 	bool navCompassDetected;
 	NavCompassDriver *navCompassDriver;
+
+	void Normalize(vec *a);
+	void CrossProduct(vec *a, vec *b, vec *out);
+	float vector_dot(vec *a, vec *b);
 };
 
 #endif /* NAVCOMPASS_H_ */

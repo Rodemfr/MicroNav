@@ -2,7 +2,7 @@
  *                                                                         *
  * Project:  MicroNav                                                      *
  * Purpose:  Driver for LSM303DLH                                          *
- * Author:   Ronan Demoment                                                *
+ * Author:   Ronan Demoment, Dietmar Warning                               *
  *                                                                         *
  ***************************************************************************
  *   Copyright (C) 2021 by Ronan Demoment                                  *
@@ -41,11 +41,11 @@
 /*                                Types                                    */
 /***************************************************************************/
 
+using string = std::string;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
-
-using string = std::string;
 
 class LSM303DLHDriver : public NavCompassDriver
 {
@@ -55,13 +55,11 @@ public:
 
 	virtual bool Init() override;
 	virtual string GetDeviceName() override;
-	virtual void GetMagneticField(float *magX, float* magY, float *magZ) override;
-	virtual void GetAcceleration(float *accX, float* accY, float *accZ) override;
+	virtual void GetMagneticField(vec *mag) override;
+	virtual void GetAcceleration(vec *acc) override;
 
 private:
 	uint8_t accAddr, magAddr;
-	float magX, magY, magZ;
-	float accX, accY, accZ;
 	float LsbPerGaussXY;
 	float LsbPerGaussZ;
 	float GPerLsb;

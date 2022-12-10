@@ -2,7 +2,7 @@
  *                                                                         *
  * Project:  MicroNav                                                      *
  * Purpose:  Driver for LSM303DLH                                          *
- * Author:   Ronan Demoment                                                *
+ * Author:   Ronan Demoment, Dietmar Warning                               *
  *                                                                         *
  ***************************************************************************
  *   Copyright (C) 2021 by Ronan Demoment                                  *
@@ -94,7 +94,7 @@
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                           Static & Globals                              */
 /***************************************************************************/
 
 /***************************************************************************/
@@ -103,7 +103,7 @@
 
 // Constructor
 LSM303DLHDriver::LSM303DLHDriver() :
-		accAddr(LSM303DLH_ACC_ADDR), magAddr(LSM303DLH_MAG_ADDR), magX(0), magY(0), magZ(0), accX(0), accY(0), accZ(0), LsbPerGaussXY(1100.0f), LsbPerGaussZ(980.0f), GPerLsb(1.0f)
+		accAddr(LSM303DLH_ACC_ADDR), magAddr(LSM303DLH_MAG_ADDR), LsbPerGaussXY(1100.0f), LsbPerGaussZ(980.0f), GPerLsb(1.0f)
 {
 }
 
@@ -183,7 +183,7 @@ string LSM303DLHDriver::GetDeviceName()
 
 // Returns magnetic field measurements on X, Y and Z axis
 // Unit is Gauss
-void LSM303DLHDriver::GetMagneticField(float *magX, float *magY, float *magZ)
+void LSM303DLHDriver::GetMagneticField(vec *mag)
 {
 	uint8_t magBuffer[6];
 	int16_t mx, my, mz;
@@ -197,14 +197,14 @@ void LSM303DLHDriver::GetMagneticField(float *magX, float *magY, float *magZ)
 	mz = ((int16_t) (magBuffer[4] << 8)) | magBuffer[5];
 
 	// Convert to proper unit (Gauss)
-	*magX = -mx / LsbPerGaussXY;
-	*magY = -my / LsbPerGaussXY;
-	*magZ = mz / LsbPerGaussZ;
+	mag->x = -mx / LsbPerGaussXY;
+	mag->y = -my / LsbPerGaussXY;
+	mag->z = mz / LsbPerGaussZ;
 }
 
 // Returns linear acceleration measurements on X, Y and Z axis
 // Unit is G
-void LSM303DLHDriver::GetAcceleration(float *accX, float *accY, float *accZ)
+void LSM303DLHDriver::GetAcceleration(vec *acc)
 {
 	int16_t ax, ay, az;
 	uint8_t regValue = 0;
@@ -227,9 +227,9 @@ void LSM303DLHDriver::GetAcceleration(float *accX, float *accY, float *accZ)
 	az = (az << 8) | regValue;
 
 	// Convert to G
-	*accX = -ax * GPerLsb;
-	*accY = -ay * GPerLsb;
-	*accZ = az * GPerLsb;
+	acc->x = -ax * GPerLsb;
+	acc->y = -ay * GPerLsb;
+	acc->z = az * GPerLsb;
 }
 
 // TODO : Create a static class to drive I2C so that this code will not be duplicated for each compass driver

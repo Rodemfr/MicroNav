@@ -2,7 +2,9 @@
  *                                                                         *
  * Project:  MicroNav                                                      *
  * Purpose:  Compass handler                                               *
- * Author:   Ronan Demoment                                                *
+ * Author:   Ronan Demoment, Dietmar Warning                               *
+ *           Heading algorithm heavily based on pololu's code :            *
+ *           https://github.com/pololu/lsm303-arduino                      *
  *                                                                         *
  ***************************************************************************
  *   Copyright (C) 2021 by Ronan Demoment                                  *
@@ -34,6 +36,9 @@
 #include "LSM303DLHDriver.h"
 #include "LSM303DLHCDriver.h"
 
+#include <vector>
+#include <cmath>
+
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
@@ -47,7 +52,7 @@
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                           Static & Globals                              */
 /***************************************************************************/
 
 /***************************************************************************/
@@ -100,46 +105,42 @@ string NavCompass::GetDeviceName()
 
 float NavCompass::GetHeading()
 {
-	float magX, magY, magZ;
-	float accelX, accelY, accelZ;
-	float starboardY, starboardZ;
-	float starboardNorm;
-	float pStarboard;
-	float bowX, bowY, bowZ;
-	float bowNorm;
-	float pBow;
+	vec accel;
+	vec mag;
+	vec from =
+	{ 1.0f, 0.0f, 0.0f }; // x axis is reference direction
+	vec E;
+	vec N;
 
 	// Get Acceleration and Magnetic data from LSM303
 	// Note that we don't care about units of both acceleration and magnetic field since we
 	// are only calculating angles.
-	navCompassDriver->GetAcceleration(&accelX, &accelY, &accelZ);
-	navCompassDriver->GetMagneticField(&magX, &magY, &magZ);
+	navCompassDriver->GetAcceleration(&accel);
+	navCompassDriver->GetMagneticField(&mag);
 
 	// Substract calibration offsets from magnetic readings
-	magX -= gConfiguration.xMagOffset;
-	magY -= gConfiguration.yMagOffset;
-	magZ -= gConfiguration.zMagOffset;
+	mag.x -= gConfiguration.xMagOffset;
+	mag.y -= gConfiguration.yMagOffset;
+	mag.z -= gConfiguration.zMagOffset;
 
-	// Build starboard axis from Nav Compass X axis & gravity vector
-	starboardY = -accelZ;
-	starboardZ = accelY;
-	starboardNorm = sqrtf(starboardY * starboardY + starboardZ * starboardZ);
+	// normalize
+	Normalize(&accel);
+	Normalize(&mag);
 
-	// Build starboard axis from starboard axis & gravity vector
-	bowX = (accelY * accelY) + (accelZ * accelZ);
-	bowY = accelX * accelY;
-	bowZ = accelX * accelZ;
-	bowNorm = sqrtf(bowX * bowX + bowY * bowY + bowZ * bowZ);
+	// D X M = E, cross acceleration vector Down with M (magnetic north + inclination) to produce "East"
+	CrossProduct(&mag, &accel, &E);
+	Normalize(&E);
+	// E X D = N, cross "East" with "Down" to produce "North" (parallel to the ground)
+	CrossProduct(&accel, &E, &N);
+	Normalize(&N);
 
-	// Project magnetic field on bow & starboard axis
-	pBow = (magX * bowX + magY * bowY + magZ * bowZ) / bowNorm;
-	pStarboard = (magY * starboardY + magZ * starboardZ) / starboardNorm;
+	// compute heading
+	float heading = atan2f(vector_dot(&E, &from), vector_dot(&N, &from)) * 180.0f / PI;
 
-	float angle = atan2(-pStarboard, pBow) * 180 / M_PI;
-	if (angle < 0)
-		angle += 360;
+	if (heading < 0)
+		heading += 360;
 
-	headingHistory[headingIndex++] = angle;
+	headingHistory[headingIndex++] = heading;
 	if (headingIndex >= HEADING_HISTORY_LENGTH)
 	{
 		headingIndex = 0;
@@ -150,28 +151,35 @@ float NavCompass::GetHeading()
 	bool shiftAngle = false;
 	for (int i = 0; i < HEADING_HISTORY_LENGTH; i++)
 	{
-		if (headingHistory[i] < 90.0) firstQ = true;
-		if (headingHistory[i] > 270.0) lastQ = true;
+		if (headingHistory[i] < 90.0)
+			firstQ = true;
+		if (headingHistory[i] > 270.0)
+			lastQ = true;
 	}
 	shiftAngle = firstQ && lastQ;
 
-	angle = 0.0f;
+	heading = 0.0f;
 	for (int i = 0; i < HEADING_HISTORY_LENGTH; i++)
 	{
 		float value = headingHistory[i];
 		if (shiftAngle && (value > 270.0))
 			value -= 360.0;
-		angle += value;
+		heading += value;
 	}
 
-	return angle / HEADING_HISTORY_LENGTH;
+	return heading / HEADING_HISTORY_LENGTH;
 }
 
 void NavCompass::GetMagneticField(float *magX, float *magY, float *magZ)
 {
 	if (navCompassDetected)
 	{
-		navCompassDriver->GetMagneticField(magX, magY, magZ);
+		vec mag;
+
+		navCompassDriver->GetMagneticField(&mag);
+		*magX = mag.x;
+		*magY = mag.y;
+		*magZ = mag.z;
 	}
 }
 
@@ -179,6 +187,32 @@ void NavCompass::GetAcceleration(float *accX, float *accY, float *accZ)
 {
 	if (navCompassDetected)
 	{
-		navCompassDriver->GetAcceleration(accX, accY, accZ);
+		vec acc;
+
+		navCompassDriver->GetAcceleration(&acc);
+		*accX = acc.x;
+		*accY = acc.y;
+		*accZ = acc.z;
 	}
 }
+
+void NavCompass::Normalize(vec *a)
+{
+	float mag = sqrt(vector_dot(a, a));
+	a->x /= mag;
+	a->y /= mag;
+	a->z /= mag;
+}
+
+void NavCompass::CrossProduct(vec *a, vec *b, vec *out)
+{
+	out->x = (a->y * b->z) - (a->z * b->y);
+	out->y = (a->z * b->x) - (a->x * b->z);
+	out->z = (a->x * b->y) - (a->y * b->x);
+}
+
+float NavCompass::vector_dot(vec *a, vec *b)
+{
+	return (a->x * b->x) + (a->y * b->y) + (a->z * b->z);
+}
+
