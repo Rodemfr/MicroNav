@@ -39,7 +39,7 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-const int gMonthLength[13] = {0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+const int gMonthLength[13] = { 0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -57,8 +57,7 @@ const int gMonthLength[13] = {0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 /*                              Functions                                  */
 /***************************************************************************/
 
-ClockPage::ClockPage() : prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0),
-prevTimeValid(false), prevDateValid(false)
+ClockPage::ClockPage(): prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(false), prevDateValid(false)
 {
 }
 
@@ -157,13 +156,13 @@ void ClockPage::Draw(bool force)
             dateStr[8] = ((year / 10) % 10) + '0';
             dateStr[9] = (year % 10) + '0';
 
-        if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
-        {
-            updateDisplay = true;
-            prevDay = day;
-            prevMonth = month;
-            prevYear = year;
-        }
+            if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
+            {
+                updateDisplay = true;
+                prevDay = day;
+                prevMonth = month;
+                prevYear = year;
+            }
         }
         else {
             dateStr[0] = '-';

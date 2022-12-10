@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "ConfigPage.h"
 #include "PanelResources.h"
@@ -108,15 +108,15 @@ void ConfigPage1::Draw(bool force)
 
         if (editMode && (editPosition == NUMBER_OF_CONFIG_ITEMS))
         {
-            display->fillRect(52, 64 - 8, 4 * 6, 8, SSD1306_WHITE);
+            display->fillRect(31, 64 - 8, 11 * 6, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
         }
         else
         {
             display->setTextColor(SSD1306_WHITE);
         }
-        display->setCursor(52, 64 - 8);
-        display->print("EXIT");
+        display->setCursor(31, 64 - 8);
+        display->print("Save & Exit");
         display->display();
     }
 }

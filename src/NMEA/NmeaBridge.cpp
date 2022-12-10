@@ -152,7 +152,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 						DecodeRMCSentence(nmeaBuffer);
 						if (sourceLink != LINK_NMEA_EXT)
 						{
-							NMEA_EXT.println(nmeaBuffer);
+							gConfiguration.ram.nmeaLink->println(nmeaBuffer);
 						}
 					}
 					break;
@@ -162,7 +162,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 						DecodeGGASentence(nmeaBuffer);
 						if (sourceLink != LINK_NMEA_EXT)
 						{
-							NMEA_EXT.println(nmeaBuffer);
+							gConfiguration.ram.nmeaLink->println(nmeaBuffer);
 						}
 					}
 					break;
@@ -172,7 +172,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 						DecodeVTGSentence(nmeaBuffer);
 						if (sourceLink != LINK_NMEA_EXT)
 						{
-							NMEA_EXT.println(nmeaBuffer);
+							gConfiguration.ram.nmeaLink->println(nmeaBuffer);
 						}
 					}
 					break;
@@ -716,7 +716,7 @@ void NmeaBridge::EncodeMWV_R()
 			sprintf(sentence, "$INMWV,%.1f,R,%.1f,N,A", absAwa, micronetCodec->navData.aws_kt.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.vwr = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -740,7 +740,7 @@ void NmeaBridge::EncodeMWV_T()
 			sprintf(sentence, "$INMWV,%.1f,T,%.1f,N,A", absTwa, micronetCodec->navData.tws_kt.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.vwt = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -760,7 +760,7 @@ void NmeaBridge::EncodeDPT()
 			sprintf(sentence, "$INDPT,%.1f,0.0", micronetCodec->navData.dpt_m.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.dpt = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -780,7 +780,7 @@ void NmeaBridge::EncodeMTW()
 			sprintf(sentence, "$INMTW,%.1f,C", micronetCodec->navData.stp_degc.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.mtw = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -801,7 +801,7 @@ void NmeaBridge::EncodeVLW()
 			sprintf(sentence, "$INVLW,%.1f,N,%.1f,N", micronetCodec->navData.log_nm.value, micronetCodec->navData.trip_nm.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.vlw = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -833,7 +833,7 @@ void NmeaBridge::EncodeVHW()
 			}
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.vhw = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -854,7 +854,7 @@ void NmeaBridge::EncodeHDG()
 					(micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W' : 'E');
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.hdg = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }
@@ -873,7 +873,7 @@ void NmeaBridge::EncodeXDR()
 			sprintf(sentence, "$INXDR,U,%.1f,V,BATTERY#0", micronetCodec->navData.vcc_v.value);
 			AddNmeaChecksum(sentence);
 			nmeaTimeStamps.vcc = millis();
-			NMEA_EXT.println(sentence);
+			gConfiguration.ram.nmeaLink->println(sentence);
 		}
 	}
 }

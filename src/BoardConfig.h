@@ -63,22 +63,9 @@
 #define GNSS_RX_PIN   34
 #define GNSS_TX_PIN   12
 
-// USB UART params
-#define USB_NMEA     Serial
-#define USB_BAUDRATE 115200
-
-// Bluettooh serial
-#define BT_NMEA gBtSerial
-
-// Wired UART params
-#define WIRED_NMEA     Serial1
-#define WIRED_BAUDRATE 115200
-#define WIRED_RX_PIN   13
-#define WIRED_TX_PIN   14
-
-// The console to use for menu and NMEA output
-#define CONSOLE  BT_NMEA
-#define NMEA_EXT BT_NMEA
+// The console to use for menu
+#define CONSOLE          Serial
+#define CONSOLE_BAUDRATE 115200
 
 // Button for user interaction
 #define BUTTON_PIN      38
@@ -101,7 +88,7 @@
 #define SPEED_SOURCE_LINK   LINK_MICRONET  // Speed data (SPD, LOG)
 #define VOLTAGE_SOURCE_LINK LINK_MICRONET  // Battery voltage data (XDG)
 #define SEATEMP_SOURCE_LINK LINK_MICRONET  // Temperature data (STP)
-#define COMPASS_SOURCE_LINK LINK_MICRONET  // Heading data (HDG)
+#define COMPASS_SOURCE_LINK LINK_COMPASS   // Heading data (HDG)
 
 // Navigation softwares can send a wrong RMB sentence and invert "FROM" and "TO" fields
 // If you see your Micronet display showing the "FROM" waypoint name instead of the "TO"

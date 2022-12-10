@@ -119,9 +119,9 @@ float NavCompass::GetHeading()
 	navCompassDriver->GetMagneticField(&mag);
 
 	// Substract calibration offsets from magnetic readings
-	mag.x -= gConfiguration.xMagOffset;
-	mag.y -= gConfiguration.yMagOffset;
-	mag.z -= gConfiguration.zMagOffset;
+	mag.x -= gConfiguration.eeprom.xMagOffset;
+	mag.y -= gConfiguration.eeprom.yMagOffset;
+	mag.z -= gConfiguration.eeprom.zMagOffset;
 
 	// normalize
 	Normalize(&accel);

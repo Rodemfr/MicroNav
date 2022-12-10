@@ -118,9 +118,7 @@ void setup()
   gConfiguration.LoadFromEeprom();
 
   // Init USB serial link
-  USB_NMEA.begin(USB_BAUDRATE);
-
-  BT_NMEA.begin(String("MicroNav"));
+  CONSOLE.begin(CONSOLE_BAUDRATE);
 
   CONSOLE.print("MicroNav v");
   CONSOLE.print(SW_MAJOR_VERSION);
@@ -129,9 +127,6 @@ void setup()
 
   // Init GNSS NMEA serial link
   GNSS_SERIAL.begin(GNSS_BAUDRATE, SERIAL_8N1, GNSS_RX_PIN, GNSS_TX_PIN);
-
-  // Init wired serial link
-  WIRED_NMEA.begin(WIRED_BAUDRATE, SERIAL_8N1, WIRED_RX_PIN, WIRED_TX_PIN);
 
   // Let time for serial drivers to set-up
   delay(250);
@@ -147,7 +142,7 @@ void setup()
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
   if (!gRfDriver.Init(&gRxMessageFifo,
-    gConfiguration.rfFrequencyOffset_MHz))
+    gConfiguration.eeprom.rfFrequencyOffset_MHz))
   {
 
     while (1)
@@ -164,25 +159,25 @@ void setup()
   if (1) //!gNavCompass.Init())
   {
     CONSOLE.println("NOT DETECTED");
-    gConfiguration.navCompassAvailable = false;
+    gConfiguration.ram.navCompassAvailable = false;
   }
   else
   {
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" Found");
-    gConfiguration.navCompassAvailable = true;
+    gConfiguration.ram.navCompassAvailable = true;
   }
 
   CONSOLE.print("Initializing display ... ");
   if (!gPanelDriver.Init())
   {
     CONSOLE.println("NOT DETECTED");
-    gConfiguration.displayAvailable = false;
+    gConfiguration.ram.displayAvailable = false;
   }
   else
   {
     CONSOLE.println(" Found");
-    gConfiguration.displayAvailable = true;
+    gConfiguration.ram.displayAvailable = true;
   }
 
   gMicronetCodec.SetSwVersion(SW_MAJOR_VERSION, SW_MINOR_VERSION);
@@ -202,7 +197,7 @@ void loop()
 {
   // If this is the first loop, we verify if we are already attached to a
   // Micronet network. if yes, We directly jump to NMEA conversion mode.
-  if ((firstLoop) && (gConfiguration.networkId != 0))
+  if ((firstLoop) && (gConfiguration.eeprom.networkId != 0))
   {
     MenuConvertToNmea();
     gMenuManager.PrintMenu();
@@ -367,12 +362,12 @@ void MenuAbout()
   CONSOLE.println(SW_MINOR_VERSION, DEC);
 
   CONSOLE.print("Device ID : ");
-  CONSOLE.println(gConfiguration.deviceId, HEX);
+  CONSOLE.println(gConfiguration.eeprom.deviceId, HEX);
 
-  if (gConfiguration.networkId != 0)
+  if (gConfiguration.eeprom.networkId != 0)
   {
     CONSOLE.print("Attached to Micronet Network ");
-    CONSOLE.println(gConfiguration.networkId, HEX);
+    CONSOLE.println(gConfiguration.eeprom.networkId, HEX);
   }
   else
   {
@@ -380,20 +375,20 @@ void MenuAbout()
   }
 
   CONSOLE.print("RF Frequency offset = ");
-  CONSOLE.print(gConfiguration.rfFrequencyOffset_MHz * 1000);
+  CONSOLE.print(gConfiguration.eeprom.rfFrequencyOffset_MHz * 1000);
   CONSOLE.print(" kHz (");
-  CONSOLE.print((int)(1000000.0 * gConfiguration.rfFrequencyOffset_MHz /
+  CONSOLE.print((int)(1000000.0 * gConfiguration.eeprom.rfFrequencyOffset_MHz /
     MICRONET_RF_CENTER_FREQUENCY_MHZ));
   CONSOLE.println(" ppm)");
   CONSOLE.print("Wind speed factor = ");
-  CONSOLE.println(gConfiguration.windSpeedFactor_per);
+  CONSOLE.println(gConfiguration.eeprom.windSpeedFactor_per);
   CONSOLE.print("Wind direction offset = ");
-  CONSOLE.println((int)(gConfiguration.windDirectionOffset_deg));
+  CONSOLE.println((int)(gConfiguration.eeprom.windDirectionOffset_deg));
   CONSOLE.print("Water speed factor = ");
-  CONSOLE.println(gConfiguration.waterSpeedFactor_per);
+  CONSOLE.println(gConfiguration.eeprom.waterSpeedFactor_per);
   CONSOLE.print("Water temperature offset = ");
-  CONSOLE.println((int)(gConfiguration.waterTemperatureOffset_C));
-  if (gConfiguration.navCompassAvailable == false)
+  CONSOLE.println((int)(gConfiguration.eeprom.waterTemperatureOffset_C));
+  if (gConfiguration.ram.navCompassAvailable == false)
   {
     CONSOLE.println(
       "No navigation compass detected, disabling magnetic heading.");
@@ -404,11 +399,11 @@ void MenuAbout()
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" for magnetic heading");
     CONSOLE.print("Magnetometer calibration : ");
-    CONSOLE.print(gConfiguration.xMagOffset);
+    CONSOLE.print(gConfiguration.eeprom.xMagOffset);
     CONSOLE.print(" ");
-    CONSOLE.print(gConfiguration.yMagOffset);
+    CONSOLE.print(gConfiguration.eeprom.yMagOffset);
     CONSOLE.print(" ");
-    CONSOLE.println(gConfiguration.zMagOffset);
+    CONSOLE.println(gConfiguration.eeprom.zMagOffset);
   }
 }
 
@@ -580,7 +575,7 @@ void MenuAttachNetwork()
   }
   else
   {
-    gConfiguration.networkId = newNetworkId;
+    gConfiguration.eeprom.networkId = newNetworkId;
     CONSOLE.print("Now attached to NetworkID ");
     CONSOLE.println(newNetworkId, HEX);
     gConfiguration.SaveToEeprom();
@@ -597,7 +592,7 @@ void MenuConvertToNmea()
   MicronetDevice micronetDevice(&gMicronetCodec);
 
   // Check that we have been attached to a network
-  if (gConfiguration.networkId == 0)
+  if (gConfiguration.eeprom.networkId == 0)
   {
     CONSOLE.println("No Micronet network has been attached.");
     CONSOLE.println("Scan and attach a Micronet network first.");
@@ -618,7 +613,7 @@ void MenuConvertToNmea()
 
   // Enable frequency tracking to keep master's frequency as reference in case
   // of XTAL/PLL drift
-  gRfDriver.EnableFrequencyTracking(gConfiguration.networkId);
+  gRfDriver.EnableFrequencyTracking(gConfiguration.eeprom.networkId);
 
   gRxMessageFifo.ResetFifo();
 
@@ -646,10 +641,10 @@ void MenuConvertToNmea()
     }
 
     char c;
-    while (NMEA_EXT.available() > 0)
+    while (gConfiguration.ram.nmeaLink->available() > 0)
     {
-      c = NMEA_EXT.read();
-      if (((void*)(&CONSOLE) == (void*)(&NMEA_EXT)) && (c == 0x1b))
+      c = gConfiguration.ram.nmeaLink->read();
+      if (((void*)(&CONSOLE) == (void*)(gConfiguration.ram.nmeaLink)) && (c == 0x1b))
       {
         CONSOLE.println("ESC key pressed, stopping conversion.");
         exitNmeaLoop = true;
@@ -658,7 +653,7 @@ void MenuConvertToNmea()
     }
 
     // Only execute magnetic heading code if navigation compass is available
-    if (gConfiguration.navCompassAvailable == true)
+    if (gConfiguration.ram.navCompassAvailable == true)
     {
       // Handle magnetic compass
       // Only request new reading if previous is at least 100ms old
@@ -668,8 +663,12 @@ void MenuConvertToNmea()
         dataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
       }
     }
+    else
+    {
+      dataBridge.UpdateCompassData((millis() / 1000) % 360);
+    }
 
-    if ((void*)(&CONSOLE) != (void*)(&NMEA_EXT))
+    if ((void*)(&CONSOLE) != (void*)(gConfiguration.ram.nmeaLink))
     {
       while (CONSOLE.available() > 0)
       {
@@ -750,7 +749,7 @@ void MenuCalibrateMagnetoMeter()
   float zMax = -1000;
   char c;
 
-  if (gConfiguration.navCompassAvailable == false)
+  if (gConfiguration.ram.navCompassAvailable == false)
   {
     CONSOLE.println("No navigation compass detected. Exiting menu ...");
     return;
@@ -824,9 +823,9 @@ void MenuCalibrateMagnetoMeter()
   c = CONSOLE.read();
   if ((c == 'y') || (c == 'Y'))
   {
-    gConfiguration.xMagOffset = (xMin + xMax) / 2;
-    gConfiguration.yMagOffset = (yMin + yMax) / 2;
-    gConfiguration.zMagOffset = (zMin + zMax) / 2;
+    gConfiguration.eeprom.xMagOffset = (xMin + xMax) / 2;
+    gConfiguration.eeprom.yMagOffset = (yMin + yMax) / 2;
+    gConfiguration.eeprom.zMagOffset = (zMin + zMax) / 2;
     gConfiguration.SaveToEeprom();
     CONSOLE.println("Configuration saved");
   }
@@ -864,7 +863,7 @@ void MenuTestRfQuality()
           CONSOLE.println("");
           gMicronetCodec.GetNetworkMap(message, &networkMap);
           txSlot = gMicronetCodec.GetAsyncTransmissionSlot(&networkMap);
-          gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.deviceId);
+          gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.eeprom.deviceId);
           txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
           txMessage.startTime_us = txSlot.start_us;
           gRfDriver.Transmit(&txMessage);
@@ -981,8 +980,8 @@ void MenuTestRfQuality()
 void ConfigureSlaveDevice(MicronetDevice& micronetDevice)
 {
   // Configure Micronet's slave devices
-  micronetDevice.SetNetworkId(gConfiguration.networkId);
-  micronetDevice.SetDeviceId(gConfiguration.deviceId);
+  micronetDevice.SetNetworkId(gConfiguration.eeprom.networkId);
+  micronetDevice.SetDeviceId(gConfiguration.eeprom.deviceId);
   micronetDevice.SetDataFields(
     DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
     DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
