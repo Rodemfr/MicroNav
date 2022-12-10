@@ -40,6 +40,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+#define TX_DELAY_COMPENSATION 200
+
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
@@ -58,10 +60,7 @@ RfDriver* RfDriver::rfDriver;
 /*                              Functions                                  */
 /***************************************************************************/
 
-RfDriver::RfDriver()
-  : messageFifo(nullptr),
-  nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0),
-  freqTrackingNID(0), txTimer(nullptr)
+RfDriver::RfDriver(): messageFifo(nullptr), nextTransmitIndex(-1), messageBytesSent(0), frequencyOffset_MHz(0), freqTrackingNID(0), txTimer(nullptr)
 {
   timerMux = portMUX_INITIALIZER_UNLOCKED;
   memset((void*)transmitList, 0, sizeof(transmitList));
@@ -166,6 +165,7 @@ void RfDriver::ScheduleTransmit()
     if ((transmitIndex < 0) || (transmitIndex == nextTransmitIndex))
     {
       // No new transmit to schedule : leave
+      nextTransmitIndex = transmitIndex;
       return;
     }
 
@@ -176,7 +176,7 @@ void RfDriver::ScheduleTransmit()
 
     // Check that we are not already late for this transmit
     uint32_t now = micros();
-    uint32_t transmitDelay = transmitList[transmitIndex].startTime_us - now;
+    uint32_t transmitDelay = transmitList[transmitIndex].startTime_us - now - TX_DELAY_COMPENSATION;
     if (transmitDelay > 60000000)
     {
       // transmitDelay is more than 1 minute away, this is invalid

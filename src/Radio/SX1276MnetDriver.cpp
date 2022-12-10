@@ -73,7 +73,7 @@ SX1276MnetDriver* SX1276MnetDriver::driverObject;
  * Constructor of SX1276MnetDriver
  * Initialize class attributes, SPI HW and pins
  */
-SX1276MnetDriver::SX1276MnetDriver() : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)),
+SX1276MnetDriver::SX1276MnetDriver(): rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)),
 msgDataOffset(0), messageFifo(nullptr)
 {
   driverObject = this;
@@ -456,6 +456,12 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
 {
   BaseType_t scheduleChange = pdFALSE;
 
+  if (rfState == RfState_t::TX_TRANSMITTING)
+  {
+    // Don't transmit a new message if one is already ongoing
+    return;
+  }
+
   // Don't transmit messages which are bigger than SX1276 FIFO size
   if (message.len < 64)
   {
@@ -468,7 +474,6 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t& message)
     {
       memcpy(mnetTxMsg.data, message.data, message.len);
     }
-
     xEventGroupSetBitsFromISR(isrEventGroup, ISR_EVENT_TRANSMIT, &scheduleChange);
     portYIELD_FROM_ISR(scheduleChange);
   }
@@ -612,6 +617,5 @@ void SX1276MnetDriver::IsrProcessing()
         }
       }
     }
-
   }
 }

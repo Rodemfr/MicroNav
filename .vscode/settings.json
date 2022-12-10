@@ -12,5 +12,9 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp"
+    },
+    "editor.defaultFormatter": "xaver.clang-format",
+    "[cpp]": {
+        "editor.defaultFormatter": "xaver.clang-format"
     }
 }
