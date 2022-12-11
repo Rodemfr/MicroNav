@@ -33,6 +33,7 @@
 
 #include "NavigationData.h"
 #include "MicronetCodec.h"
+#include "Configuration.h"
 
 #include <stdint.h>
 
@@ -46,13 +47,6 @@
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
-
-typedef enum {
-		LINK_NMEA_EXT,
-		LINK_NMEA_GNSS,
-		LINK_MICRONET,
-		LINK_COMPASS
-} LinkId_t;
 
 typedef enum {
 	NMEA_ID_UNKNOWN,
@@ -96,14 +90,6 @@ private:
 	int nmeaExtWriteIndex;
 	int nmeaGnssWriteIndex;
 	NmeaTimeStamps_t nmeaTimeStamps;
-	LinkId_t navSourceLink;
-	LinkId_t gnssSourceLink;
-	LinkId_t windSourceLink;
-	LinkId_t depthSourceLink;
-	LinkId_t speedSourceLink;
-	LinkId_t voltageSourceLink;
-	LinkId_t seaTempSourceLink;
-	LinkId_t compassSourceLink;
 	MicronetCodec *micronetCodec;
 
 	bool IsSentenceValid(char *nmeaBuffer);

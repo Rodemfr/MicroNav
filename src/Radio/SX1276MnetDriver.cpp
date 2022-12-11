@@ -364,7 +364,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
 {
   ChangeOperatingMode(SX127X_SLEEP);
   ChangeOperatingMode(SX127X_STANDBY);
-  SetFrequency(MICRONET_RF_CENTER_FREQUENCY_MHZ);
+  SetFrequency(MICRONET_RF_CENTER_FREQUENCY_868MHZ);
   SetBitrate(MICRONET_RF_BAUDRATE_BAUD / 1000.0f);
   SetDeviation(MICRONET_RF_DEVIATION_KHZ);
   SetBandwidth(250.0f);

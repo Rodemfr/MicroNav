@@ -59,6 +59,8 @@ NavCompass gNavCompass;
 M8NDriver gM8nDriver;
 PanelManager gPanelDriver;
 BluetoothSerial gBtSerial;
+NmeaBridge gDataBridge(&gMicronetCodec);
+MicronetDevice gMicronetDevice(&gMicronetCodec);
 
 /***************************************************************************/
 /*                              Functions                                  */

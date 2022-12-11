@@ -71,7 +71,6 @@ void MenuConvertToNmea();
 void MenuScanTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuTestRfQuality();
-void ConfigureSlaveDevice(MicronetDevice& micronetDevice);
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -123,7 +122,9 @@ void setup()
   CONSOLE.print("MicroNav v");
   CONSOLE.print(SW_MAJOR_VERSION);
   CONSOLE.print(".");
-  CONSOLE.println(SW_MINOR_VERSION);
+  CONSOLE.print(SW_MINOR_VERSION);
+  CONSOLE.print(".");
+  CONSOLE.println(SW_PATCH_VERSION);
 
   // Init GNSS NMEA serial link
   GNSS_SERIAL.begin(GNSS_BAUDRATE, SERIAL_8N1, GNSS_RX_PIN, GNSS_TX_PIN);
@@ -141,8 +142,7 @@ void setup()
 
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
-  if (!gRfDriver.Init(&gRxMessageFifo,
-    gConfiguration.eeprom.rfFrequencyOffset_MHz))
+  if (!gRfDriver.Init(&gRxMessageFifo))
   {
 
     while (1)
@@ -374,12 +374,6 @@ void MenuAbout()
     CONSOLE.println("No Micronet Network attached");
   }
 
-  CONSOLE.print("RF Frequency offset = ");
-  CONSOLE.print(gConfiguration.eeprom.rfFrequencyOffset_MHz * 1000);
-  CONSOLE.print(" kHz (");
-  CONSOLE.print((int)(1000000.0 * gConfiguration.eeprom.rfFrequencyOffset_MHz /
-    MICRONET_RF_CENTER_FREQUENCY_MHZ));
-  CONSOLE.println(" ppm)");
   CONSOLE.print("Wind speed factor = ");
   CONSOLE.println(gConfiguration.eeprom.windSpeedFactor_per);
   CONSOLE.print("Wind direction offset = ");
@@ -588,8 +582,6 @@ void MenuConvertToNmea()
   MicronetMessage_t* rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
-  NmeaBridge dataBridge(&gMicronetCodec);
-  MicronetDevice micronetDevice(&gMicronetCodec);
 
   // Check that we have been attached to a network
   if (gConfiguration.eeprom.networkId == 0)
@@ -609,7 +601,7 @@ void MenuConvertToNmea()
   gConfiguration.LoadCalibration(&gMicronetCodec);
 
   // Configure Micronet device according to board configuration
-  ConfigureSlaveDevice(micronetDevice);
+  gConfiguration.ConfigureMicronetDevice(&gMicronetDevice);
 
   // Enable frequency tracking to keep master's frequency as reference in case
   // of XTAL/PLL drift
@@ -621,10 +613,10 @@ void MenuConvertToNmea()
   {
     if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
     {
-      micronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
+      gMicronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
       gRfDriver.Transmit(&txMessageFifo);
 
-      dataBridge.UpdateMicronetData();
+      gDataBridge.UpdateMicronetData();
 
       if (gMicronetCodec.navData.calibrationUpdated)
       {
@@ -637,7 +629,7 @@ void MenuConvertToNmea()
 
     while (GNSS_SERIAL.available() > 0)
     {
-      dataBridge.PushNmeaChar(GNSS_SERIAL.read(), LINK_NMEA_GNSS);
+      gDataBridge.PushNmeaChar(GNSS_SERIAL.read(), LINK_NMEA_GNSS);
     }
 
     char c;
@@ -649,7 +641,7 @@ void MenuConvertToNmea()
         CONSOLE.println("ESC key pressed, stopping conversion.");
         exitNmeaLoop = true;
       }
-      dataBridge.PushNmeaChar(c, LINK_NMEA_EXT);
+      gDataBridge.PushNmeaChar(c, LINK_NMEA_EXT);
     }
 
     // Only execute magnetic heading code if navigation compass is available
@@ -660,12 +652,8 @@ void MenuConvertToNmea()
       if ((millis() - lastHeadingTime) > 100)
       {
         lastHeadingTime = millis();
-        dataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
+        gDataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
       }
-    }
-    else
-    {
-      dataBridge.UpdateCompassData((millis() / 1000) % 360);
     }
 
     if ((void*)(&CONSOLE) != (void*)(gConfiguration.ram.nmeaLink))
@@ -682,8 +670,8 @@ void MenuConvertToNmea()
 
     gMicronetCodec.navData.UpdateValidity();
 
-    micronetDevice.Yield();
-    gPanelDriver.SetNetworkStatus(micronetDevice.GetNetworkStatus());
+    gMicronetDevice.Yield();
+    gPanelDriver.SetNetworkStatus(gMicronetDevice.GetNetworkStatus());
     yield();
 
   } while (!exitNmeaLoop);
@@ -975,35 +963,4 @@ void MenuTestRfQuality()
     }
     yield();
   } while (!exitTestLoop);
-}
-
-void ConfigureSlaveDevice(MicronetDevice& micronetDevice)
-{
-  // Configure Micronet's slave devices
-  micronetDevice.SetNetworkId(gConfiguration.eeprom.networkId);
-  micronetDevice.SetDeviceId(gConfiguration.eeprom.deviceId);
-  micronetDevice.SetDataFields(
-    DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
-    DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
-    DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
-
-  if (COMPASS_SOURCE_LINK != LINK_MICRONET)
-  {
-    micronetDevice.AddDataFields(DATA_FIELD_HDG);
-  }
-
-  if (DEPTH_SOURCE_LINK != LINK_MICRONET)
-  {
-    micronetDevice.AddDataFields(DATA_FIELD_DPT);
-  }
-
-  if (SPEED_SOURCE_LINK != LINK_MICRONET)
-  {
-    micronetDevice.AddDataFields(DATA_FIELD_SPD);
-  }
-
-  if ((MICRONET_WIND_REPEATER == 1) || (WIND_SOURCE_LINK != LINK_MICRONET))
-  {
-    micronetDevice.AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
-  }
 }

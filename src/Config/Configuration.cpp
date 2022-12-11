@@ -24,35 +24,34 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "Configuration.h"
 #include "BoardConfig.h"
 
 #include <Arduino.h>
-#include <EEPROM.h>
 #include <CRC32.h>
+#include <EEPROM.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
 #define CONFIGURATION_EEPROM_SIZE 128
-#define EEPROM_CONFIG_OFFSET      0
-#define CONFIG_MAGIC_NUMBER       0x4D544E4D
+#define EEPROM_CONFIG_OFFSET 0
+#define CONFIG_MAGIC_NUMBER 0x4D544E4D
 
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
 
 #pragma pack(1)
-typedef struct
-{
-	uint32_t magicWord;
-	EEPROMConfig_t config;
-	uint32_t checksum;
+typedef struct {
+  uint32_t magicWord;
+  EEPROMConfig_t config;
+  uint32_t checksum;
 } ConfigBlock_t;
 #pragma pack()
 
@@ -68,114 +67,138 @@ typedef struct
 /*                              Functions                                  */
 /***************************************************************************/
 
-void Configuration::Init()
-{
-	EEPROM.begin(CONFIGURATION_EEPROM_SIZE);
+void Configuration::Init() { EEPROM.begin(CONFIGURATION_EEPROM_SIZE); }
+
+Configuration::Configuration() {
+  // Set default configuration
+  ram.navCompassAvailable = false;
+  ram.displayAvailable = false;
+
+  memset(&eeprom, 0, sizeof(eeprom));
+
+  eeprom.windShift = 10;
+  eeprom.deviceId = 0x03123456;
+  eeprom.nmeaLink = SERIAL_TYPE_BT;
+  eeprom.gnssSource = LINK_NMEA_GNSS;
+  eeprom.windSource = LINK_MICRONET;
+  eeprom.depthSource = LINK_MICRONET;
+  eeprom.speedSource = LINK_MICRONET;
+  eeprom.compassSource = LINK_MICRONET;
+  eeprom.rmbWorkaround = false;
+  eeprom.windRepeater = true;
 }
 
-Configuration::Configuration()
-{
-	// Set default configuration
-	ram.navCompassAvailable = false;
-	ram.displayAvailable = false;
+Configuration::~Configuration() {}
 
-	memset(&eeprom, 0, sizeof(eeprom));
+void Configuration::LoadFromEeprom() {
+  ConfigBlock_t configBlock = {0};
 
-	eeprom.windShift = 10;
-	eeprom.deviceId = 0x03123456;
-	eeprom.serialType = SERIAL_TYPE_BT;
+  EEPROM.get(0, configBlock);
+  uint8_t *pConfig = (uint8_t *)(&configBlock);
+
+  if (configBlock.magicWord == CONFIG_MAGIC_NUMBER) {
+    if (CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t)) ==
+        configBlock.checksum) {
+      eeprom = configBlock.config;
+      eeprom.nmeaLink = SERIAL_TYPE_BT;
+      DeployConfiguration();
+    }
+  }
 }
 
-Configuration::~Configuration()
-{
+void Configuration::SaveToEeprom() {
+  ConfigBlock_t eepromBlock = {0};
+  ConfigBlock_t configBlock = {0};
+
+  uint8_t *pEepromBlock = (uint8_t *)(&eepromBlock);
+  uint8_t *pConfig = (uint8_t *)(&configBlock);
+
+  EEPROM.get(0, eepromBlock);
+
+  configBlock.magicWord = CONFIG_MAGIC_NUMBER;
+  configBlock.config = eeprom;
+
+  configBlock.checksum =
+      CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t));
+
+  for (uint32_t i = 0; i < sizeof(ConfigBlock_t); i++) {
+    if (pEepromBlock[i] != pConfig[i]) {
+      EEPROM.put(0, configBlock);
+      EEPROM.commit();
+      break;
+    }
+  }
 }
 
-void Configuration::LoadFromEeprom()
-{
-	ConfigBlock_t configBlock = { 0 };
+void Configuration::SaveCalibration(MicronetCodec &micronetCodec) {
+  eeprom.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
+  eeprom.waterTemperatureOffset_C =
+      micronetCodec.navData.waterTemperatureOffset_degc;
+  eeprom.depthOffset_m = micronetCodec.navData.depthOffset_m;
+  eeprom.windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
+  eeprom.windDirectionOffset_deg =
+      micronetCodec.navData.windDirectionOffset_deg;
+  eeprom.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
+  eeprom.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
+  eeprom.windShift = micronetCodec.navData.windShift_min;
+  eeprom.timeZone_h = micronetCodec.navData.timeZone_h;
 
-	EEPROM.get(0, configBlock);
-	uint8_t* pConfig = (uint8_t*)(&configBlock);
-
-	if (configBlock.magicWord == CONFIG_MAGIC_NUMBER)
-	{
-		if (CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t)) == configBlock.checksum)
-		{
-			eeprom = configBlock.config;
-				eeprom.serialType = SERIAL_TYPE_BT;
-			DeployConfiguration();
-		}
-	}
+  SaveToEeprom();
 }
 
-void Configuration::SaveToEeprom()
-{
-	ConfigBlock_t eepromBlock = { 0 };
-	ConfigBlock_t configBlock = { 0 };
-
-	uint8_t* pEepromBlock = (uint8_t*)(&eepromBlock);
-	uint8_t* pConfig = (uint8_t*)(&configBlock);
-
-	EEPROM.get(0, eepromBlock);
-
-	configBlock.magicWord = CONFIG_MAGIC_NUMBER;
-	configBlock.config = eeprom;
-
-	configBlock.checksum = CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t));
-
-	for (uint32_t i = 0; i < sizeof(ConfigBlock_t); i++)
-	{
-		if (pEepromBlock[i] != pConfig[i])
-		{
-			EEPROM.put(0, configBlock);
-			EEPROM.commit();
-			break;
-		}
-	}
+void Configuration::LoadCalibration(MicronetCodec *micronetCodec) {
+  micronetCodec->navData.waterSpeedFactor_per = eeprom.waterSpeedFactor_per;
+  micronetCodec->navData.waterTemperatureOffset_degc =
+      eeprom.waterTemperatureOffset_C;
+  micronetCodec->navData.depthOffset_m = eeprom.depthOffset_m;
+  micronetCodec->navData.windSpeedFactor_per = eeprom.windSpeedFactor_per;
+  micronetCodec->navData.windDirectionOffset_deg =
+      eeprom.windDirectionOffset_deg;
+  micronetCodec->navData.headingOffset_deg = eeprom.headingOffset_deg;
+  micronetCodec->navData.magneticVariation_deg = eeprom.magneticVariation_deg;
+  micronetCodec->navData.windShift_min = eeprom.windShift;
+  micronetCodec->navData.timeZone_h = eeprom.timeZone_h;
 }
 
-void Configuration::SaveCalibration(MicronetCodec& micronetCodec)
-{
-	eeprom.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
-	eeprom.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
-	eeprom.depthOffset_m = micronetCodec.navData.depthOffset_m;
-	eeprom.windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
-	eeprom.windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
-	eeprom.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
-	eeprom.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
-	eeprom.windShift = micronetCodec.navData.windShift_min;
-	eeprom.timeZone_h = micronetCodec.navData.timeZone_h;
-
-	SaveToEeprom();
+void Configuration::DeployConfiguration() {
+  switch (eeprom.nmeaLink) {
+  case SERIAL_TYPE_USB:
+    ram.nmeaLink = &Serial;
+    break;
+  case SERIAL_TYPE_BT:
+    gBtSerial.begin(String("MicroNav"));
+    ram.nmeaLink = &gBtSerial;
+    break;
+  case SERIAL_TYPE_WIFI:
+    // TODO : Implement WiFi serial link
+    ram.nmeaLink = &Serial;
+    break;
+  }
 }
 
-void Configuration::LoadCalibration(MicronetCodec* micronetCodec)
-{
-	micronetCodec->navData.waterSpeedFactor_per = eeprom.waterSpeedFactor_per;
-	micronetCodec->navData.waterTemperatureOffset_degc = eeprom.waterTemperatureOffset_C;
-	micronetCodec->navData.depthOffset_m = eeprom.depthOffset_m;
-	micronetCodec->navData.windSpeedFactor_per = eeprom.windSpeedFactor_per;
-	micronetCodec->navData.windDirectionOffset_deg = eeprom.windDirectionOffset_deg;
-	micronetCodec->navData.headingOffset_deg = eeprom.headingOffset_deg;
-	micronetCodec->navData.magneticVariation_deg = eeprom.magneticVariation_deg;
-	micronetCodec->navData.windShift_min = eeprom.windShift;
-	micronetCodec->navData.timeZone_h = eeprom.timeZone_h;
-}
+void Configuration::ConfigureMicronetDevice(MicronetDevice *micronetDevice) {
+  // Configure Micronet's slave devices
+  micronetDevice->SetNetworkId(gConfiguration.eeprom.networkId);
+  micronetDevice->SetDeviceId(gConfiguration.eeprom.deviceId);
+  micronetDevice->SetDataFields(
+      DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
+      DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
+      DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
-void Configuration::DeployConfiguration()
-{
-	switch (eeprom.serialType)
-	{
-	case SERIAL_TYPE_USB:
-		ram.nmeaLink = &Serial;
-		break;
-	case SERIAL_TYPE_BT:
-		gBtSerial.begin(String("MicroNav"));
-		ram.nmeaLink = &gBtSerial;
-		break;
-	case SERIAL_TYPE_WIFI:
-		// TODO : Implement WiFi serial link
-		ram.nmeaLink = &Serial;
-		break;
-	}
+  if (gConfiguration.eeprom.compassSource != LINK_MICRONET) {
+    micronetDevice->AddDataFields(DATA_FIELD_HDG);
+  }
+
+  if (gConfiguration.eeprom.depthSource != LINK_MICRONET) {
+    micronetDevice->AddDataFields(DATA_FIELD_DPT);
+  }
+
+  if (gConfiguration.eeprom.speedSource != LINK_MICRONET) {
+    micronetDevice->AddDataFields(DATA_FIELD_SPD);
+  }
+
+  if ((gConfiguration.eeprom.windRepeater) ||
+      (gConfiguration.eeprom.windSource != LINK_MICRONET)) {
+    micronetDevice->AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
+  }
 }

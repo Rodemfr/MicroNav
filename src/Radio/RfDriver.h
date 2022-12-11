@@ -72,9 +72,8 @@ public:
 	RfDriver();
 	virtual ~RfDriver();
 
-	bool Init(MicronetMessageFifo *messageFifo, float frequencyOffset_mHz);
+	bool Init(MicronetMessageFifo *messageFifo);
 	void Start();
-	void SetFrequencyOffset(float offset_MHz);
 	void SetFrequency(float frequency_MHz);
 	void SetBandwidth(RfBandwidth_t bandwidth);
 	void Transmit(MicronetMessageFifo *txMessageFifo);
@@ -88,7 +87,6 @@ private:
 	MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];
 	volatile int nextTransmitIndex;
 	volatile int messageBytesSent;
-	float frequencyOffset_MHz;
 	uint32_t freqTrackingNID;
 	hw_timer_t *txTimer;
 	portMUX_TYPE timerMux;

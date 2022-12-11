@@ -66,6 +66,8 @@ extern M8NDriver gM8nDriver;
 extern PanelManager gPanelDriver;
 extern MicronetCodec gMicronetCodec;
 extern BluetoothSerial gBtSerial;
+extern NmeaBridge gDataBridge;
+extern MicronetDevice gMicronetDevice;
 
 /***************************************************************************/
 /*                              Prototypes                                 */
