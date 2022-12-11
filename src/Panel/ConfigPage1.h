@@ -1,11 +1,11 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Configuration handler                                         *
+ * Purpose:  Handler of the Config page                                      *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
- *   Copyright (C) 2021 by Ronan Demoment                                  *
+ *   Copyright (C) 2022 by Ronan Demoment                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,17 +24,14 @@
  ***************************************************************************
  */
 
-#ifndef CONFIGURATION_H_
-#define CONFIGURATION_H_
+#ifndef CONFIGPAGE1_H_
+#define CONFIGPAGE1_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "MicronetCodec.h"
-#include "MicronetDevice.h"
-#include <Arduino.h>
-#include <stdint.h>
+#include "PageHandler.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -44,78 +41,42 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum { RF_FREQ_SYSTEM_868 = 0, RF_FREQ_SYSTEM_915 } FreqSystem_t;
-
-typedef enum {
-  SERIAL_TYPE_USB = 0,
-  SERIAL_TYPE_BT,
-  SERIAL_TYPE_WIFI
-} SerialType_t;
-
-typedef enum {
-  LINK_NMEA_EXT,
-  LINK_NMEA_GNSS,
-  LINK_MICRONET,
-  LINK_COMPASS
-} LinkId_t;
-
-typedef struct {
-  uint32_t networkId;
-  uint32_t deviceId;
-  float waterSpeedFactor_per;
-  float waterTemperatureOffset_C;
-  float depthOffset_m;
-  float windSpeedFactor_per;
-  float windDirectionOffset_deg;
-  float headingOffset_deg;
-  float magneticVariation_deg;
-  float windShift;
-  float xMagOffset;
-  float yMagOffset;
-  float zMagOffset;
-  FreqSystem_t freqSystem;
-  int8_t timeZone_h;
-  uint8_t rmbWorkaround;
-  uint8_t windRepeater;
-  uint8_t spare;
-  SerialType_t nmeaLink;
-  LinkId_t gnssSource;
-  LinkId_t windSource;
-  LinkId_t depthSource;
-  LinkId_t speedSource;
-  LinkId_t compassSource;
-} EEPROMConfig_t;
-
-typedef struct {
-  bool navCompassAvailable;
-  bool displayAvailable;
-  Stream *nmeaLink;
-} RAMConfig_t;
-
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
-class Configuration {
+class ConfigPage1 : public PageHandler {
 public:
-  Configuration();
-  virtual ~Configuration();
+  ConfigPage1();
+  virtual ~ConfigPage1();
 
-  void Init();
-  void LoadFromEeprom();
-  void SaveToEeprom();
-  void SaveCalibration(MicronetCodec &micronetCodec);
-  void LoadCalibration(MicronetCodec *micronetCodec);
-  void DeployConfiguration(MicronetDevice *micronetDevice);
+  void Draw(bool force);
+  PageAction_t OnButtonPressed(bool longPress);
 
-  // The following parameters are loaded/saved from/to EEPROM
-  EEPROMConfig_t eeprom;
-  // The following parameters are NOT loaded/saved from/to EEPROM
-  RAMConfig_t ram;
+private:
+  uint8_t swMajorVersion, swMinorVersion;
+  uint32_t swPatchVersion;
+  bool editMode;
+  uint32_t editPosition;
+
+  uint32_t configFreqSel;
+  uint32_t configNmeaSel;
+  bool configRmbWorkaround;
+  bool configWindRepeater;
+
+  void DeployConfiguration();
+
+  char const *ConfigString(uint32_t index);
+  char const *ConfigFreqString();
+  char const *ConfigNmeaString();
+  char const *ConfigRmbWorkaroundString();
+  char const *ConfigWindRepeaterString();
+
+  void ConfigCycle(uint32_t index);
+  void ConfigFreqCycle();
+  void ConfigNmeaCycle();
+  void ConfigRmbWorkaroundCycle();
+  void ConfigWindRepeaterCycle();
 };
 
-/***************************************************************************/
-/*                              Prototypes                                 */
-/***************************************************************************/
-
-#endif /* CONFIGURATION_H_ */
+#endif

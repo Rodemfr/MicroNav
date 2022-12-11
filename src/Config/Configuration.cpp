@@ -100,8 +100,7 @@ void Configuration::LoadFromEeprom() {
     if (CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t)) ==
         configBlock.checksum) {
       eeprom = configBlock.config;
-      eeprom.nmeaLink = SERIAL_TYPE_BT;
-      DeployConfiguration();
+      DeployConfiguration(nullptr);
     }
   }
 }
@@ -160,7 +159,7 @@ void Configuration::LoadCalibration(MicronetCodec *micronetCodec) {
   micronetCodec->navData.timeZone_h = eeprom.timeZone_h;
 }
 
-void Configuration::DeployConfiguration() {
+void Configuration::DeployConfiguration(MicronetDevice *micronetDevice) {
   switch (eeprom.nmeaLink) {
   case SERIAL_TYPE_USB:
     ram.nmeaLink = &Serial;
@@ -174,31 +173,31 @@ void Configuration::DeployConfiguration() {
     ram.nmeaLink = &Serial;
     break;
   }
-}
 
-void Configuration::ConfigureMicronetDevice(MicronetDevice *micronetDevice) {
-  // Configure Micronet's slave devices
-  micronetDevice->SetNetworkId(gConfiguration.eeprom.networkId);
-  micronetDevice->SetDeviceId(gConfiguration.eeprom.deviceId);
-  micronetDevice->SetDataFields(
-      DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
-      DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
-      DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
+  if (micronetDevice != nullptr) {
+    // Configure Micronet device
+    micronetDevice->SetNetworkId(gConfiguration.eeprom.networkId);
+    micronetDevice->SetDeviceId(gConfiguration.eeprom.deviceId);
+    micronetDevice->SetDataFields(
+        DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE |
+        DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW |
+        DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
-  if (gConfiguration.eeprom.compassSource != LINK_MICRONET) {
-    micronetDevice->AddDataFields(DATA_FIELD_HDG);
-  }
+    if (gConfiguration.eeprom.compassSource != LINK_MICRONET) {
+      micronetDevice->AddDataFields(DATA_FIELD_HDG);
+    }
 
-  if (gConfiguration.eeprom.depthSource != LINK_MICRONET) {
-    micronetDevice->AddDataFields(DATA_FIELD_DPT);
-  }
+    if (gConfiguration.eeprom.depthSource != LINK_MICRONET) {
+      micronetDevice->AddDataFields(DATA_FIELD_DPT);
+    }
 
-  if (gConfiguration.eeprom.speedSource != LINK_MICRONET) {
-    micronetDevice->AddDataFields(DATA_FIELD_SPD);
-  }
+    if (gConfiguration.eeprom.speedSource != LINK_MICRONET) {
+      micronetDevice->AddDataFields(DATA_FIELD_SPD);
+    }
 
-  if ((gConfiguration.eeprom.windRepeater) ||
-      (gConfiguration.eeprom.windSource != LINK_MICRONET)) {
-    micronetDevice->AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
+    if ((gConfiguration.eeprom.windRepeater) ||
+        (gConfiguration.eeprom.windSource != LINK_MICRONET)) {
+      micronetDevice->AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
+    }
   }
 }

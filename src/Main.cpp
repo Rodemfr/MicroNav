@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "BoardConfig.h"
 #include "Configuration.h"
@@ -60,9 +60,9 @@
 
 void PrintByte(uint8_t data);
 void PrintInt(uint32_t data);
-void PrintRawMessage(MicronetMessage_t* message, uint32_t lastMasterRequest_us);
-void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap);
-void PrintMessageFifo(MicronetMessageFifo& messageFifo);
+void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us);
+void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap);
+void PrintMessageFifo(MicronetMessageFifo &messageFifo);
 
 void MenuAbout();
 void MenuScanNetworks();
@@ -89,26 +89,22 @@ MenuEntry_t mainMenu[] = {
     {"Scan surrounding Micronet traffic", MenuScanTraffic},
     {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
     {"Test RF quality", MenuTestRfQuality},
-    {nullptr, nullptr} };
+    {nullptr, nullptr}};
 
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-void setup()
-{
+void setup() {
   // Configure power supply
   Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-  if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
-  {
+  if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS)) {
     pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LoRa
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS
     pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
     pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON); // OLED
-  }
-  else
-  {
+  } else {
     CONSOLE.println("AXP192 Configuration failed");
   }
 
@@ -142,11 +138,9 @@ void setup()
 
   CONSOLE.print("Initializing SX1276 ... ");
   // Check connection to SX1276
-  if (!gRfDriver.Init(&gRxMessageFifo))
-  {
+  if (!gRfDriver.Init(&gRxMessageFifo)) {
 
-    while (1)
-    {
+    while (1) {
       CONSOLE.println("Failed");
       CONSOLE.println("Aborting execution : Verify connection to CC1101 board");
       CONSOLE.println("Halted");
@@ -156,26 +150,21 @@ void setup()
   CONSOLE.println("OK");
 
   CONSOLE.print("Initializing navigation compass ... ");
-  if (1) //!gNavCompass.Init())
+  if (1) //! gNavCompass.Init())
   {
     CONSOLE.println("NOT DETECTED");
     gConfiguration.ram.navCompassAvailable = false;
-  }
-  else
-  {
+  } else {
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" Found");
     gConfiguration.ram.navCompassAvailable = true;
   }
 
   CONSOLE.print("Initializing display ... ");
-  if (!gPanelDriver.Init())
-  {
+  if (!gPanelDriver.Init()) {
     CONSOLE.println("NOT DETECTED");
     gConfiguration.ram.displayAvailable = false;
-  }
-  else
-  {
+  } else {
     CONSOLE.println(" Found");
     gConfiguration.ram.displayAvailable = true;
   }
@@ -193,47 +182,39 @@ void setup()
   firstLoop = true;
 }
 
-void loop()
-{
+void loop() {
   // If this is the first loop, we verify if we are already attached to a
   // Micronet network. if yes, We directly jump to NMEA conversion mode.
-  if ((firstLoop) && (gConfiguration.eeprom.networkId != 0))
-  {
+  if ((firstLoop) && (gConfiguration.eeprom.networkId != 0)) {
     MenuConvertToNmea();
     gMenuManager.PrintMenu();
   }
 
   // Process console input
-  while (CONSOLE.available() > 0)
-  {
+  while (CONSOLE.available() > 0) {
     gMenuManager.PushChar(CONSOLE.read());
   }
 
   firstLoop = false;
 }
 
-void PrintByte(uint8_t data)
-{
-  if (data < 16)
-  {
+void PrintByte(uint8_t data) {
+  if (data < 16) {
     CONSOLE.print("0");
   }
   CONSOLE.print(data, HEX);
 }
 
-void PrintInt(uint32_t data)
-{
+void PrintInt(uint32_t data) {
   PrintByte((data >> 24) & 0x0ff);
   PrintByte((data >> 16) & 0x0ff);
   PrintByte((data >> 8) & 0x0ff);
   PrintByte(data & 0x0ff);
 }
 
-void PrintRawMessage(MicronetMessage_t* message,
-  uint32_t lastMasterRequest_us)
-{
-  if (message->len < MICRONET_PAYLOAD_OFFSET)
-  {
+void PrintRawMessage(MicronetMessage_t *message,
+                     uint32_t lastMasterRequest_us) {
+  if (message->len < MICRONET_PAYLOAD_OFFSET) {
     CONSOLE.print("Invalid message (");
     CONSOLE.print((int)message->rssi);
     CONSOLE.print(", ");
@@ -241,28 +222,24 @@ void PrintRawMessage(MicronetMessage_t* message,
     CONSOLE.println(")");
   }
 
-  for (int j = 0; j < 4; j++)
-  {
+  for (int j = 0; j < 4; j++) {
     PrintByte(message->data[j]);
   }
   CONSOLE.print(" ");
 
-  for (int j = 4; j < 8; j++)
-  {
+  for (int j = 4; j < 8; j++) {
     PrintByte(message->data[j]);
   }
   CONSOLE.print(" ");
 
-  for (int j = 8; j < 14; j++)
-  {
+  for (int j = 8; j < 14; j++) {
     PrintByte(message->data[j]);
     CONSOLE.print(" ");
   }
 
   CONSOLE.print(" -- ");
 
-  for (int j = 14; j < message->len; j++)
-  {
+  for (int j = 14; j < message->len; j++) {
     PrintByte(message->data[j]);
     CONSOLE.print(" ");
   }
@@ -276,8 +253,7 @@ void PrintRawMessage(MicronetMessage_t* message,
   CONSOLE.println();
 }
 
-void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap)
-{
+void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap) {
   CONSOLE.print("Network ID : 0x");
   PrintInt(networkMap->networkId);
   CONSOLE.println("");
@@ -289,23 +265,19 @@ void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap)
   PrintInt(networkMap->masterDevice);
   CONSOLE.println("");
 
-  for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++)
-  {
+  for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++) {
     CONSOLE.print("S");
     CONSOLE.print(i);
     CONSOLE.print(" : 0x");
     PrintInt(networkMap->syncSlot[i].deviceId);
     CONSOLE.print(" ");
-    if (networkMap->syncSlot[i].start_us > 0)
-    {
+    if (networkMap->syncSlot[i].start_us > 0) {
       CONSOLE.print(networkMap->syncSlot[i].payloadBytes);
       CONSOLE.print(" ");
       CONSOLE.print(networkMap->syncSlot[i].start_us - networkMap->firstSlot);
       CONSOLE.print(" ");
       CONSOLE.println(networkMap->syncSlot[i].length_us);
-    }
-    else
-    {
+    } else {
       CONSOLE.println("-");
     }
   }
@@ -318,8 +290,7 @@ void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap)
   CONSOLE.print(" ");
   CONSOLE.println(networkMap->asyncSlot.length_us);
 
-  for (uint32_t i = 0; i < networkMap->nbAckSlots; i++)
-  {
+  for (uint32_t i = 0; i < networkMap->nbAckSlots; i++) {
     CONSOLE.print("A");
     CONSOLE.print(i);
     CONSOLE.print(" : 0x");
@@ -334,13 +305,10 @@ void PrintNetworkMap(MicronetCodec::NetworkMap* networkMap)
   CONSOLE.println("");
 }
 
-void PrintMessageFifo(MicronetMessageFifo& messageFifo)
-{
-  if (messageFifo.GetNbMessages() > 0)
-  {
-    for (int i = 0; i < messageFifo.GetNbMessages(); i++)
-    {
-      MicronetMessage_t* message = messageFifo.Peek(i);
+void PrintMessageFifo(MicronetMessageFifo &messageFifo) {
+  if (messageFifo.GetNbMessages() > 0) {
+    for (int i = 0; i < messageFifo.GetNbMessages(); i++) {
+      MicronetMessage_t *message = messageFifo.Peek(i);
       CONSOLE.print("MSG ");
       CONSOLE.print(i);
       CONSOLE.print(" : ");
@@ -354,8 +322,7 @@ void PrintMessageFifo(MicronetMessageFifo& messageFifo)
   }
 }
 
-void MenuAbout()
-{
+void MenuAbout() {
   CONSOLE.print("MicroNav, Version ");
   CONSOLE.print(SW_MAJOR_VERSION, DEC);
   CONSOLE.print(".");
@@ -364,13 +331,10 @@ void MenuAbout()
   CONSOLE.print("Device ID : ");
   CONSOLE.println(gConfiguration.eeprom.deviceId, HEX);
 
-  if (gConfiguration.eeprom.networkId != 0)
-  {
+  if (gConfiguration.eeprom.networkId != 0) {
     CONSOLE.print("Attached to Micronet Network ");
     CONSOLE.println(gConfiguration.eeprom.networkId, HEX);
-  }
-  else
-  {
+  } else {
     CONSOLE.println("No Micronet Network attached");
   }
 
@@ -382,13 +346,10 @@ void MenuAbout()
   CONSOLE.println(gConfiguration.eeprom.waterSpeedFactor_per);
   CONSOLE.print("Water temperature offset = ");
   CONSOLE.println((int)(gConfiguration.eeprom.waterTemperatureOffset_C));
-  if (gConfiguration.ram.navCompassAvailable == false)
-  {
+  if (gConfiguration.ram.navCompassAvailable == false) {
     CONSOLE.println(
-      "No navigation compass detected, disabling magnetic heading.");
-  }
-  else
-  {
+        "No navigation compass detected, disabling magnetic heading.");
+  } else {
     CONSOLE.print("Using ");
     CONSOLE.print(gNavCompass.GetDeviceName().c_str());
     CONSOLE.println(" for magnetic heading");
@@ -401,9 +362,8 @@ void MenuAbout()
   }
 }
 
-void MenuScanNetworks()
-{
-  MicronetMessage_t* message;
+void MenuScanNetworks() {
+  MicronetMessage_t *message;
   uint32_t nidArray[MAX_SCANNED_NETWORKS];
   int16_t rssiArray[MAX_SCANNED_NETWORKS];
 
@@ -414,41 +374,29 @@ void MenuScanNetworks()
 
   gRxMessageFifo.ResetFifo();
   unsigned long startTime = millis();
-  do
-  {
-    if ((message = gRxMessageFifo.Peek()) != nullptr)
-    {
+  do {
+    if ((message = gRxMessageFifo.Peek()) != nullptr) {
       // Only consider messages with a valid CRC
-      if (gMicronetCodec.VerifyHeaderCrc(message))
-      {
+      if (gMicronetCodec.VerifyHeaderCrc(message)) {
         uint32_t nid = gMicronetCodec.GetNetworkId(message);
         int16_t rssi = message->rssi;
         // Store the network in the array by order of reception power
-        for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
-        {
-          if (nidArray[i] == 0)
-          {
+        for (int i = 0; i < MAX_SCANNED_NETWORKS; i++) {
+          if (nidArray[i] == 0) {
             // New network
             nidArray[i] = nid;
             rssiArray[i] = rssi;
             break;
-          }
-          else if (nidArray[i] == nid)
-          {
+          } else if (nidArray[i] == nid) {
             // Already scanned network : update RSSI if stronger
-            if (rssi > rssiArray[i])
-            {
+            if (rssi > rssiArray[i]) {
               rssiArray[i] = rssi;
             }
             break;
-          }
-          else
-          {
+          } else {
             // New network to be inserted in the list : shift the list down
-            if (rssi > rssiArray[i])
-            {
-              for (int j = (MAX_SCANNED_NETWORKS - 1); j > i; j++)
-              {
+            if (rssi > rssiArray[i]) {
+              for (int j = (MAX_SCANNED_NETWORKS - 1); j > i; j++) {
                 nidArray[j] = nidArray[j - 1];
                 rssiArray[j] = rssiArray[j - 1];
               }
@@ -467,14 +415,11 @@ void MenuScanNetworks()
   CONSOLE.println("");
 
   // Print result
-  if (nidArray[0] != 0)
-  {
+  if (nidArray[0] != 0) {
     CONSOLE.println("List of scanned networks :");
     CONSOLE.println("");
-    for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
-    {
-      if (nidArray[i] != 0)
-      {
+    for (int i = 0; i < MAX_SCANNED_NETWORKS; i++) {
+      if (nidArray[i] != 0) {
         CONSOLE.print("Network ");
         CONSOLE.print(i);
         CONSOLE.print(" - ");
@@ -491,40 +436,30 @@ void MenuScanNetworks()
         CONSOLE.println(")");
       }
     }
-  }
-  else
-  {
+  } else {
     CONSOLE.println("/!\\ No Micronet network found /!\\");
     CONSOLE.println("Check that your Micronet network is powered on.");
   }
 }
 
-void MenuAttachNetwork()
-{
+void MenuAttachNetwork() {
   char input[16], c;
   uint32_t charIndex = 0;
 
   CONSOLE.print("Enter Network ID to attach to : ");
 
-  do
-  {
-    if (CONSOLE.available())
-    {
+  do {
+    if (CONSOLE.available()) {
       c = CONSOLE.read();
-      if (c == 0x0d)
-      {
+      if (c == 0x0d) {
         CONSOLE.println("");
         break;
-      }
-      else if ((c == 0x08) && (charIndex > 0))
-      {
+      } else if ((c == 0x08) && (charIndex > 0)) {
         charIndex--;
         CONSOLE.print(c);
         CONSOLE.print(" ");
         CONSOLE.print(c);
-      }
-      else if (charIndex < sizeof(input))
-      {
+      } else if (charIndex < sizeof(input)) {
         input[charIndex++] = c;
         CONSOLE.print(c);
       }
@@ -534,28 +469,19 @@ void MenuAttachNetwork()
   bool invalidInput = false;
   uint32_t newNetworkId = 0;
 
-  if (charIndex == 0)
-  {
+  if (charIndex == 0) {
     invalidInput = true;
   }
 
-  for (uint32_t i = 0; i < charIndex; i++)
-  {
+  for (uint32_t i = 0; i < charIndex; i++) {
     c = input[i];
-    if ((c >= '0') && (c <= '9'))
-    {
+    if ((c >= '0') && (c <= '9')) {
       c -= '0';
-    }
-    else if ((c >= 'a') && (c <= 'f'))
-    {
+    } else if ((c >= 'a') && (c <= 'f')) {
       c = c - 'a' + 10;
-    }
-    else if ((c >= 'A') && (c <= 'F'))
-    {
+    } else if ((c >= 'A') && (c <= 'F')) {
       c = c - 'A' + 10;
-    }
-    else
-    {
+    } else {
       invalidInput = true;
       break;
     }
@@ -563,12 +489,9 @@ void MenuAttachNetwork()
     newNetworkId = (newNetworkId << 4) | c;
   }
 
-  if (invalidInput)
-  {
+  if (invalidInput) {
     CONSOLE.println("Invalid Network ID entered, ignoring input.");
-  }
-  else
-  {
+  } else {
     gConfiguration.eeprom.networkId = newNetworkId;
     CONSOLE.print("Now attached to NetworkID ");
     CONSOLE.println(newNetworkId, HEX);
@@ -576,16 +499,14 @@ void MenuAttachNetwork()
   }
 }
 
-void MenuConvertToNmea()
-{
+void MenuConvertToNmea() {
   bool exitNmeaLoop = false;
-  MicronetMessage_t* rxMessage;
+  MicronetMessage_t *rxMessage;
   MicronetMessageFifo txMessageFifo;
   uint32_t lastHeadingTime = millis();
 
   // Check that we have been attached to a network
-  if (gConfiguration.eeprom.networkId == 0)
-  {
+  if (gConfiguration.eeprom.networkId == 0) {
     CONSOLE.println("No Micronet network has been attached.");
     CONSOLE.println("Scan and attach a Micronet network first.");
     return;
@@ -594,32 +515,28 @@ void MenuConvertToNmea()
   CONSOLE.println("");
   CONSOLE.println("Starting Micronet to NMEA0183 conversion.");
   CONSOLE.println(
-    "Press ESC key at any time to stop conversion and come back to menu.");
+      "Press ESC key at any time to stop conversion and come back to menu.");
   CONSOLE.println("");
 
   // Load sensor calibration data into Micronet codec
   gConfiguration.LoadCalibration(&gMicronetCodec);
 
   // Configure Micronet device according to board configuration
-  gConfiguration.ConfigureMicronetDevice(&gMicronetDevice);
+  gConfiguration.DeployConfiguration(&gMicronetDevice);
 
-  // Enable frequency tracking to keep master's frequency as reference in case
-  // of XTAL/PLL drift
+  // Enable frequency tracking to compensate for XTAL drift
   gRfDriver.EnableFrequencyTracking(gConfiguration.eeprom.networkId);
 
   gRxMessageFifo.ResetFifo();
 
-  do
-  {
-    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
-    {
+  do {
+    if ((rxMessage = gRxMessageFifo.Peek()) != nullptr) {
       gMicronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
       gRfDriver.Transmit(&txMessageFifo);
 
       gDataBridge.UpdateMicronetData();
 
-      if (gMicronetCodec.navData.calibrationUpdated)
-      {
+      if (gMicronetCodec.navData.calibrationUpdated) {
         gMicronetCodec.navData.calibrationUpdated = false;
         gConfiguration.SaveCalibration(gMicronetCodec);
       }
@@ -627,17 +544,15 @@ void MenuConvertToNmea()
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (GNSS_SERIAL.available() > 0)
-    {
+    while (GNSS_SERIAL.available() > 0) {
       gDataBridge.PushNmeaChar(GNSS_SERIAL.read(), LINK_NMEA_GNSS);
     }
 
     char c;
-    while (gConfiguration.ram.nmeaLink->available() > 0)
-    {
+    while (gConfiguration.ram.nmeaLink->available() > 0) {
       c = gConfiguration.ram.nmeaLink->read();
-      if (((void*)(&CONSOLE) == (void*)(gConfiguration.ram.nmeaLink)) && (c == 0x1b))
-      {
+      if (((void *)(&CONSOLE) == (void *)(gConfiguration.ram.nmeaLink)) &&
+          (c == 0x1b)) {
         CONSOLE.println("ESC key pressed, stopping conversion.");
         exitNmeaLoop = true;
       }
@@ -645,23 +560,19 @@ void MenuConvertToNmea()
     }
 
     // Only execute magnetic heading code if navigation compass is available
-    if (gConfiguration.ram.navCompassAvailable == true)
-    {
+    if (gConfiguration.ram.navCompassAvailable == true) {
       // Handle magnetic compass
       // Only request new reading if previous is at least 100ms old
-      if ((millis() - lastHeadingTime) > 100)
-      {
+      if ((millis() - lastHeadingTime) > 100) {
         lastHeadingTime = millis();
-        gDataBridge.UpdateCompassData(gNavCompass.GetHeading() + gMicronetCodec.navData.headingOffset_deg);
+        gDataBridge.UpdateCompassData(gNavCompass.GetHeading() +
+                                      gMicronetCodec.navData.headingOffset_deg);
       }
     }
 
-    if ((void*)(&CONSOLE) != (void*)(gConfiguration.ram.nmeaLink))
-    {
-      while (CONSOLE.available() > 0)
-      {
-        if (CONSOLE.read() == 0x1b)
-        {
+    if ((void *)(&CONSOLE) != (void *)(gConfiguration.ram.nmeaLink)) {
+      while (CONSOLE.available() > 0) {
+        if (CONSOLE.read() == 0x1b) {
           CONSOLE.println("ESC key pressed, stopping conversion.");
           exitNmeaLoop = true;
         }
@@ -679,28 +590,24 @@ void MenuConvertToNmea()
   gRfDriver.DisableFrequencyTracking();
 }
 
-void MenuScanTraffic()
-{
+void MenuScanTraffic() {
   bool exitSniffLoop = false;
   uint32_t lastMasterRequest_us = 0;
   MicronetCodec::NetworkMap networkMap;
 
   CONSOLE.println("Starting Micronet traffic scanning.");
   CONSOLE.println(
-    "Press ESC key at any time to stop scanning and come back to menu.");
+      "Press ESC key at any time to stop scanning and come back to menu.");
   CONSOLE.println("");
 
   gRxMessageFifo.ResetFifo();
 
-  MicronetMessage_t* message;
-  do
-  {
-    if ((message = gRxMessageFifo.Peek()) != nullptr)
-    {
-      if (gMicronetCodec.VerifyHeaderCrc(message))
-      {
-        if (message->data[MICRONET_MI_OFFSET] == MICRONET_MESSAGE_ID_MASTER_REQUEST)
-        {
+  MicronetMessage_t *message;
+  do {
+    if ((message = gRxMessageFifo.Peek()) != nullptr) {
+      if (gMicronetCodec.VerifyHeaderCrc(message)) {
+        if (message->data[MICRONET_MI_OFFSET] ==
+            MICRONET_MESSAGE_ID_MASTER_REQUEST) {
           CONSOLE.println("");
           // lastMasterRequest_us = message->endTime_us;
           // gMicronetCodec.GetNetworkMap(message, &networkMap);
@@ -711,10 +618,8 @@ void MenuScanTraffic()
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (CONSOLE.available() > 0)
-    {
-      if (CONSOLE.read() == 0x1b)
-      {
+    while (CONSOLE.available() > 0) {
+      if (CONSOLE.read() == 0x1b) {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitSniffLoop = true;
       }
@@ -723,8 +628,7 @@ void MenuScanTraffic()
   } while (!exitSniffLoop);
 }
 
-void MenuCalibrateMagnetoMeter()
-{
+void MenuCalibrateMagnetoMeter() {
   bool exitLoop = false;
   uint32_t pDisplayTime = 0;
   uint32_t pSampleTime = 0;
@@ -737,22 +641,18 @@ void MenuCalibrateMagnetoMeter()
   float zMax = -1000;
   char c;
 
-  if (gConfiguration.ram.navCompassAvailable == false)
-  {
+  if (gConfiguration.ram.navCompassAvailable == false) {
     CONSOLE.println("No navigation compass detected. Exiting menu ...");
     return;
   }
 
   CONSOLE.println("Calibrating magnetometer ... ");
 
-  do
-  {
+  do {
     uint32_t currentTime = millis();
-    if ((currentTime - pSampleTime) > 100)
-    {
+    if ((currentTime - pSampleTime) > 100) {
       gNavCompass.GetMagneticField(&mx, &my, &mz);
-      if ((currentTime - pDisplayTime) > 250)
-      {
+      if ((currentTime - pDisplayTime) > 250) {
         pDisplayTime = currentTime;
         if (mx < xMin)
           xMin = mx;
@@ -795,10 +695,8 @@ void MenuCalibrateMagnetoMeter()
       }
     }
 
-    while (CONSOLE.available() > 0)
-    {
-      if (CONSOLE.read() == 0x1b)
-      {
+    while (CONSOLE.available() > 0) {
+      if (CONSOLE.read() == 0x1b) {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitLoop = true;
       }
@@ -809,22 +707,18 @@ void MenuCalibrateMagnetoMeter()
   while (CONSOLE.available() == 0)
     ;
   c = CONSOLE.read();
-  if ((c == 'y') || (c == 'Y'))
-  {
+  if ((c == 'y') || (c == 'Y')) {
     gConfiguration.eeprom.xMagOffset = (xMin + xMax) / 2;
     gConfiguration.eeprom.yMagOffset = (yMin + yMax) / 2;
     gConfiguration.eeprom.zMagOffset = (zMin + zMax) / 2;
     gConfiguration.SaveToEeprom();
     CONSOLE.println("Configuration saved");
-  }
-  else
-  {
+  } else {
     CONSOLE.println("Configuration discarded");
   }
 }
 
-void MenuTestRfQuality()
-{
+void MenuTestRfQuality() {
   bool exitTestLoop = false;
   MicronetCodec::NetworkMap networkMap;
   float strength;
@@ -833,25 +727,24 @@ void MenuTestRfQuality()
   uint32_t receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
 
   CONSOLE.println("Starting RF signal quality test.");
-  CONSOLE.println("Press ESC key at any time to stop testing and come back to menu.");
+  CONSOLE.println(
+      "Press ESC key at any time to stop testing and come back to menu.");
   CONSOLE.println("");
 
   gRxMessageFifo.ResetFifo();
 
-  do
-  {
-    MicronetMessage_t* message;
+  do {
+    MicronetMessage_t *message;
 
-    if ((message = gRxMessageFifo.Peek()) != nullptr)
-    {
-      if (gMicronetCodec.VerifyHeaderCrc(message))
-      {
-        if (message->data[MICRONET_MI_OFFSET] == MICRONET_MESSAGE_ID_MASTER_REQUEST)
-        {
+    if ((message = gRxMessageFifo.Peek()) != nullptr) {
+      if (gMicronetCodec.VerifyHeaderCrc(message)) {
+        if (message->data[MICRONET_MI_OFFSET] ==
+            MICRONET_MESSAGE_ID_MASTER_REQUEST) {
           CONSOLE.println("");
           gMicronetCodec.GetNetworkMap(message, &networkMap);
           txSlot = gMicronetCodec.GetAsyncTransmissionSlot(&networkMap);
-          gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.eeprom.deviceId);
+          gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId,
+                                           gConfiguration.eeprom.deviceId);
           txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
           txMessage.startTime_us = txSlot.start_us;
           gRfDriver.Transmit(&txMessage);
@@ -859,56 +752,39 @@ void MenuTestRfQuality()
         }
 
         bool alreadyReceived = false;
-        for (int i = 0; i < MICRONET_MAX_DEVICES_PER_NETWORK; i++)
-        {
+        for (int i = 0; i < MICRONET_MAX_DEVICES_PER_NETWORK; i++) {
           uint32_t did = gMicronetCodec.GetDeviceId(message);
-          if (receivedDid[i] == did)
-          {
+          if (receivedDid[i] == did) {
             alreadyReceived = true;
             break;
-          }
-          else if (receivedDid[i] == 0)
-          {
+          } else if (receivedDid[i] == 0) {
             receivedDid[i] = did;
             break;
           }
         }
 
-        if (!alreadyReceived)
-        {
+        if (!alreadyReceived) {
           PrintInt(gMicronetCodec.GetDeviceId(message));
           CONSOLE.print(" Strength=");
           strength = gMicronetCodec.CalculateSignalFloatStrength(message);
           CONSOLE.print(strength);
           CONSOLE.print(" (");
-          if (strength < 1.0)
-          {
+          if (strength < 1.0) {
             CONSOLE.print("Very low");
-          }
-          else if (strength < 2.5)
-          {
+          } else if (strength < 2.5) {
             CONSOLE.print("Low");
-          }
-          else if (strength < 5.0)
-          {
+          } else if (strength < 5.0) {
             CONSOLE.print("Medium");
-          }
-          else if (strength < 7.0)
-          {
+          } else if (strength < 7.0) {
             CONSOLE.print("Good");
-          }
-          else if (strength < 9.0)
-          {
+          } else if (strength < 9.0) {
             CONSOLE.print("Very Good");
-          }
-          else
-          {
+          } else {
             CONSOLE.print("Excellent");
           }
 
           CONSOLE.print(") ");
-          switch (gMicronetCodec.GetDeviceType(message))
-          {
+          switch (gMicronetCodec.GetDeviceType(message)) {
           case MICRONET_DEVICE_TYPE_HULL_TRANSMITTER:
             CONSOLE.print("Hull Transmitter");
             break;
@@ -943,8 +819,7 @@ void MenuTestRfQuality()
             CONSOLE.print("Unknown device");
             break;
           }
-          if (networkMap.masterDevice == gMicronetCodec.GetDeviceId(message))
-          {
+          if (networkMap.masterDevice == gMicronetCodec.GetDeviceId(message)) {
             CONSOLE.print(", MASTER");
           }
           CONSOLE.println("");
@@ -953,10 +828,8 @@ void MenuTestRfQuality()
       gRxMessageFifo.DeleteMessage();
     }
 
-    while (CONSOLE.available() > 0)
-    {
-      if (CONSOLE.read() == 0x1b)
-      {
+    while (CONSOLE.available() > 0) {
+      if (CONSOLE.read() == 0x1b) {
         CONSOLE.println("ESC key pressed, stopping scan.");
         exitTestLoop = true;
       }

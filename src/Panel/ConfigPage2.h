@@ -24,12 +24,12 @@
  ***************************************************************************
  */
 
-#ifndef CONFIGPAGE_H_
-#define CONFIGPAGE_H_
+#ifndef CONFIGPAGE2_H_
+#define CONFIGPAGE2_H_
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "PageHandler.h"
 
@@ -45,46 +45,46 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class ConfigPage1 : public PageHandler
-{
+class ConfigPage2 : public PageHandler {
 public:
-    ConfigPage1();
-    virtual ~ConfigPage1();
+  ConfigPage2();
+  virtual ~ConfigPage2();
 
-    void Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+  void Draw(bool force);
+  PageAction_t OnButtonPressed(bool longPress);
 
 private:
-    uint8_t swMajorVersion, swMinorVersion;
-    uint32_t swPatchVersion;
-    bool editMode;
-    uint32_t editPosition;
+  uint8_t swMajorVersion, swMinorVersion;
+  uint32_t swPatchVersion;
+  bool editMode;
+  uint32_t editPosition;
 
-    uint32_t configFreqSel;
-    uint32_t configNmeaSel;
-    uint32_t configCompassSel;
-    uint32_t configGnssSel;
-    uint32_t configWindSel;
-    uint32_t configDepthSel;
-    uint32_t configSpeedSel;
+  uint32_t configCompassSel;
+  uint32_t configGnssSel;
+  uint32_t configWindSel;
+  uint32_t configDepthSel;
+  uint32_t configSpeedSel;
 
-    char const *ConfigString(uint32_t index);
-    char const *ConfigFreqString();
-    char const *ConfigNmeaString();
-    char const *ConfigCompassString();
-    char const *ConfigGnssString();
-    char const *ConfigWindString();
-    char const *ConfigDepthString();
-    char const *ConfigSpeedString();
+  void DeployConfiguration();
+  void DeployCompass();
+  void DeployGnss();
+  void DeployWind();
+  void DeployDepth();
+  void DeploySpeed();
 
-    void ConfigCycle(uint32_t index);
-    void ConfigFreqCycle();
-    void ConfigNmeaCycle();
-    void ConfigCompassCycle();
-    void ConfigGnssCycle();
-    void ConfigWindCycle();
-    void ConfigDepthCycle();
-    void ConfigSpeedCycle();
+  char const *ConfigString(uint32_t index);
+  char const *ConfigCompassString();
+  char const *ConfigGnssString();
+  char const *ConfigWindString();
+  char const *ConfigDepthString();
+  char const *ConfigSpeedString();
+
+  void ConfigCycle(uint32_t index);
+  void ConfigCompassCycle();
+  void ConfigGnssCycle();
+  void ConfigWindCycle();
+  void ConfigDepthCycle();
+  void ConfigSpeedCycle();
 };
 
 #endif
