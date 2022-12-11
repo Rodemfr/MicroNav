@@ -66,12 +66,15 @@ ConfigPage1::ConfigPage1()
 
 ConfigPage1::~ConfigPage1() {}
 
+// @brief Draw the page on display
+// @param force Force redraw, even if the content did not change
 void ConfigPage1::Draw(bool force) {
   char versionStr[10];
   char networkIdStr[9];
   int16_t xVersion, yVersion;
   uint16_t wVersion, hVersion;
 
+  // Forced draw occurs when user enters the page : load configuration locally
   if (force) {
     configFreqSel = (uint32_t)gConfiguration.eeprom.freqSystem;
     configNmeaSel = (uint32_t)gConfiguration.eeprom.nmeaLink;
@@ -82,15 +85,17 @@ void ConfigPage1::Draw(bool force) {
   if (display != nullptr) {
     display->clearDisplay();
 
+    // Config items
     display->setTextColor(SSD1306_WHITE);
     display->setTextSize(1);
     display->setFont(nullptr);
     display->setCursor(0, 0);
     display->println("Frequency");
-    display->println("NMEA");
+    display->println("NMEA link");
     display->println("RMB bugfix");
     display->println("Wind Repeat");
 
+    // Config values
     for (int i = 0; i < NUMBER_OF_CONFIG_ITEMS; i++) {
       display->setCursor(SELECTION_X_POSITION, i * 8);
       if (editMode && (editPosition == i)) {
@@ -104,13 +109,14 @@ void ConfigPage1::Draw(bool force) {
       display->print(ConfigString(i));
     }
 
-    if (editMode && (editPosition == NUMBER_OF_CONFIG_ITEMS)) {
-      display->fillRect(31, 64 - 8, 11 * 6, 8, SSD1306_WHITE);
-      display->setTextColor(SSD1306_BLACK);
-    } else {
-      display->setTextColor(SSD1306_WHITE);
-    }
+    // Save & exit
     if (editMode) {
+      if (editPosition == NUMBER_OF_CONFIG_ITEMS) {
+        display->fillRect(31, 64 - 8, 11 * 6, 8, SSD1306_WHITE);
+        display->setTextColor(SSD1306_BLACK);
+      } else {
+        display->setTextColor(SSD1306_WHITE);
+      }
       display->setCursor(31, 64 - 8);
       display->print("Save & Exit");
     }
@@ -118,28 +124,38 @@ void ConfigPage1::Draw(bool force) {
   }
 }
 
+// @brief Function called by PanelManager when the button is pressed
+// @param longPress true if a long press was detected
+// @return Action to be executed by PanelManager
 PageAction_t ConfigPage1::OnButtonPressed(bool longPress) {
   PageAction_t action = PAGE_ACTION_NEXT_PAGE;
 
   if (editMode) {
+    // In edit mode, the button is used to cycle through the configuration items
     if (longPress) {
       if (editPosition == NUMBER_OF_CONFIG_ITEMS) {
+        // Long press on "Save & Exit"
         editMode = false;
+        // Apply configuration
         DeployConfiguration();
       } else {
+        // Long press on a configuration item : cycle its value
         ConfigCycle(editPosition);
       }
       action = PAGE_ACTION_REFRESH;
     } else {
+      // Short press : cycle through configuration items
       editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
       action = PAGE_ACTION_REFRESH;
     }
   } else {
     if (longPress) {
+      // Long press while not in edit mode : enter edit mode
       editMode = true;
       editPosition = 0;
       action = PAGE_ACTION_REFRESH;
     } else {
+      // Short press while not in edit mode : cycle to next page
       action = PAGE_ACTION_NEXT_PAGE;
     }
   }
@@ -147,6 +163,9 @@ PageAction_t ConfigPage1::OnButtonPressed(bool longPress) {
   return action;
 }
 
+// @brief Return the string of a given configuration item
+// @param index Configuration item
+// @return String naming the value of the configuration item
 char const *ConfigPage1::ConfigString(uint32_t index) {
   switch (index) {
   case 0:
@@ -162,6 +181,8 @@ char const *ConfigPage1::ConfigString(uint32_t index) {
   return "---";
 }
 
+// @brief Return the string of a the frequency system configuration item
+// @return String naming the value of the frequency
 char const *ConfigPage1::ConfigFreqString() {
   switch (configFreqSel) {
   case 0:
@@ -173,6 +194,8 @@ char const *ConfigPage1::ConfigFreqString() {
   return "---";
 }
 
+// Return the string of a the NMEA link configuration item
+// @return String naming the value of the NMEA link
 char const *ConfigPage1::ConfigNmeaString() {
   switch (configNmeaSel) {
   case 0:
@@ -186,6 +209,8 @@ char const *ConfigPage1::ConfigNmeaString() {
   return "---";
 }
 
+// Return the string of a the RMB Workaround configuration item
+// @return String naming the value of the RMB Workaround
 char const *ConfigPage1::ConfigRmbWorkaroundString() {
   if (configRmbWorkaround) {
     return "Yes";
@@ -193,6 +218,8 @@ char const *ConfigPage1::ConfigRmbWorkaroundString() {
   return "No";
 }
 
+// Return the string of a the Wind Repeater configuration item
+// @return String naming the value of Wind Repeater
 char const *ConfigPage1::ConfigWindRepeaterString() {
   if (configWindRepeater) {
     return "Yes";
@@ -200,6 +227,8 @@ char const *ConfigPage1::ConfigWindRepeaterString() {
   return "No";
 }
 
+// @brief Cycle the value of a given configuration item
+// @param index Configuration item
 void ConfigPage1::ConfigCycle(uint32_t index) {
   switch (index) {
   case 0:
@@ -217,18 +246,23 @@ void ConfigPage1::ConfigCycle(uint32_t index) {
   }
 }
 
+// @brief Cycle the value of the frequency system configuration item
 void ConfigPage1::ConfigFreqCycle() { configFreqSel = (configFreqSel + 1) % 2; }
 
+// @brief Cycle the value of the NMEA Link configuration item
 void ConfigPage1::ConfigNmeaCycle() { configNmeaSel = (configNmeaSel + 1) % 2; }
 
+// @brief Cycle the value of the RMB Workaround configuration item
 void ConfigPage1::ConfigRmbWorkaroundCycle() {
   configRmbWorkaround = !configRmbWorkaround;
 }
 
+// @brief Cycle the value of the Wind Repeater configuration item
 void ConfigPage1::ConfigWindRepeaterCycle() {
   configWindRepeater = !configWindRepeater;
 }
 
+// Deploy the local configuration to the overall system and save it to EEPROM
 void ConfigPage1::DeployConfiguration() {
   gConfiguration.eeprom.freqSystem = (FreqSystem_t)configFreqSel;
   gConfiguration.eeprom.nmeaLink = (SerialType_t)configNmeaSel;
