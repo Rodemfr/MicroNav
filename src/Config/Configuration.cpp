@@ -76,6 +76,8 @@ Configuration::Configuration() {
 
   memset(&eeprom, 0, sizeof(eeprom));
 
+  eeprom.waterSpeedFactor_per = 1.0;
+  eeprom.windSpeedFactor_per = 1.0;
   eeprom.windShift = 10;
   eeprom.deviceId = 0x03123456;
   eeprom.nmeaLink = SERIAL_TYPE_BT;
@@ -195,7 +197,7 @@ void Configuration::DeployConfiguration(MicronetDevice *micronetDevice) {
       micronetDevice->AddDataFields(DATA_FIELD_SPD);
     }
 
-    if ((gConfiguration.eeprom.windRepeater) ||
+    if ((gConfiguration.eeprom.windRepeater != 0) ||
         (gConfiguration.eeprom.windSource != LINK_MICRONET)) {
       micronetDevice->AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
     }
