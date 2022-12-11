@@ -286,7 +286,7 @@ void ConfigPage2::ConfigCycle(uint32_t index) {
 }
 
 void ConfigPage2::ConfigCompassCycle() {
-  configCompassSel = (configCompassSel + 1) % 2;
+  configCompassSel = (configCompassSel + 1) % 3;
 }
 
 void ConfigPage2::ConfigGnssCycle() { configGnssSel = (configGnssSel + 1) % 2; }
