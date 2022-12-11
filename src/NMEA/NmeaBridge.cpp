@@ -299,11 +299,11 @@ void NmeaBridge::DecodeRMBSentence(char *sentence) {
   if ((sentence = strchr(sentence, ',')) == nullptr)
     return;
   sentence++;
-#if (INVERTED_RMB_WORKAROUND != 1)
-  if ((sentence = strchr(sentence, ',')) == nullptr)
-    return;
-  sentence++;
-#endif
+  if (gConfiguration.eeprom.rmbWorkaround == 0) {
+    if ((sentence = strchr(sentence, ',')) == nullptr)
+      return;
+    sentence++;
+  }
   memset(micronetCodec->navData.waypoint.name, ' ',
          sizeof(micronetCodec->navData.waypoint.name));
   if (sentence[0] != ',') {
@@ -327,12 +327,13 @@ void NmeaBridge::DecodeRMBSentence(char *sentence) {
     }
     micronetCodec->navData.waypoint.nameLength = i;
   }
-#if (INVERTED_RMB_WORKAROUND != 1)
-  for (int i = 0; i < 5; i++)
-#else
-  for (int i = 0; i < 6; i++)
-#endif
-  {
+  uint32_t remainingParams;
+  if (gConfiguration.eeprom.rmbWorkaround == 0) {
+    remainingParams = 5;
+  } else {
+    remainingParams = 6;
+  }
+  for (int i = 0; i < remainingParams; i++) {
     if ((sentence = strchr(sentence, ',')) == nullptr)
       return;
     sentence++;
