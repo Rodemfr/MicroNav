@@ -41,7 +41,9 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+// @brief Number of configuration items on this page
 #define NUMBER_OF_CONFIG_ITEMS 5
+// @brief Horizontal position of configuration values on display
 #define SELECTION_X_POSITION 72
 
 /***************************************************************************/
@@ -66,13 +68,17 @@ ConfigPage2::ConfigPage2()
 
 ConfigPage2::~ConfigPage2() {}
 
+// @brief Draw the page on display
+// @param force Force redraw, even if the content did not change
 void ConfigPage2::Draw(bool force) {
   char versionStr[10];
   char networkIdStr[9];
   int16_t xVersion, yVersion;
   uint16_t wVersion, hVersion;
 
+  // Forced draw occurs when user enters the page : load configuration locally
   if (force) {
+    // Convert compass enum
     switch (gConfiguration.eeprom.compassSource) {
     case LINK_MICRONET:
       configCompassSel = 0;
@@ -85,6 +91,7 @@ void ConfigPage2::Draw(bool force) {
       break;
     }
 
+    // Convert GNSS enum
     switch (gConfiguration.eeprom.gnssSource) {
     case LINK_NMEA_GNSS:
       configGnssSel = 0;
@@ -94,6 +101,7 @@ void ConfigPage2::Draw(bool force) {
       break;
     }
 
+    // Convert wind enum
     switch (gConfiguration.eeprom.windSource) {
     case LINK_MICRONET:
       configWindSel = 0;
@@ -103,6 +111,7 @@ void ConfigPage2::Draw(bool force) {
       break;
     }
 
+    // Convert depth enum
     switch (gConfiguration.eeprom.depthSource) {
     case LINK_MICRONET:
       configDepthSel = 0;
@@ -112,6 +121,7 @@ void ConfigPage2::Draw(bool force) {
       break;
     }
 
+    // Convert speed enum
     switch (gConfiguration.eeprom.speedSource) {
     case LINK_MICRONET:
       configSpeedSel = 0;
@@ -125,6 +135,7 @@ void ConfigPage2::Draw(bool force) {
   if (display != nullptr) {
     display->clearDisplay();
 
+    // Config items
     display->setTextColor(SSD1306_WHITE);
     display->setTextSize(1);
     display->setFont(nullptr);
@@ -135,6 +146,7 @@ void ConfigPage2::Draw(bool force) {
     display->println("Depth");
     display->println("Speed");
 
+    // Config values
     for (int i = 0; i < NUMBER_OF_CONFIG_ITEMS; i++) {
       display->setCursor(SELECTION_X_POSITION, i * 8);
       if (editMode && (editPosition == i)) {
@@ -162,19 +174,27 @@ void ConfigPage2::Draw(bool force) {
   }
 }
 
+// @brief Function called by PanelManager when the button is pressed
+// @param longPress true if a long press was detected
+// @return Action to be executed by PanelManager
 PageAction_t ConfigPage2::OnButtonPressed(bool longPress) {
   PageAction_t action = PAGE_ACTION_NEXT_PAGE;
 
   if (editMode) {
+    // In edit mode, the button is used to cycle through the configuration items
     if (longPress) {
       if (editPosition == NUMBER_OF_CONFIG_ITEMS) {
+        // Long press on "Save & Exit"
         editMode = false;
+        // Apply configuration
         DeployConfiguration();
       } else {
+        // Long press on a configuration item : cycle its value
         ConfigCycle(editPosition);
       }
       action = PAGE_ACTION_REFRESH;
     } else {
+      // Short press : cycle through configuration items
       editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
       action = PAGE_ACTION_REFRESH;
     }
@@ -191,6 +211,9 @@ PageAction_t ConfigPage2::OnButtonPressed(bool longPress) {
   return action;
 }
 
+// @brief Return the string of a given configuration item
+// @param index Configuration item
+// @return String naming the value of the configuration item
 char const *ConfigPage2::ConfigString(uint32_t index) {
   switch (index) {
   case 0:
@@ -208,6 +231,8 @@ char const *ConfigPage2::ConfigString(uint32_t index) {
   return "---";
 }
 
+// @brief Return the string of a the compass configuration item
+// @return String naming the value of the compass source
 char const *ConfigPage2::ConfigCompassString() {
   switch (configCompassSel) {
   case 0:
@@ -221,6 +246,8 @@ char const *ConfigPage2::ConfigCompassString() {
   return "---";
 }
 
+// Return the string of a the GNSS configuration item
+// @return String naming the value of the GNSS source
 char const *ConfigPage2::ConfigGnssString() {
   switch (configGnssSel) {
   case 0:
@@ -232,6 +259,8 @@ char const *ConfigPage2::ConfigGnssString() {
   return "---";
 }
 
+// Return the string of a the Wind configuration item
+// @return String naming the value of the Wind source
 char const *ConfigPage2::ConfigWindString() {
   switch (configWindSel) {
   case 0:
@@ -243,6 +272,8 @@ char const *ConfigPage2::ConfigWindString() {
   return "---";
 }
 
+// Return the string of a the depth configuration item
+// @return String naming the value of the depth source
 char const *ConfigPage2::ConfigDepthString() {
   switch (configDepthSel) {
   case 0:
@@ -254,6 +285,8 @@ char const *ConfigPage2::ConfigDepthString() {
   return "---";
 }
 
+// Return the string of a the speed configuration item
+// @return String naming the value of the speed source
 char const *ConfigPage2::ConfigSpeedString() {
   switch (configSpeedSel) {
   case 0:
@@ -265,6 +298,8 @@ char const *ConfigPage2::ConfigSpeedString() {
   return "---";
 }
 
+// @brief Cycle the value of a given configuration item
+// @param index Configuration item
 void ConfigPage2::ConfigCycle(uint32_t index) {
   switch (index) {
   case 0:
@@ -285,22 +320,28 @@ void ConfigPage2::ConfigCycle(uint32_t index) {
   }
 }
 
+// @brief Cycle the value of the compass configuration item
 void ConfigPage2::ConfigCompassCycle() {
   configCompassSel = (configCompassSel + 1) % 3;
 }
 
+// @brief Cycle the value of the GNSS configuration item
 void ConfigPage2::ConfigGnssCycle() { configGnssSel = (configGnssSel + 1) % 2; }
 
+// @brief Cycle the value of the wind configuration item
 void ConfigPage2::ConfigWindCycle() { configWindSel = (configWindSel + 1) % 2; }
 
+// @brief Cycle the value of the depth configuration item
 void ConfigPage2::ConfigDepthCycle() {
   configDepthSel = (configDepthSel + 1) % 2;
 }
 
+// @brief Cycle the value of the speed configuration item
 void ConfigPage2::ConfigSpeedCycle() {
   configSpeedSel = (configSpeedSel + 1) % 2;
 }
 
+// @brief Deploy the local configuration to the overall system and save it to EEPROM
 void ConfigPage2::DeployConfiguration() {
   DeployCompass();
   DeployGnss();
@@ -312,6 +353,7 @@ void ConfigPage2::DeployConfiguration() {
   gConfiguration.SaveToEeprom();
 }
 
+// @brief Deploy compass configuration to the overall system
 void ConfigPage2::DeployCompass() {
   switch (configCompassSel) {
   case 0:
@@ -326,6 +368,7 @@ void ConfigPage2::DeployCompass() {
   }
 }
 
+// @brief Deploy GNSS configuration to the overall system
 void ConfigPage2::DeployGnss() {
   switch (configGnssSel) {
   case 0:
@@ -337,6 +380,7 @@ void ConfigPage2::DeployGnss() {
   }
 }
 
+// @brief Deploy wind configuration to the overall system
 void ConfigPage2::DeployWind() {
   switch (configWindSel) {
   case 0:
@@ -348,6 +392,7 @@ void ConfigPage2::DeployWind() {
   }
 }
 
+// @brief Deploy depth configuration to the overall system
 void ConfigPage2::DeployDepth() {
   switch (configDepthSel) {
   case 0:
@@ -359,6 +404,7 @@ void ConfigPage2::DeployDepth() {
   }
 }
 
+// @brief Deploy speed configuration to the overall system
 void ConfigPage2::DeploySpeed() {
   switch (configSpeedSel) {
   case 0:

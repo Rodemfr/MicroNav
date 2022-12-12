@@ -41,7 +41,9 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+// @brief Number of configuration items on this page
 #define NUMBER_OF_CONFIG_ITEMS 4
+// @brief Horizontal position of configuration values on display
 #define SELECTION_X_POSITION 72
 
 /***************************************************************************/
@@ -262,7 +264,7 @@ void ConfigPage1::ConfigWindRepeaterCycle() {
   configWindRepeater = !configWindRepeater;
 }
 
-// Deploy the local configuration to the overall system and save it to EEPROM
+// @brief Deploy the local configuration to the overall system and save it to EEPROM
 void ConfigPage1::DeployConfiguration() {
   gConfiguration.eeprom.freqSystem = (FreqSystem_t)configFreqSel;
   gConfiguration.eeprom.nmeaLink = (SerialType_t)configNmeaSel;
