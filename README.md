@@ -12,8 +12,8 @@ MicroNav can :
 
 - Send T-Beam's GPS data to your Micronet network (Position, COG, SOG, DATE, TIME) and to the NMEA link (GGA, RMC, VTG)
 - Send Navigation/guidance data from a navigation software (OpenCPN, AvNav, qtVlm) to Micronet network (BTW, DTW, XTE, WPNAME)
-- Send Micronet's data to the NMEA link (MWV, DPT, MTW, VLW, VHW, HDG, XDR)
-- Send Magnetic heading from LSM303DLHC to Micronet network and NMEA link
+- Send Micronet's data to the NMEA link (MWV, DPT, MTW, VLW, VHW, HDG, XDR). NMEA link can be USB or Bluetooth. Wifi will come later.
+- Send Magnetic heading from LSM303DLHC to Micronet network and NMEA link (**Underwork**)
 - Be configured to match your boat configuration : you can select which set of data is received from which link (NMEA, Micronet, GPS or LSM303)
 
 The project requires the following hardware :
@@ -28,7 +28,7 @@ The project requires the following hardware :
 ![](images/t215.png)
 ![](images/t113.png)
 
-- A 868/915MHz TTGO T-Beam v1.1 with SX1276 RF IC and OLED display (like [this one](http://www.lilygo.cn/prod_view.aspx?TypeId=50060&Id=1317&FId=t3:50060:3)). Select 868MHz version if you have a Tacktick system for EU or 915MHz else.
+- A 868 or 915MHz TTGO T-Beam v1.1 with SX1276 RF IC and OLED display (like [this one](http://www.lilygo.cn/prod_view.aspx?TypeId=50060&Id=1317&FId=t3:50060:3)). You should check on which frequency is your Tacktick system communicating, 868MHz for EU system or 915MHz for non EU, and select the corresponding T-Beam version. Selecting the wrong one would reduce the operating distance of Micronav. Note that OLED display is mandatory since Micronav can't be configured without it.
 
 ![](images/t-beam-v1-1.png)
 
@@ -71,6 +71,7 @@ Fully operational:
 - GPS Decoding
 - NMEA through USB
 - NMEA through Bluetooh
+- Interactive configuration using OLED display & button
 
 Not tested:
 - Micronet RX/TX with SX1276 at 915Mhz
@@ -79,6 +80,5 @@ Not working:
 - LSM303DLHC Driver (Magnetic heading)
 
 Not developped:
-- NMEA through WiFi
-- Interactive configuration using OLED display & button
+- NMEA through Wifi
 - Power saving , power off & battery handling
