@@ -262,7 +262,7 @@ void ConfigPage1::ConfigWindRepeaterCycle() {
   configWindRepeater = !configWindRepeater;
 }
 
-// Deploy the local configuration to the overall system and save it to EEPROM
+// @brief Deploy the local configuration to the overall system and save it to EEPROM
 void ConfigPage1::DeployConfiguration() {
   gConfiguration.eeprom.freqSystem = (FreqSystem_t)configFreqSel;
   gConfiguration.eeprom.nmeaLink = (SerialType_t)configNmeaSel;

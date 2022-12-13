@@ -53,7 +53,7 @@
 
 #define TASK_WAKEUP_PERIOD 200
 #define DISPLAY_UPDATE_PERIOD 1000
-#define BUTTON_LONG_PRESS_DELAY 1500
+#define BUTTON_LONG_PRESS_DELAY 1000
 #define BUTTON_SHORT_PRESS_MIN 200
 
 /***************************************************************************/
