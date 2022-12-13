@@ -41,7 +41,9 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+// @brief Number of configuration items on this page
 #define NUMBER_OF_CONFIG_ITEMS 4
+// @brief Horizontal position of configuration values on display
 #define SELECTION_X_POSITION 72
 
 /***************************************************************************/
