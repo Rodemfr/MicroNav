@@ -115,8 +115,6 @@ bool LSM303DLHCDriver::Init()
 	uint8_t sr = 0;
 	uint8_t whoami = 0;
 
-	NAVCOMPASS_I2C.begin();
-
 	if (!I2CRead(LSM303DLHC_ACC_ADDR, STATUS_REG_A, &sr))
 	{
 		return false;

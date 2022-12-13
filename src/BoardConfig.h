@@ -38,9 +38,7 @@
 /***************************************************************************/
 
 // Selects on which I2C bus is connected compass as per Wiring library definition
-#define NAVCOMPASS_I2C Wire1
-#define NAVCOMPASS_I2C_SDA 13
-#define NAVCOMPASS_I2C_SCL 14
+#define NAVCOMPASS_I2C Wire
 
 #define RF_CS0_PIN  18
 #define RF_MOSI_PIN 27

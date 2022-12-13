@@ -150,7 +150,7 @@ void setup() {
   CONSOLE.println("OK");
 
   CONSOLE.print("Initializing navigation compass ... ");
-  if (1) //! gNavCompass.Init())
+  if (!gNavCompass.Init())
   {
     CONSOLE.println("NOT DETECTED");
     gConfiguration.ram.navCompassAvailable = false;
