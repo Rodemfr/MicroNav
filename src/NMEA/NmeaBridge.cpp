@@ -669,7 +669,8 @@ void NmeaBridge::EncodeDPT() {
 
     if (update) {
       char sentence[NMEA_SENTENCE_MAX_LENGTH];
-      sprintf(sentence, "$INDPT,%.1f,0.0", micronetCodec->navData.dpt_m.value);
+      sprintf(sentence, "$INDPT,%.1f,%.1f,", micronetCodec->navData.dpt_m.value,
+              micronetCodec->navData.depthOffset_m);
       AddNmeaChecksum(sentence);
       nmeaTimeStamps.dpt = millis();
       gConfiguration.ram.nmeaLink->println(sentence);
@@ -708,7 +709,7 @@ void NmeaBridge::EncodeVLW() {
 
     if (update) {
       char sentence[NMEA_SENTENCE_MAX_LENGTH];
-      sprintf(sentence, "$INVLW,%.1f,N,%.1f,N",
+      sprintf(sentence, "$INVLW,%.1f,N,%.1f,N,,N,,N",
               micronetCodec->navData.log_nm.value,
               micronetCodec->navData.trip_nm.value);
       AddNmeaChecksum(sentence);
@@ -720,27 +721,27 @@ void NmeaBridge::EncodeVLW() {
 
 void NmeaBridge::EncodeVHW() {
   if (gConfiguration.eeprom.speedSource == LINK_MICRONET) {
-    bool update;
-
-    update = (micronetCodec->navData.spd_kt.timeStamp >
-              nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS);
-    update = update || (micronetCodec->navData.magHdg_deg.timeStamp >
-                        nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS);
-    update = update && (micronetCodec->navData.spd_kt.valid ||
-                        micronetCodec->navData.magHdg_deg.valid);
+    bool update = (micronetCodec->navData.spd_kt.timeStamp >
+                   nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS) &&
+                  (micronetCodec->navData.spd_kt.valid);
 
     if (update) {
       char sentence[NMEA_SENTENCE_MAX_LENGTH];
       if ((micronetCodec->navData.magHdg_deg.valid) &&
           (micronetCodec->navData.spd_kt.valid)) {
-        sprintf(sentence, "$INVHW,,T,%.0f,M,%.2f,N,,K",
+        float trueHeading = micronetCodec->navData.magHdg_deg.value +
+                            micronetCodec->navData.magneticVariation_deg;
+        if (trueHeading < 0.0f) {
+          trueHeading += 360.0f;
+        }
+        if (trueHeading >= 360.0f) {
+          trueHeading -= 360.0f;
+        }
+        sprintf(sentence, "$INVHW,%.1f,T,%.1f,M,%.1f,N,,K", trueHeading,
                 micronetCodec->navData.magHdg_deg.value,
                 micronetCodec->navData.spd_kt.value);
-      } else if (micronetCodec->navData.magHdg_deg.valid) {
-        sprintf(sentence, "$INVHW,,T,%.0f,M,,N,,K",
-                micronetCodec->navData.magHdg_deg.value);
-      } else {
-        sprintf(sentence, "$INVHW,,T,,M,%.2f,N,,K",
+      } else if (micronetCodec->navData.spd_kt.valid) {
+        sprintf(sentence, "$INVHW,,T,,M,%.1f,N,,K",
                 micronetCodec->navData.spd_kt.value);
       }
       AddNmeaChecksum(sentence);
@@ -761,7 +762,7 @@ void NmeaBridge::EncodeHDG() {
 
     if (update) {
       char sentence[NMEA_SENTENCE_MAX_LENGTH];
-      sprintf(sentence, "$INHDG,%.0f,,,%.0f,%c",
+      sprintf(sentence, "$INHDG,%.1f,0,E,%.1f,%c",
               micronetCodec->navData.magHdg_deg.value,
               fabsf(micronetCodec->navData.magneticVariation_deg),
               (micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W'
@@ -781,7 +782,7 @@ void NmeaBridge::EncodeXDR() {
 
   if (update) {
     char sentence[NMEA_SENTENCE_MAX_LENGTH];
-    sprintf(sentence, "$INXDR,U,%.1f,V,BATTERY#0",
+    sprintf(sentence, "$INXDR,U,%.1f,V,TACKTICK",
             micronetCodec->navData.vcc_v.value);
     AddNmeaChecksum(sentence);
     nmeaTimeStamps.vcc = millis();
