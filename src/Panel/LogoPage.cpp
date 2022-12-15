@@ -83,14 +83,14 @@ void LogoPage::Draw(bool force)
     if (display != nullptr)
     {
         display->clearDisplay();
-        display->drawBitmap(0, (SCREEN_HEIGHT - LOGO_HEIGHT) / 2 - 4, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
+        display->drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
 
         display->setTextColor(SSD1306_WHITE);
         display->setTextSize(1);
         display->setFont(nullptr);
         snprintf(versionStr, sizeof(versionStr), "v%d.%d.%d", swMajorVersion, swMinorVersion, swPatchVersion);
         display->getTextBounds(String(versionStr), 0, 0, &xVersion, &yVersion, &wVersion, &hVersion);
-        display->setCursor(SCREEN_WIDTH - wVersion, (SCREEN_HEIGHT - LOGO_HEIGHT) / 2 - 4 + LOGO_HEIGHT - yVersion + 2);
+        display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 2);
         display->print(versionStr);
 
         display->display();

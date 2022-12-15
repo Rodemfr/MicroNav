@@ -71,10 +71,8 @@ ConfigPage2::~ConfigPage2() {}
 // @brief Draw the page on display
 // @param force Force redraw, even if the content did not change
 void ConfigPage2::Draw(bool force) {
-  char versionStr[10];
-  char networkIdStr[9];
-  int16_t xVersion, yVersion;
-  uint16_t wVersion, hVersion;
+  int16_t xStr, yStr;
+  uint16_t wStr, hStr;
 
   // Forced draw occurs when user enters the page : load configuration locally
   if (force) {
@@ -157,18 +155,24 @@ void ConfigPage2::Draw(bool force) {
       } else {
         display->setTextColor(SSD1306_WHITE);
       }
+      display->getTextBounds(String(ConfigString(i)), 0, 0, &xStr, &yStr, &wStr,
+                             &hStr);
+      display->setCursor(SCREEN_WIDTH - wStr, i * 8);
       display->print(ConfigString(i));
     }
 
-    if (editMode && (editPosition == NUMBER_OF_CONFIG_ITEMS)) {
-      display->fillRect(31, 64 - 8, 11 * 6, 8, SSD1306_WHITE);
-      display->setTextColor(SSD1306_BLACK);
-    } else {
-      display->setTextColor(SSD1306_WHITE);
-    }
     if (editMode) {
-      display->setCursor(31, 64 - 8);
-      display->print("Save & Exit");
+      if (editPosition == NUMBER_OF_CONFIG_ITEMS) {
+        display->fillRect(52, 64 - 8, 4 * 6, 8, SSD1306_WHITE);
+        display->setTextColor(SSD1306_BLACK);
+      } else {
+        display->setTextColor(SSD1306_WHITE);
+      }
+      display->setCursor(52, 64 - 8);
+      display->print("Save");
+    } else {
+      display->setCursor(0, 64 - 8);
+      display->print("Config 2");
     }
     display->display();
   }
@@ -341,7 +345,8 @@ void ConfigPage2::ConfigSpeedCycle() {
   configSpeedSel = (configSpeedSel + 1) % 2;
 }
 
-// @brief Deploy the local configuration to the overall system and save it to EEPROM
+// @brief Deploy the local configuration to the overall system and save it to
+// EEPROM
 void ConfigPage2::DeployConfiguration() {
   DeployCompass();
   DeployGnss();
