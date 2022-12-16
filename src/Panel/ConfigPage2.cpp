@@ -189,7 +189,7 @@ void ConfigPage2::Draw(bool force)
         }
         else
         {
-            display->setCursor(0, 64 - 8);
+            display->setCursor((SCREEN_WIDTH - (6 * 8)) / 2, 64 - 8);
             display->print("Config 2");
         }
         display->display();

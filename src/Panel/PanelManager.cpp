@@ -98,6 +98,7 @@ bool PanelManager::Init()
         networkPage.SetDisplay(&display);
         configPage1.SetDisplay(&display);
         configPage2.SetDisplay(&display);
+        commandPage.SetDisplay(&display);
 
         pageNumber = 0;
 
@@ -263,6 +264,9 @@ void PanelManager::CommandCallback()
                 break;
             case PAGE_CONFIG2:
                 currentPage = (PageHandler *)&configPage2;
+                break;
+            case PAGE_COMMAND:
+                currentPage = (PageHandler *)&commandPage;
                 break;
             }
             portEXIT_CRITICAL(&commandMutex);
