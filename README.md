@@ -75,8 +75,6 @@ Fully operational:
 
 Not tested:
 - Micronet RX/TX with SX1276 at 915Mhz
-
-Not working:
 - LSM303DLHC Driver (Magnetic heading)
 
 Not developped:
