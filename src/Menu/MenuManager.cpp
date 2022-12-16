@@ -57,7 +57,7 @@
 MenuManager::MenuManager()
 {
     menuLength = 0;
-    menu = nullptr;
+    menu       = nullptr;
 }
 
 MenuManager::~MenuManager()

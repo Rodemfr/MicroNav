@@ -62,39 +62,39 @@
 
 NavigationData::NavigationData()
 {
-    spd_kt.valid = false;
-    awa_deg.valid = false;
-    aws_kt.valid = false;
-    twa_deg.valid = false;
-    tws_kt.valid = false;
-    dpt_m.valid = false;
-    vcc_v.valid = false;
-    log_nm.valid = false;
-    trip_nm.valid = false;
-    stp_degc.valid = false;
-    time.valid = false;
-    date.valid = false;
-    latitude_deg.valid = false;
+    spd_kt.valid        = false;
+    awa_deg.valid       = false;
+    aws_kt.valid        = false;
+    twa_deg.valid       = false;
+    tws_kt.valid        = false;
+    dpt_m.valid         = false;
+    vcc_v.valid         = false;
+    log_nm.valid        = false;
+    trip_nm.valid       = false;
+    stp_degc.valid      = false;
+    time.valid          = false;
+    date.valid          = false;
+    latitude_deg.valid  = false;
     longitude_deg.valid = false;
-    cog_deg.valid = false;
-    sog_kt.valid = false;
-    xte_nm.valid = false;
-    dtw_nm.valid = false;
-    btw_deg.valid = false;
-    waypoint.valid = false;
-    vmgwp_kt.valid = false;
-    magHdg_deg.valid = false;
+    cog_deg.valid       = false;
+    sog_kt.valid        = false;
+    xte_nm.valid        = false;
+    dtw_nm.valid        = false;
+    btw_deg.valid       = false;
+    waypoint.valid      = false;
+    vmgwp_kt.valid      = false;
+    magHdg_deg.valid    = false;
 
-    calibrationUpdated = false;
-    waterSpeedFactor_per = 0.0f;
+    calibrationUpdated          = false;
+    waterSpeedFactor_per        = 0.0f;
     waterTemperatureOffset_degc = 0.0f;
-    depthOffset_m = 0.0f;
-    windSpeedFactor_per = 0.0f;
-    windDirectionOffset_deg = 0.0f;
-    headingOffset_deg = 0.0f;
-    magneticVariation_deg = 0.0f;
-    windShift_min = 0.0f;
-    timeZone_h = 0;
+    depthOffset_m               = 0.0f;
+    windSpeedFactor_per         = 0.0f;
+    windDirectionOffset_deg     = 0.0f;
+    headingOffset_deg           = 0.0f;
+    magneticVariation_deg       = 0.0f;
+    windShift_min               = 0.0f;
+    timeZone_h                  = 0;
 }
 
 NavigationData::~NavigationData()

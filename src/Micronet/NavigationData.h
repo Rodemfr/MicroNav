@@ -45,33 +45,33 @@
 
 typedef struct
 {
-    bool valid;
-    float value;
+    bool     valid;
+    float    value;
     uint32_t timeStamp;
 } FloatValue_t;
 
 typedef struct
 {
-    bool valid;
-    uint8_t hour;
-    uint8_t minute;
+    bool     valid;
+    uint8_t  hour;
+    uint8_t  minute;
     uint32_t timeStamp;
 } TimeValue_t;
 
 typedef struct
 {
-    bool valid;
-    uint8_t day;
-    uint8_t month;
-    uint8_t year;
+    bool     valid;
+    uint8_t  day;
+    uint8_t  month;
+    uint8_t  year;
     uint32_t timeStamp;
 } DateValue_t;
 
 typedef struct
 {
-    bool valid;
-    uint8_t name[WAYPOINT_NAME_LENGTH];
-    uint8_t nameLength;
+    bool     valid;
+    uint8_t  name[WAYPOINT_NAME_LENGTH];
+    uint8_t  nameLength;
     uint32_t timeStamp;
 } WaypointName_t;
 
@@ -98,29 +98,29 @@ class NavigationData
     FloatValue_t trip_nm;
     FloatValue_t stp_degc;
 
-    TimeValue_t time;
-    DateValue_t date;
-    FloatValue_t latitude_deg;
-    FloatValue_t longitude_deg;
-    FloatValue_t cog_deg;
-    FloatValue_t sog_kt;
-    FloatValue_t xte_nm;
-    FloatValue_t dtw_nm;
-    FloatValue_t btw_deg;
+    TimeValue_t    time;
+    DateValue_t    date;
+    FloatValue_t   latitude_deg;
+    FloatValue_t   longitude_deg;
+    FloatValue_t   cog_deg;
+    FloatValue_t   sog_kt;
+    FloatValue_t   xte_nm;
+    FloatValue_t   dtw_nm;
+    FloatValue_t   btw_deg;
     WaypointName_t waypoint;
-    FloatValue_t vmgwp_kt;
+    FloatValue_t   vmgwp_kt;
 
     FloatValue_t magHdg_deg; // Magnetic heading (includes heading offset but not magnetic variation or deviation)
 
-    bool calibrationUpdated;
-    float waterSpeedFactor_per;
-    float waterTemperatureOffset_degc;
-    float depthOffset_m;
-    float windSpeedFactor_per;
-    float windDirectionOffset_deg;
-    float headingOffset_deg;
-    float magneticVariation_deg;
-    float windShift_min;
+    bool   calibrationUpdated;
+    float  waterSpeedFactor_per;
+    float  waterTemperatureOffset_degc;
+    float  depthOffset_m;
+    float  windSpeedFactor_per;
+    float  windDirectionOffset_deg;
+    float  headingOffset_deg;
+    float  magneticVariation_deg;
+    float  windShift_min;
     int8_t timeZone_h;
 };
 

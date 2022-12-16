@@ -51,19 +51,19 @@ class ConfigPage1 : public PageHandler
     ConfigPage1();
     virtual ~ConfigPage1();
 
-    void Draw(bool force);
+    void         Draw(bool force);
     PageAction_t OnButtonPressed(bool longPress);
 
   private:
-    uint8_t swMajorVersion, swMinorVersion;
+    uint8_t  swMajorVersion, swMinorVersion;
     uint32_t swPatchVersion;
-    bool editMode;
+    bool     editMode;
     uint32_t editPosition;
 
     uint32_t configFreqSel;
     uint32_t configNmeaSel;
-    bool configRmbWorkaround;
-    bool configWindRepeater;
+    bool     configRmbWorkaround;
+    bool     configWindRepeater;
 
     void DeployConfiguration();
 

@@ -60,20 +60,20 @@ class NavCompass
     NavCompass();
     virtual ~NavCompass();
 
-    bool Init();
+    bool   Init();
     string GetDeviceName();
-    float GetHeading();
-    void GetMagneticField(float *magX, float *magY, float *magZ);
-    void GetAcceleration(float *accX, float *accY, float *accZ);
+    float  GetHeading();
+    void   GetMagneticField(float *magX, float *magY, float *magZ);
+    void   GetAcceleration(float *accX, float *accY, float *accZ);
 
   private:
-    float headingHistory[HEADING_HISTORY_LENGTH];
-    uint32_t headingIndex;
-    bool navCompassDetected;
+    float             headingHistory[HEADING_HISTORY_LENGTH];
+    uint32_t          headingIndex;
+    bool              navCompassDetected;
     NavCompassDriver *navCompassDriver;
 
-    void Normalize(vec *a);
-    void CrossProduct(vec *a, vec *b, vec *out);
+    void  Normalize(vec *a);
+    void  CrossProduct(vec *a, vec *b, vec *out);
     float vector_dot(vec *a, vec *b);
 };
 

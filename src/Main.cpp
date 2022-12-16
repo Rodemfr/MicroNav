@@ -400,8 +400,8 @@ void MenuAbout()
 void MenuScanNetworks()
 {
     MicronetMessage_t *message;
-    uint32_t nidArray[MAX_SCANNED_NETWORKS];
-    int16_t rssiArray[MAX_SCANNED_NETWORKS];
+    uint32_t           nidArray[MAX_SCANNED_NETWORKS];
+    int16_t            rssiArray[MAX_SCANNED_NETWORKS];
 
     memset(nidArray, 0, sizeof(nidArray));
     memset(rssiArray, 0, sizeof(rssiArray));
@@ -417,15 +417,15 @@ void MenuScanNetworks()
             // Only consider messages with a valid CRC
             if (gMicronetCodec.VerifyHeaderCrc(message))
             {
-                uint32_t nid = gMicronetCodec.GetNetworkId(message);
-                int16_t rssi = message->rssi;
+                uint32_t nid  = gMicronetCodec.GetNetworkId(message);
+                int16_t  rssi = message->rssi;
                 // Store the network in the array by order of reception power
                 for (int i = 0; i < MAX_SCANNED_NETWORKS; i++)
                 {
                     if (nidArray[i] == 0)
                     {
                         // New network
-                        nidArray[i] = nid;
+                        nidArray[i]  = nid;
                         rssiArray[i] = rssi;
                         break;
                     }
@@ -445,10 +445,10 @@ void MenuScanNetworks()
                         {
                             for (int j = (MAX_SCANNED_NETWORKS - 1); j > i; j++)
                             {
-                                nidArray[j] = nidArray[j - 1];
+                                nidArray[j]  = nidArray[j - 1];
                                 rssiArray[j] = rssiArray[j - 1];
                             }
-                            nidArray[i] = nid;
+                            nidArray[i]  = nid;
                             rssiArray[i] = rssi;
                             break;
                         }
@@ -497,7 +497,7 @@ void MenuScanNetworks()
 
 void MenuAttachNetwork()
 {
-    char input[16], c;
+    char     input[16], c;
     uint32_t charIndex = 0;
 
     CONSOLE.print("Enter Network ID to attach to : ");
@@ -527,7 +527,7 @@ void MenuAttachNetwork()
         };
     } while (1);
 
-    bool invalidInput = false;
+    bool     invalidInput = false;
     uint32_t newNetworkId = 0;
 
     if (charIndex == 0)
@@ -574,10 +574,10 @@ void MenuAttachNetwork()
 
 void MenuConvertToNmea()
 {
-    bool exitNmeaLoop = false;
-    MicronetMessage_t *rxMessage;
+    bool                exitNmeaLoop = false;
+    MicronetMessage_t * rxMessage;
     MicronetMessageFifo txMessageFifo;
-    uint32_t lastHeadingTime = millis();
+    uint32_t            lastHeadingTime = millis();
 
     // Check that we have been attached to a network
     if (gConfiguration.eeprom.networkId == 0)
@@ -675,8 +675,8 @@ void MenuConvertToNmea()
 
 void MenuScanTraffic()
 {
-    bool exitSniffLoop = false;
-    uint32_t lastMasterRequest_us = 0;
+    bool                      exitSniffLoop        = false;
+    uint32_t                  lastMasterRequest_us = 0;
     MicronetCodec::NetworkMap networkMap;
 
     CONSOLE.println("Starting Micronet traffic scanning.");
@@ -718,17 +718,17 @@ void MenuScanTraffic()
 
 void MenuCalibrateMagnetoMeter()
 {
-    bool exitLoop = false;
+    bool     exitLoop     = false;
     uint32_t pDisplayTime = 0;
-    uint32_t pSampleTime = 0;
-    float mx, my, mz;
-    float xMin = 1000;
-    float xMax = -1000;
-    float yMin = 1000;
-    float yMax = -1000;
-    float zMin = 1000;
-    float zMax = -1000;
-    char c;
+    uint32_t pSampleTime  = 0;
+    float    mx, my, mz;
+    float    xMin = 1000;
+    float    xMax = -1000;
+    float    yMin = 1000;
+    float    yMax = -1000;
+    float    zMin = 1000;
+    float    zMax = -1000;
+    char     c;
 
     if (gConfiguration.ram.navCompassAvailable == false)
     {
@@ -818,12 +818,12 @@ void MenuCalibrateMagnetoMeter()
 
 void MenuTestRfQuality()
 {
-    bool exitTestLoop = false;
+    bool                      exitTestLoop = false;
     MicronetCodec::NetworkMap networkMap;
-    float strength;
-    TxSlotDesc_t txSlot;
-    MicronetMessage_t txMessage;
-    uint32_t receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
+    float                     strength;
+    TxSlotDesc_t              txSlot;
+    MicronetMessage_t         txMessage;
+    uint32_t                  receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
 
     CONSOLE.println("Starting RF signal quality test.");
     CONSOLE.println("Press ESC key at any time to stop testing and come back to menu.");
@@ -844,9 +844,8 @@ void MenuTestRfQuality()
                     CONSOLE.println("");
                     gMicronetCodec.GetNetworkMap(message, &networkMap);
                     txSlot = gMicronetCodec.GetAsyncTransmissionSlot(&networkMap);
-                    gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId,
-                                                     gConfiguration.eeprom.deviceId);
-                    txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+                    gMicronetCodec.EncodePingMessage(&txMessage, 9, networkMap.networkId, gConfiguration.eeprom.deviceId);
+                    txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                     txMessage.startTime_us = txSlot.start_us;
                     gRfDriver.Transmit(&txMessage);
                     memset(receivedDid, 0, sizeof(receivedDid));

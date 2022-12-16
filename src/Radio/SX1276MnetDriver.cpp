@@ -41,13 +41,13 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define SPI_WRITE_COMMAND 0x80
+#define SPI_WRITE_COMMAND     0x80
 #define DEFAULT_PACKET_LENGTH 255
 
-#define ISR_EVENT_DIO0 0x00000001
-#define ISR_EVENT_DIO1 0x00000002
+#define ISR_EVENT_DIO0     0x00000001
+#define ISR_EVENT_DIO1     0x00000002
 #define ISR_EVENT_TRANSMIT 0x00000004
-#define ISR_EVENT_ALL 0x00000007
+#define ISR_EVENT_ALL      0x00000007
 
 #define DIOCONFIG_FOR_RXTX 0x00
 
@@ -74,8 +74,7 @@ SX1276MnetDriver *SX1276MnetDriver::driverObject;
  * Initialize class attributes, SPI HW and pins
  */
 SX1276MnetDriver::SX1276MnetDriver()
-    : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)), msgDataOffset(0),
-      messageFifo(nullptr)
+    : rfState(RfState_t::RX_HEADER_RECEIVE), spiSettings(SPISettings(8000000, MSBFIRST, SPI_MODE0)), msgDataOffset(0), messageFifo(nullptr)
 {
     driverObject = this;
 }
@@ -99,17 +98,17 @@ SX1276MnetDriver::~SX1276MnetDriver()
   @param rstPin Pin number of SX1276 Reset line
   @return true if SX1276 has been found on SPI bus and configured
 */
-bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin,
-                            uint32_t dio1Pin, uint32_t rstPin, MicronetMessageFifo *messageFifo)
+bool SX1276MnetDriver::Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin, uint32_t rstPin,
+                            MicronetMessageFifo *messageFifo)
 {
     // Store pin configuration
-    this->sckPin = sckPin;
-    this->mosiPin = mosiPin;
+    this->sckPin   = sckPin;
+    this->mosiPin  = mosiPin;
     this->miso_Pin = miso_Pin;
-    this->csPin = csPin;
-    this->dio0Pin = dio0Pin;
-    this->dio1Pin = dio1Pin;
-    this->rstPin = rstPin;
+    this->csPin    = csPin;
+    this->dio0Pin  = dio0Pin;
+    this->dio1Pin  = dio1Pin;
+    this->rstPin   = rstPin;
 
     // Configure pin directions
     ExtendedPinMode(sckPin, OUTPUT);
@@ -182,7 +181,7 @@ void SX1276MnetDriver::SetBandwidth(float bandwidth)
 */
 void SX1276MnetDriver::SetBitrate(float birate)
 {
-    uint16_t BrReg = floor((SX127X_CRYSTAL_FREQ * 1000.0) / birate);
+    uint16_t BrReg  = floor((SX127X_CRYSTAL_FREQ * 1000.0) / birate);
     uint16_t BrFrac = roundf(16 * (((SX127X_CRYSTAL_FREQ * 1000.0) / birate) - BrReg));
 
     if (BrFrac > 127)
@@ -369,8 +368,7 @@ void SX1276MnetDriver::SetBaseConfiguration()
     SpiWriteRegister(SX127X_REG_PREAMBLE_MSB_FSK, 0);
     SpiWriteRegister(SX127X_REG_PREAMBLE_LSB_FSK, 14);
     // Sync word detection ON, 3 bytes long, 0x55 preamble polarity for Tx
-    SpiWriteRegister(SX127X_REG_SYNC_CONFIG,
-                     SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
+    SpiWriteRegister(SX127X_REG_SYNC_CONFIG, SX127X_AUTO_RESTART_RX_MODE_NO_PLL | SX127X_PREAMBLE_POLARITY_55 | SX127X_SYNC_ON | 0x02);
     SpiWriteRegister(SX127X_REG_SYNC_VALUE_1, MICRONET_RF_PREAMBLE_BYTE);
     SpiWriteRegister(SX127X_REG_SYNC_VALUE_2, MICRONET_RF_PREAMBLE_BYTE);
     SpiWriteRegister(SX127X_REG_SYNC_VALUE_3, MICRONET_RF_SYNC_BYTE);
@@ -418,14 +416,14 @@ void SX1276MnetDriver::ExtendedPinMode(int pinNum, int pinDir)
     // Enable GPIO32 or 33 as output.
     if (pinNum == 32 || pinNum == 33)
     {
-        uint64_t gpioBitMask = (pinNum == 32) ? 1ULL << GPIO_NUM_32 : 1ULL << GPIO_NUM_33;
-        gpio_mode_t gpioMode = (pinDir == OUTPUT) ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT;
+        uint64_t      gpioBitMask = (pinNum == 32) ? 1ULL << GPIO_NUM_32 : 1ULL << GPIO_NUM_33;
+        gpio_mode_t   gpioMode    = (pinDir == OUTPUT) ? GPIO_MODE_OUTPUT : GPIO_MODE_INPUT;
         gpio_config_t io_conf;
-        io_conf.intr_type = GPIO_INTR_DISABLE;
-        io_conf.mode = gpioMode;
+        io_conf.intr_type    = GPIO_INTR_DISABLE;
+        io_conf.mode         = gpioMode;
         io_conf.pin_bit_mask = gpioBitMask;
         io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-        io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+        io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
         gpio_config(&io_conf);
     }
     else
@@ -457,11 +455,11 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
     // Don't transmit messages which are bigger than SX1276 FIFO size
     if (message.len < 64)
     {
-        mnetTxMsg.action = message.action;
-        mnetTxMsg.rssi = message.rssi;
+        mnetTxMsg.action       = message.action;
+        mnetTxMsg.rssi         = message.rssi;
         mnetTxMsg.startTime_us = message.startTime_us;
-        mnetTxMsg.endTime_us = message.endTime_us;
-        mnetTxMsg.len = message.len;
+        mnetTxMsg.endTime_us   = message.endTime_us;
+        mnetTxMsg.len          = message.len;
         if (message.len > 0)
         {
             memcpy(mnetTxMsg.data, message.data, message.len);
@@ -534,8 +532,8 @@ void SX1276MnetDriver::IsrProcessing(uint32_t flags)
                 // header. We will begin processing it.
                 SpiBurstReadRegister(SX127X_REG_FIFO, mnetRxMsg.data, HEADER_LENGTH_IN_BYTES);
                 mnetRxMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
-                msgDataOffset = HEADER_LENGTH_IN_BYTES;
-                rfState = RfState_t::RX_PAYLOAD_RECEIVE;
+                msgDataOffset          = HEADER_LENGTH_IN_BYTES;
+                rfState                = RfState_t::RX_PAYLOAD_RECEIVE;
                 // Calculate checksum
                 for (int i = 0; i < 11; i++)
                 {
@@ -548,8 +546,8 @@ void SX1276MnetDriver::IsrProcessing(uint32_t flags)
                     ((mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2) >= MICRONET_PAYLOAD_OFFSET))
                 {
                     // TODO : Also verify the first checksum
-                    mnetRxMsg.len = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
-                    mnetRxMsg.rssi = GetRssi();
+                    mnetRxMsg.len    = mnetRxMsg.data[MICRONET_LEN_OFFSET_1] + 2;
+                    mnetRxMsg.rssi   = GetRssi();
                     mnetRxMsg.action = MICRONET_ACTION_RF_TRANSMIT;
                     if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
                     {

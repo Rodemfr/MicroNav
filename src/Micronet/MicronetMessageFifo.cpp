@@ -55,7 +55,7 @@ MicronetMessageFifo::MicronetMessageFifo()
     // Reset packet store
     memset(store, 0, sizeof(store));
     writeIndex = 0;
-    readIndex = 0;
+    readIndex  = 0;
     nbMessages = 0;
 }
 
@@ -71,11 +71,11 @@ bool MicronetMessageFifo::Push(MicronetMessage_t const &message)
     if (nbMessages < MESSAGE_STORE_SIZE)
     {
         // Yes : copy message to the store and update store's status
-        store[writeIndex].action = message.action;
-        store[writeIndex].len = message.len;
-        store[writeIndex].rssi = message.rssi;
+        store[writeIndex].action       = message.action;
+        store[writeIndex].len          = message.len;
+        store[writeIndex].rssi         = message.rssi;
         store[writeIndex].startTime_us = message.startTime_us;
-        store[writeIndex].endTime_us = message.endTime_us;
+        store[writeIndex].endTime_us   = message.endTime_us;
         memcpy(store[writeIndex].data, message.data, message.len);
         writeIndex++;
         nbMessages++;
@@ -100,11 +100,11 @@ bool MicronetMessageFifo::PushIsr(MicronetMessage_t const &message)
     if (nbMessages < MESSAGE_STORE_SIZE)
     {
         // Yes : copy message to the store and update store's status
-        store[writeIndex].action = message.action;
-        store[writeIndex].len = message.len;
-        store[writeIndex].rssi = message.rssi;
+        store[writeIndex].action       = message.action;
+        store[writeIndex].len          = message.len;
+        store[writeIndex].rssi         = message.rssi;
         store[writeIndex].startTime_us = message.startTime_us;
-        store[writeIndex].endTime_us = message.endTime_us;
+        store[writeIndex].endTime_us   = message.endTime_us;
         memcpy(store[writeIndex].data, message.data, message.len);
         writeIndex++;
         nbMessages++;
@@ -210,7 +210,7 @@ void MicronetMessageFifo::DeleteMessage()
 void MicronetMessageFifo::ResetFifo()
 {
     noInterrupts();
-    readIndex = writeIndex;
+    readIndex  = writeIndex;
     nbMessages = 0;
     interrupts();
 }

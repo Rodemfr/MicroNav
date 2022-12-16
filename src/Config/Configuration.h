@@ -67,36 +67,36 @@ typedef enum
 
 typedef struct
 {
-    uint32_t networkId;
-    uint32_t deviceId;
-    float waterSpeedFactor_per;
-    float waterTemperatureOffset_C;
-    float depthOffset_m;
-    float windSpeedFactor_per;
-    float windDirectionOffset_deg;
-    float headingOffset_deg;
-    float magneticVariation_deg;
-    float windShift;
-    float xMagOffset;
-    float yMagOffset;
-    float zMagOffset;
+    uint32_t     networkId;
+    uint32_t     deviceId;
+    float        waterSpeedFactor_per;
+    float        waterTemperatureOffset_C;
+    float        depthOffset_m;
+    float        windSpeedFactor_per;
+    float        windDirectionOffset_deg;
+    float        headingOffset_deg;
+    float        magneticVariation_deg;
+    float        windShift;
+    float        xMagOffset;
+    float        yMagOffset;
+    float        zMagOffset;
     FreqSystem_t freqSystem;
-    int8_t timeZone_h;
-    uint8_t rmbWorkaround;
-    uint8_t windRepeater;
-    uint8_t spare;
+    int8_t       timeZone_h;
+    uint8_t      rmbWorkaround;
+    uint8_t      windRepeater;
+    uint8_t      spare;
     SerialType_t nmeaLink;
-    LinkId_t gnssSource;
-    LinkId_t windSource;
-    LinkId_t depthSource;
-    LinkId_t speedSource;
-    LinkId_t compassSource;
+    LinkId_t     gnssSource;
+    LinkId_t     windSource;
+    LinkId_t     depthSource;
+    LinkId_t     speedSource;
+    LinkId_t     compassSource;
 } EEPROMConfig_t;
 
 typedef struct
 {
-    bool navCompassAvailable;
-    bool displayAvailable;
+    bool    navCompassAvailable;
+    bool    displayAvailable;
     Stream *nmeaLink;
 } RAMConfig_t;
 

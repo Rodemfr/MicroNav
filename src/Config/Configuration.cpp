@@ -40,8 +40,8 @@
 /***************************************************************************/
 
 #define CONFIGURATION_EEPROM_SIZE 128
-#define EEPROM_CONFIG_OFFSET 0
-#define CONFIG_MAGIC_NUMBER 0x4D544E4D
+#define EEPROM_CONFIG_OFFSET      0
+#define CONFIG_MAGIC_NUMBER       0x4D544E4D
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -50,9 +50,9 @@
 #pragma pack(1)
 typedef struct
 {
-    uint32_t magicWord;
+    uint32_t       magicWord;
     EEPROMConfig_t config;
-    uint32_t checksum;
+    uint32_t       checksum;
 } ConfigBlock_t;
 #pragma pack()
 
@@ -77,22 +77,22 @@ Configuration::Configuration()
 {
     // Set default configuration
     ram.navCompassAvailable = false;
-    ram.displayAvailable = false;
+    ram.displayAvailable    = false;
 
     memset(&eeprom, 0, sizeof(eeprom));
 
     eeprom.waterSpeedFactor_per = 1.0;
-    eeprom.windSpeedFactor_per = 1.0;
-    eeprom.windShift = 10;
-    eeprom.deviceId = 0x03123456;
-    eeprom.nmeaLink = SERIAL_TYPE_BT;
-    eeprom.gnssSource = LINK_NMEA_GNSS;
-    eeprom.windSource = LINK_MICRONET;
-    eeprom.depthSource = LINK_MICRONET;
-    eeprom.speedSource = LINK_MICRONET;
-    eeprom.compassSource = LINK_MICRONET;
-    eeprom.rmbWorkaround = false;
-    eeprom.windRepeater = true;
+    eeprom.windSpeedFactor_per  = 1.0;
+    eeprom.windShift            = 10;
+    eeprom.deviceId             = 0x03123456;
+    eeprom.nmeaLink             = SERIAL_TYPE_BT;
+    eeprom.gnssSource           = LINK_NMEA_GNSS;
+    eeprom.windSource           = LINK_MICRONET;
+    eeprom.depthSource          = LINK_MICRONET;
+    eeprom.speedSource          = LINK_MICRONET;
+    eeprom.compassSource        = LINK_MICRONET;
+    eeprom.rmbWorkaround        = false;
+    eeprom.windRepeater         = true;
 }
 
 Configuration::~Configuration()
@@ -122,12 +122,12 @@ void Configuration::SaveToEeprom()
     ConfigBlock_t configBlock = {0};
 
     uint8_t *pEepromBlock = (uint8_t *)(&eepromBlock);
-    uint8_t *pConfig = (uint8_t *)(&configBlock);
+    uint8_t *pConfig      = (uint8_t *)(&configBlock);
 
     EEPROM.get(0, eepromBlock);
 
     configBlock.magicWord = CONFIG_MAGIC_NUMBER;
-    configBlock.config = eeprom;
+    configBlock.config    = eeprom;
 
     configBlock.checksum = CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t));
 
@@ -144,30 +144,30 @@ void Configuration::SaveToEeprom()
 
 void Configuration::SaveCalibration(MicronetCodec &micronetCodec)
 {
-    eeprom.waterSpeedFactor_per = micronetCodec.navData.waterSpeedFactor_per;
+    eeprom.waterSpeedFactor_per     = micronetCodec.navData.waterSpeedFactor_per;
     eeprom.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
-    eeprom.depthOffset_m = micronetCodec.navData.depthOffset_m;
-    eeprom.windSpeedFactor_per = micronetCodec.navData.windSpeedFactor_per;
-    eeprom.windDirectionOffset_deg = micronetCodec.navData.windDirectionOffset_deg;
-    eeprom.headingOffset_deg = micronetCodec.navData.headingOffset_deg;
-    eeprom.magneticVariation_deg = micronetCodec.navData.magneticVariation_deg;
-    eeprom.windShift = micronetCodec.navData.windShift_min;
-    eeprom.timeZone_h = micronetCodec.navData.timeZone_h;
+    eeprom.depthOffset_m            = micronetCodec.navData.depthOffset_m;
+    eeprom.windSpeedFactor_per      = micronetCodec.navData.windSpeedFactor_per;
+    eeprom.windDirectionOffset_deg  = micronetCodec.navData.windDirectionOffset_deg;
+    eeprom.headingOffset_deg        = micronetCodec.navData.headingOffset_deg;
+    eeprom.magneticVariation_deg    = micronetCodec.navData.magneticVariation_deg;
+    eeprom.windShift                = micronetCodec.navData.windShift_min;
+    eeprom.timeZone_h               = micronetCodec.navData.timeZone_h;
 
     SaveToEeprom();
 }
 
 void Configuration::LoadCalibration(MicronetCodec *micronetCodec)
 {
-    micronetCodec->navData.waterSpeedFactor_per = eeprom.waterSpeedFactor_per;
+    micronetCodec->navData.waterSpeedFactor_per        = eeprom.waterSpeedFactor_per;
     micronetCodec->navData.waterTemperatureOffset_degc = eeprom.waterTemperatureOffset_C;
-    micronetCodec->navData.depthOffset_m = eeprom.depthOffset_m;
-    micronetCodec->navData.windSpeedFactor_per = eeprom.windSpeedFactor_per;
-    micronetCodec->navData.windDirectionOffset_deg = eeprom.windDirectionOffset_deg;
-    micronetCodec->navData.headingOffset_deg = eeprom.headingOffset_deg;
-    micronetCodec->navData.magneticVariation_deg = eeprom.magneticVariation_deg;
-    micronetCodec->navData.windShift_min = eeprom.windShift;
-    micronetCodec->navData.timeZone_h = eeprom.timeZone_h;
+    micronetCodec->navData.depthOffset_m               = eeprom.depthOffset_m;
+    micronetCodec->navData.windSpeedFactor_per         = eeprom.windSpeedFactor_per;
+    micronetCodec->navData.windDirectionOffset_deg     = eeprom.windDirectionOffset_deg;
+    micronetCodec->navData.headingOffset_deg           = eeprom.headingOffset_deg;
+    micronetCodec->navData.magneticVariation_deg       = eeprom.magneticVariation_deg;
+    micronetCodec->navData.windShift_min               = eeprom.windShift;
+    micronetCodec->navData.timeZone_h                  = eeprom.timeZone_h;
 }
 
 void Configuration::DeployConfiguration(MicronetDevice *micronetDevice)
@@ -192,9 +192,8 @@ void Configuration::DeployConfiguration(MicronetDevice *micronetDevice)
         // Configure Micronet device
         micronetDevice->SetNetworkId(gConfiguration.eeprom.networkId);
         micronetDevice->SetDeviceId(gConfiguration.eeprom.deviceId);
-        micronetDevice->SetDataFields(DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE | DATA_FIELD_POSITION |
-                                      DATA_FIELD_XTE | DATA_FIELD_DTW | DATA_FIELD_BTW | DATA_FIELD_VMGWP |
-                                      DATA_FIELD_NODE_INFO);
+        micronetDevice->SetDataFields(DATA_FIELD_TIME | DATA_FIELD_SOGCOG | DATA_FIELD_DATE | DATA_FIELD_POSITION | DATA_FIELD_XTE | DATA_FIELD_DTW |
+                                      DATA_FIELD_BTW | DATA_FIELD_VMGWP | DATA_FIELD_NODE_INFO);
 
         if (gConfiguration.eeprom.compassSource != LINK_MICRONET)
         {

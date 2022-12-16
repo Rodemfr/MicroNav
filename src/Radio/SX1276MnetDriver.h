@@ -67,8 +67,8 @@ class SX1276MnetDriver
     SX1276MnetDriver();
     ~SX1276MnetDriver();
 
-    bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin,
-              uint32_t rstPin, MicronetMessageFifo *messageFifo);
+    bool Init(uint32_t sckPin, uint32_t mosiPin, uint32_t miso_Pin, uint32_t csPin, uint32_t dio0Pin, uint32_t dio1Pin, uint32_t rstPin,
+              MicronetMessageFifo *messageFifo);
     void SetFrequency(float frequency);
     void SetBandwidth(float bandwidth);
     void StartTx(void);
@@ -77,35 +77,35 @@ class SX1276MnetDriver
     void TransmitFromIsr(MicronetMessage_t &message);
 
   private:
-    SPISettings spiSettings;
-    uint32_t sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
-    RfState_t rfState;
-    MicronetMessage_t mnetRxMsg;
-    MicronetMessage_t mnetTxMsg;
-    uint32_t msgDataOffset;
+    SPISettings          spiSettings;
+    uint32_t             sckPin, mosiPin, miso_Pin, csPin, dio0Pin, dio1Pin, rstPin;
+    RfState_t            rfState;
+    MicronetMessage_t    mnetRxMsg;
+    MicronetMessage_t    mnetTxMsg;
+    uint32_t             msgDataOffset;
     MicronetMessageFifo *messageFifo;
 
     uint8_t SpiReadRegister(uint8_t addr);
-    void SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
-    void SpiWriteRegister(uint8_t addr, uint8_t value);
-    void SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
+    void    SpiBurstReadRegister(uint8_t addr, uint8_t *data, uint16_t length);
+    void    SpiWriteRegister(uint8_t addr, uint8_t value);
+    void    SpiBurstWriteRegister(uint8_t addr, uint8_t *data, uint16_t length);
 
-    void Reset();
+    void    Reset();
     int32_t GetRssi(void);
-    void RestartRx();
-    void SetBitrate(float bitrate);
-    void SetDeviation(float deviation);
-    void ChangeOperatingMode(uint8_t mode);
-    void SetBaseConfiguration();
+    void    RestartRx();
+    void    SetBitrate(float bitrate);
+    void    SetDeviation(float deviation);
+    void    ChangeOperatingMode(uint8_t mode);
+    void    SetBaseConfiguration();
     uint8_t CalculateBandwidthRegister(float bandwidth);
-    void ExtendedPinMode(int pinNum, int pinDir);
-    void FlushFifo();
-    void ClearIrq();
+    void    ExtendedPinMode(int pinNum, int pinDir);
+    void    FlushFifo();
+    void    ClearIrq();
 
     static SX1276MnetDriver *driverObject;
-    static void Dio0Isr();
-    static void Dio1Isr();
-    void IsrProcessing(uint32_t flags);
+    static void              Dio0Isr();
+    static void              Dio1Isr();
+    void                     IsrProcessing(uint32_t flags);
 };
 
 #endif

@@ -60,8 +60,7 @@ RfDriver *RfDriver::rfDriver;
 /*                              Functions                                  */
 /***************************************************************************/
 
-RfDriver::RfDriver()
-    : messageFifo(nullptr), nextTransmitIndex(-1), messageBytesSent(0), freqTrackingNID(0), txTimer(nullptr)
+RfDriver::RfDriver() : messageFifo(nullptr), nextTransmitIndex(-1), messageBytesSent(0), freqTrackingNID(0), txTimer(nullptr)
 {
     timerMux = portMUX_INITIALIZER_UNLOCKED;
     memset((void *)transmitList, 0, sizeof(transmitList));
@@ -74,14 +73,13 @@ RfDriver::~RfDriver()
 bool RfDriver::Init(MicronetMessageFifo *messageFifo)
 {
     this->messageFifo = messageFifo;
-    rfDriver = this;
+    rfDriver          = this;
 
     txTimer = timerBegin(0, getApbFrequency() / 1000000, true);
     timerAlarmDisable(txTimer);
     timerAttachInterrupt(txTimer, TimerHandler, true);
 
-    if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN, RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN,
-                           messageFifo))
+    if (!sx1276Driver.Init(RF_SCK_PIN, RF_MOSI_PIN, RF_MISO_PIN, RF_CS0_PIN, RF_DIO0_PIN, RF_DIO1_PIN, RF_RST_PIN, messageFifo))
     {
         return false;
     }
@@ -144,9 +142,9 @@ void RfDriver::Transmit(MicronetMessage_t *message)
 
     if (transmitIndex >= 0)
     {
-        transmitList[transmitIndex].action = message->action;
+        transmitList[transmitIndex].action       = message->action;
         transmitList[transmitIndex].startTime_us = message->startTime_us;
-        transmitList[transmitIndex].len = message->len;
+        transmitList[transmitIndex].len          = message->len;
         if ((message->len > 0) && (message->len <= MICRONET_MAX_MESSAGE_LENGTH))
         {
             memcpy(transmitList[transmitIndex].data, message->data, message->len);
@@ -179,7 +177,7 @@ void RfDriver::ScheduleTransmit()
         timerWrite(txTimer, 0);
 
         // Check that we are not already late for this transmit
-        uint32_t now = micros();
+        uint32_t now           = micros();
         uint32_t transmitDelay = transmitList[transmitIndex].startTime_us - now - TX_DELAY_COMPENSATION;
         if (transmitDelay > 60000000)
         {
@@ -200,11 +198,11 @@ void RfDriver::ScheduleTransmit()
 
 int RfDriver::GetNextTransmitIndex()
 {
-    uint32_t minTime = 0xffffffff;
-    int minIndex = -1;
-    bool upperTimestamps = false;
-    bool lowerTimestamps = false;
-    bool timeWrap = false;
+    uint32_t minTime         = 0xffffffff;
+    int      minIndex        = -1;
+    bool     upperTimestamps = false;
+    bool     lowerTimestamps = false;
+    bool     timeWrap        = false;
 
     for (int i = 0; i < TRANSMIT_LIST_SIZE; i++)
     {
@@ -231,7 +229,7 @@ int RfDriver::GetNextTransmitIndex()
             {
                 if (transmitList[i].startTime_us <= minTime)
                 {
-                    minTime = transmitList[i].startTime_us;
+                    minTime  = transmitList[i].startTime_us;
                     minIndex = i;
                 }
             }

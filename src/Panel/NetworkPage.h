@@ -56,13 +56,13 @@ class NetworkPage : public PageHandler
     void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
   private:
-    bool networkConnected;
-    uint32_t deviceId;
+    bool                      networkConnected;
+    uint32_t                  deviceId;
     MicronetCodec::NetworkMap networkMap;
-    uint32_t nbDevicesInRange;
-    MicronetDeviceInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
+    uint32_t                  nbDevicesInRange;
+    MicronetDeviceInfo_t      devicesInRange[MAX_DEVICES_PER_NETWORK];
 
-    void DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t radioLevel);
+    void                 DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t radioLevel);
     unsigned char const *GetIconById(uint32_t deviceId);
 };
 

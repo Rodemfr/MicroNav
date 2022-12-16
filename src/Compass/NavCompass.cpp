@@ -144,8 +144,8 @@ float NavCompass::GetHeading()
         headingIndex = 0;
     }
 
-    bool firstQ = false;
-    bool lastQ = false;
+    bool firstQ     = false;
+    bool lastQ      = false;
     bool shiftAngle = false;
     for (int i = 0; i < HEADING_HISTORY_LENGTH; i++)
     {

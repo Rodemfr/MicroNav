@@ -58,8 +58,7 @@ const int gMonthLength[13] = {0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 /***************************************************************************/
 
 ClockPage::ClockPage()
-    : prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(false),
-      prevDateValid(false)
+    : prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(false), prevDateValid(false)
 {
 }
 
@@ -69,13 +68,13 @@ ClockPage::~ClockPage()
 
 void ClockPage::Draw(bool force)
 {
-    char timeStr[] = "--:--";
-    char dateStr[] = "--/--/----";
-    int16_t xTime, yTime, xDate, yDate;
+    char     timeStr[] = "--:--";
+    char     dateStr[] = "--/--/----";
+    int16_t  xTime, yTime, xDate, yDate;
     uint16_t wTime, hTime, wDate, hDate;
-    bool updateDisplay = false;
-    int minute, hour, day, month, year;
-    int dayShift = 0;
+    bool     updateDisplay = false;
+    int      minute, hour, day, month, year;
+    int      dayShift = 0;
 
     if (navData != nullptr)
     {
@@ -88,7 +87,7 @@ void ClockPage::Draw(bool force)
         if (navData->time.valid)
         {
             minute = navData->time.minute;
-            hour = navData->time.hour;
+            hour   = navData->time.hour;
             hour += navData->timeZone_h;
             if (hour < 0)
             {
@@ -109,8 +108,8 @@ void ClockPage::Draw(bool force)
             if ((hour != prevHour) || (minute != prevMinute))
             {
                 updateDisplay = true;
-                prevHour = hour;
-                prevMinute = minute;
+                prevHour      = hour;
+                prevMinute    = minute;
             }
         }
         else
@@ -129,9 +128,9 @@ void ClockPage::Draw(bool force)
 
         if (navData->date.valid)
         {
-            day = navData->date.day + dayShift;
+            day   = navData->date.day + dayShift;
             month = navData->date.month;
-            year = navData->date.year;
+            year  = navData->date.year;
 
             int monthLength = gMonthLength[month];
             if ((month == 2) && ((year % 4) == 0))
@@ -159,13 +158,12 @@ void ClockPage::Draw(bool force)
             dateStr[8] = ((year / 10) % 10) + '0';
             dateStr[9] = (year % 10) + '0';
 
-            if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) ||
-                (navData->date.year != prevYear))
+            if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
             {
                 updateDisplay = true;
-                prevDay = day;
-                prevMonth = month;
-                prevYear = year;
+                prevDay       = day;
+                prevMonth     = month;
+                prevYear      = year;
             }
         }
         else
@@ -184,7 +182,7 @@ void ClockPage::Draw(bool force)
     if (prevNavDataValid != (navData != nullptr))
     {
         prevNavDataValid = (navData != nullptr);
-        updateDisplay = true;
+        updateDisplay    = true;
     };
 
     if (updateDisplay || force)

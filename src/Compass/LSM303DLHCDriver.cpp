@@ -41,46 +41,46 @@
 
 #define LSM303DLHC_WHO_AM_I 0x3C
 
-#define CTRL_REG1_A 0x20
-#define CTRL_REG2_A 0x21
-#define CTRL_REG3_A 0x22
-#define CTRL_REG4_A 0x23
-#define CTRL_REG5_A 0x24
-#define CTRL_REG6_A 0x25
-#define REFERENCE_A 0x26
-#define STATUS_REG_A 0x27
-#define OUT_X_L_A 0x28
-#define OUT_X_H_A 0x29
-#define OUT_Y_L_A 0x2a
-#define OUT_Y_H_A 0x2b
-#define OUT_Z_L_A 0x2c
-#define OUT_Z_H_A 0x2d
+#define CTRL_REG1_A     0x20
+#define CTRL_REG2_A     0x21
+#define CTRL_REG3_A     0x22
+#define CTRL_REG4_A     0x23
+#define CTRL_REG5_A     0x24
+#define CTRL_REG6_A     0x25
+#define REFERENCE_A     0x26
+#define STATUS_REG_A    0x27
+#define OUT_X_L_A       0x28
+#define OUT_X_H_A       0x29
+#define OUT_Y_L_A       0x2a
+#define OUT_Y_H_A       0x2b
+#define OUT_Z_L_A       0x2c
+#define OUT_Z_H_A       0x2d
 #define FIFO_CTRL_REG_A 0x2e
-#define FIFO_SRC_REG_A 0x2f
-#define INT1_CFG_A 0x30
-#define INT1_SOURCE_A 0x31
-#define INT1_THS_A 0x32
+#define FIFO_SRC_REG_A  0x2f
+#define INT1_CFG_A      0x30
+#define INT1_SOURCE_A   0x31
+#define INT1_THS_A      0x32
 #define INT1_DURATION_A 0x33
-#define INT2_CFG_A 0x34
-#define INT2_SOURCE_A 0x35
-#define INT2_THS_A 0x36
+#define INT2_CFG_A      0x34
+#define INT2_SOURCE_A   0x35
+#define INT2_THS_A      0x36
 #define INT2_DURATION_A 0x37
-#define CRA_REG_M 0x00
-#define CRB_REG_M 0x01
-#define MR_REG_M 0x02
-#define OUT_X_H_M 0x03
-#define OUT_X_L_M 0x04
-#define OUT_Y_H_M 0x05
-#define OUT_Y_L_M 0x06
-#define OUT_Z_H_M 0x07
-#define OUT_Z_L_M 0x08
-#define SR_REG_M 0x09
-#define IRA_REG_M 0x0a
-#define IRB_REG_M 0x0b
-#define IRC_REG_M 0x0c
-#define WHO_AM_I_M 0x0f
-#define TEMP_OUT_H_M 0x31
-#define TEMP_OUT_L_M 0x32
+#define CRA_REG_M       0x00
+#define CRB_REG_M       0x01
+#define MR_REG_M        0x02
+#define OUT_X_H_M       0x03
+#define OUT_X_L_M       0x04
+#define OUT_Y_H_M       0x05
+#define OUT_Y_L_M       0x06
+#define OUT_Z_H_M       0x07
+#define OUT_Z_L_M       0x08
+#define SR_REG_M        0x09
+#define IRA_REG_M       0x0a
+#define IRB_REG_M       0x0b
+#define IRC_REG_M       0x0c
+#define WHO_AM_I_M      0x0f
+#define TEMP_OUT_H_M    0x31
+#define TEMP_OUT_L_M    0x32
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -99,8 +99,7 @@
 /***************************************************************************/
 
 LSM303DLHCDriver::LSM303DLHCDriver()
-    : accAddr(LSM303DLHC_ACC_ADDR), magAddr(LSM303DLHC_MAG_ADDR), LSB_per_Gauss_XY(1100.0f), LSB_per_Gauss_Z(980.0f),
-      mGal_per_LSB(1.0f)
+    : accAddr(LSM303DLHC_ACC_ADDR), magAddr(LSM303DLHC_MAG_ADDR), LSB_per_Gauss_XY(1100.0f), LSB_per_Gauss_Z(980.0f), mGal_per_LSB(1.0f)
 {
 }
 
@@ -110,10 +109,10 @@ LSM303DLHCDriver::~LSM303DLHCDriver()
 
 bool LSM303DLHCDriver::Init()
 {
-    uint8_t ira = 0;
-    uint8_t irb = 0;
-    uint8_t irc = 0;
-    uint8_t sr = 0;
+    uint8_t ira    = 0;
+    uint8_t irb    = 0;
+    uint8_t irc    = 0;
+    uint8_t sr     = 0;
     uint8_t whoami = 0;
 
     if (!I2CRead(LSM303DLHC_ACC_ADDR, STATUS_REG_A, &sr))
@@ -147,7 +146,7 @@ bool LSM303DLHCDriver::Init()
     I2CWrite(magAddr, 0x10, CRA_REG_M); // 0x10=0b00010000 ODR 15Hz
     I2CWrite(magAddr, 0x20, CRB_REG_M); // 0x20=0b00100000 Range: +/-1.3 Gauss gain: 1100LSB/Gauss
     LSB_per_Gauss_XY = 1100.0f;
-    LSB_per_Gauss_Z = 980.0f;
+    LSB_per_Gauss_Z  = 980.0f;
     I2CWrite(magAddr, 0x00, MR_REG_M); // Continuous mode
 
     return true;

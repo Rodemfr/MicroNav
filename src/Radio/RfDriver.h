@@ -39,10 +39,10 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define TRANSMIT_LIST_SIZE 16
-#define LOW_BANDWIDTH_VALUE 80
+#define TRANSMIT_LIST_SIZE     16
+#define LOW_BANDWIDTH_VALUE    80
 #define MEDIUM_BANDWIDTH_VALUE 125
-#define HIGH_BANDWIDTH_VALUE 250
+#define HIGH_BANDWIDTH_VALUE   250
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -84,23 +84,23 @@ class RfDriver
     void DisableFrequencyTracking();
 
   private:
-    SX1276MnetDriver sx1276Driver;
+    SX1276MnetDriver     sx1276Driver;
     MicronetMessageFifo *messageFifo;
-    MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];
-    volatile int nextTransmitIndex;
-    volatile int messageBytesSent;
-    uint32_t freqTrackingNID;
-    hw_timer_t *txTimer;
-    portMUX_TYPE timerMux;
+    MicronetMessage_t    transmitList[TRANSMIT_LIST_SIZE];
+    volatile int         nextTransmitIndex;
+    volatile int         messageBytesSent;
+    uint32_t             freqTrackingNID;
+    hw_timer_t *         txTimer;
+    portMUX_TYPE         timerMux;
 
     static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
 
     void ScheduleTransmit();
-    int GetNextTransmitIndex();
-    int GetFreeTransmitSlot();
+    int  GetNextTransmitIndex();
+    int  GetFreeTransmitSlot();
     void TransmitCallback();
 
-    static void TimerHandler();
+    static void      TimerHandler();
     static RfDriver *rfDriver;
 };
 

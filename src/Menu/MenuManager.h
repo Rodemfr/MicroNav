@@ -65,7 +65,7 @@ class MenuManager
 
   private:
     MenuEntry_t *menu;
-    int menuLength;
+    int          menuLength;
 
     void PrintPrompt();
 };

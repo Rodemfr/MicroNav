@@ -43,18 +43,18 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define OLED_RESET -1
+#define OLED_RESET     -1
 #define SCREEN_ADDRESS 0x3C
 
-#define COMMAND_EVENT_REFRESH 0x00000001
+#define COMMAND_EVENT_REFRESH         0x00000001
 #define COMMAND_EVENT_BUTTON_RELEASED 0x00000002
-#define COMMAND_EVENT_NEW_PAGE 0x00000004
-#define COMMAND_EVENT_ALL 0x00000007
+#define COMMAND_EVENT_NEW_PAGE        0x00000004
+#define COMMAND_EVENT_ALL             0x00000007
 
-#define TASK_WAKEUP_PERIOD 200
-#define DISPLAY_UPDATE_PERIOD 1000
+#define TASK_WAKEUP_PERIOD      200
+#define DISPLAY_UPDATE_PERIOD   1000
 #define BUTTON_LONG_PRESS_DELAY 1000
-#define BUTTON_SHORT_PRESS_MIN 200
+#define BUTTON_SHORT_PRESS_MIN  200
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -69,7 +69,7 @@
 /***************************************************************************/
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-PanelManager *PanelManager::objectPtr;
+PanelManager *   PanelManager::objectPtr;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -101,8 +101,8 @@ bool PanelManager::Init()
 
         pageNumber = 0;
 
-        commandMutex = portMUX_INITIALIZER_UNLOCKED;
-        buttonMutex = portMUX_INITIALIZER_UNLOCKED;
+        commandMutex      = portMUX_INITIALIZER_UNLOCKED;
+        buttonMutex       = portMUX_INITIALIZER_UNLOCKED;
         commandEventGroup = xEventGroupCreate();
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
@@ -190,18 +190,18 @@ void PanelManager::CommandCallback()
     uint32_t now;
     uint32_t localLastPress;
     uint32_t localLastRelease;
-    bool localButtonPressed;
-    bool longPress;
+    bool     localButtonPressed;
+    bool     longPress;
 
     while (true)
     {
-        EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE,
-                                                       TASK_WAKEUP_PERIOD / portTICK_PERIOD_MS);
+        EventBits_t commandFlags =
+            xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, TASK_WAKEUP_PERIOD / portTICK_PERIOD_MS);
         now = millis();
 
         portENTER_CRITICAL(&buttonMutex);
-        localLastPress = lastPress;
-        localLastRelease = lastRelease;
+        localLastPress     = lastPress;
+        localLastRelease   = lastRelease;
         localButtonPressed = buttonPressed;
         portEXIT_CRITICAL(&buttonMutex);
 
@@ -243,8 +243,7 @@ void PanelManager::CommandCallback()
             }
         }
 
-        if ((commandFlags & COMMAND_EVENT_REFRESH) || (commandFlags & COMMAND_EVENT_NEW_PAGE) ||
-            ((now - lastPageUpdate) > DISPLAY_UPDATE_PERIOD))
+        if ((commandFlags & COMMAND_EVENT_REFRESH) || (commandFlags & COMMAND_EVENT_NEW_PAGE) || ((now - lastPageUpdate) > DISPLAY_UPDATE_PERIOD))
         {
             lastPageUpdate = now;
             portENTER_CRITICAL(&commandMutex);
@@ -280,7 +279,7 @@ void PanelManager::StaticButtonIsr()
 
 void PanelManager::ButtonIsr()
 {
-    uint32_t now = millis();
+    uint32_t   now            = millis();
     BaseType_t scheduleChange = pdFALSE;
 
     if (!digitalRead(BUTTON_PIN))
@@ -288,7 +287,7 @@ void PanelManager::ButtonIsr()
         // Button pressed
         portENTER_CRITICAL_ISR(&buttonMutex);
         buttonPressed = true;
-        lastPress = now;
+        lastPress     = now;
         portEXIT_CRITICAL_ISR(&buttonMutex);
     }
     else
@@ -296,7 +295,7 @@ void PanelManager::ButtonIsr()
         // Button released
         portENTER_CRITICAL_ISR(&buttonMutex);
         buttonPressed = false;
-        lastRelease = now;
+        lastRelease   = now;
         portEXIT_CRITICAL_ISR(&buttonMutex);
 
         xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);

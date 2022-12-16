@@ -49,21 +49,21 @@
 typedef struct
 {
     uint32_t deviceId;
-    uint8_t radioLevel;
+    uint8_t  radioLevel;
     uint32_t lastCommMs;
 } MicronetDeviceInfo_t;
 
 typedef struct
 {
-    bool connected;
-    uint32_t deviceId;
-    uint32_t networkId;
+    bool                      connected;
+    uint32_t                  deviceId;
+    uint32_t                  networkId;
     MicronetCodec::NetworkMap networkMap;
-    uint32_t lastMasterCommMs;
-    uint32_t dataFields;
-    uint32_t splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
-    uint32_t nbDevicesInRange;
-    MicronetDeviceInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
+    uint32_t                  lastMasterCommMs;
+    uint32_t                  dataFields;
+    uint32_t                  splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
+    uint32_t                  nbDevicesInRange;
+    MicronetDeviceInfo_t      devicesInRange[MAX_DEVICES_PER_NETWORK];
 } MicronetNetworkState_t;
 
 /***************************************************************************/
@@ -76,25 +76,25 @@ class MicronetDevice
     MicronetDevice(MicronetCodec *micronetCodec);
     virtual ~MicronetDevice();
 
-    void SetDeviceId(uint32_t deviceId);
-    void SetNetworkId(uint32_t networkId);
-    void SetDataFields(uint32_t dataMask);
-    void AddDataFields(uint32_t dataMask);
-    void ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
+    void                    SetDeviceId(uint32_t deviceId);
+    void                    SetNetworkId(uint32_t networkId);
+    void                    SetDataFields(uint32_t dataMask);
+    void                    AddDataFields(uint32_t dataMask);
+    void                    ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
     MicronetNetworkState_t &GetNetworkStatus();
-    void Yield();
+    void                    Yield();
 
   private:
-    MicronetCodec *micronetCodec;
-    uint8_t latestSignalStrength;
+    MicronetCodec *        micronetCodec;
+    uint8_t                latestSignalStrength;
     MicronetNetworkState_t networkState;
-    uint32_t pingTimeStamp;
+    uint32_t               pingTimeStamp;
 
-    void SplitDataFields();
+    void    SplitDataFields();
     uint8_t GetShortestDevice();
-    void UpdateDevicesInRange(MicronetMessage_t *message);
-    void RemoveLostDevices();
-    void PingNetwork(MicronetMessageFifo *messageFifo);
+    void    UpdateDevicesInRange(MicronetMessage_t *message);
+    void    RemoveLostDevices();
+    void    PingNetwork(MicronetMessageFifo *messageFifo);
 };
 
 #endif /* MICRONETDEVICE_H_ */

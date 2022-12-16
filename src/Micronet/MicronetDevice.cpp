@@ -93,7 +93,7 @@ void MicronetDevice::AddDataFields(uint32_t dataFields)
 
 void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo)
 {
-    TxSlotDesc_t txSlot;
+    TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
 
     // Is the message addresses to us ?
@@ -103,21 +103,21 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
 
         if (micronetCodec->GetMessageId(message) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
         {
-            networkState.connected = true;
+            networkState.connected        = true;
             networkState.lastMasterCommMs = millis();
             micronetCodec->GetNetworkMap(message, &networkState.networkMap);
 
             // We schedule the low power mode of CC1101 just at the end of the network cycle
-            txMessage.action = MICRONET_ACTION_RF_LOW_POWER;
+            txMessage.action       = MICRONET_ACTION_RF_LOW_POWER;
             txMessage.startTime_us = micronetCodec->GetEndOfNetwork(&networkState.networkMap);
-            txMessage.len = 0;
+            txMessage.len          = 0;
             messageFifo->Push(txMessage);
 
             // We schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
             // It will let time for the PLL calibration loop to complete.
-            txMessage.action = MICRONET_ACTION_RF_ACTIVE_POWER;
+            txMessage.action       = MICRONET_ACTION_RF_ACTIVE_POWER;
             txMessage.startTime_us = micronetCodec->GetNextStartOfNetwork(&networkState.networkMap) - 1000;
-            txMessage.len = 0;
+            txMessage.len          = 0;
             messageFifo->Push(txMessage);
 
             latestSignalStrength = micronetCodec->CalculateSignalStrength(message);
@@ -127,23 +127,22 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                 txSlot = micronetCodec->GetSyncTransmissionSlot(&networkState.networkMap, networkState.deviceId + i);
                 if (txSlot.start_us != 0)
                 {
-                    uint32_t payloadLength =
-                        micronetCodec->EncodeDataMessage(&txMessage, latestSignalStrength, networkState.networkId,
-                                                         networkState.deviceId + i, networkState.splitDataFields[i]);
+                    uint32_t payloadLength = micronetCodec->EncodeDataMessage(&txMessage, latestSignalStrength, networkState.networkId,
+                                                                              networkState.deviceId + i, networkState.splitDataFields[i]);
                     if (txSlot.payloadBytes < payloadLength)
                     {
                         // Sync slot is available but too small : request slot resize
                         txSlot = micronetCodec->GetAsyncTransmissionSlot(&networkState.networkMap);
-                        micronetCodec->EncodeSlotUpdateMessage(&txMessage, latestSignalStrength, networkState.networkId,
-                                                               networkState.deviceId + i, payloadLength);
-                        txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+                        micronetCodec->EncodeSlotUpdateMessage(&txMessage, latestSignalStrength, networkState.networkId, networkState.deviceId + i,
+                                                               payloadLength);
+                        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                         txMessage.startTime_us = txSlot.start_us;
                         messageFifo->Push(txMessage);
                     }
                     else
                     {
                         // Sync slot is ok : transmit message
-                        txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+                        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                         txMessage.startTime_us = txSlot.start_us;
                         messageFifo->Push(txMessage);
                         // Also ping other devices to maintain a list of devices in range
@@ -154,10 +153,9 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                 {
                     // No sync slot available : request a slot
                     txSlot = micronetCodec->GetAsyncTransmissionSlot(&networkState.networkMap);
-                    micronetCodec->EncodeSlotRequestMessage(
-                        &txMessage, latestSignalStrength, networkState.networkId, networkState.deviceId + i,
-                        micronetCodec->GetDataMessageLength(networkState.splitDataFields[i]));
-                    txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+                    micronetCodec->EncodeSlotRequestMessage(&txMessage, latestSignalStrength, networkState.networkId, networkState.deviceId + i,
+                                                            micronetCodec->GetDataMessageLength(networkState.splitDataFields[i]));
+                    txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                     txMessage.startTime_us = txSlot.start_us;
                     messageFifo->Push(txMessage);
                 }
@@ -170,9 +168,8 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                 for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
                 {
                     txSlot = micronetCodec->GetAckTransmissionSlot(&networkState.networkMap, networkState.deviceId + i);
-                    micronetCodec->EncodeAckParamMessage(&txMessage, latestSignalStrength, networkState.networkId,
-                                                         networkState.deviceId + i);
-                    txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+                    micronetCodec->EncodeAckParamMessage(&txMessage, latestSignalStrength, networkState.networkId, networkState.deviceId + i);
+                    txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                     txMessage.startTime_us = txSlot.start_us;
                     messageFifo->Push(txMessage);
                 }
@@ -206,7 +203,7 @@ void MicronetDevice::SplitDataFields()
 // Returns the index of the virtual device with the shortest data message
 uint8_t MicronetDevice::GetShortestDevice()
 {
-    uint8_t minDeviceSize = 255;
+    uint8_t  minDeviceSize  = 255;
     uint32_t minDeviceIndex = 0;
 
     for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
@@ -214,7 +211,7 @@ uint8_t MicronetDevice::GetShortestDevice()
         uint8_t size = micronetCodec->GetDataMessageLength(networkState.splitDataFields[i]);
         if (size < minDeviceSize)
         {
-            minDeviceSize = size;
+            minDeviceSize  = size;
             minDeviceIndex = i;
         }
     }
@@ -229,27 +226,26 @@ MicronetNetworkState_t &MicronetDevice::GetNetworkStatus()
 
 void MicronetDevice::UpdateDevicesInRange(MicronetMessage_t *message)
 {
-    bool deviceFound = false;
-    uint32_t deviceId = micronetCodec->GetDeviceId(message);
+    bool     deviceFound = false;
+    uint32_t deviceId    = micronetCodec->GetDeviceId(message);
 
     for (int i = 0; i < networkState.nbDevicesInRange; i++)
     {
         if (networkState.devicesInRange[i].deviceId == deviceId)
         {
-            networkState.devicesInRange[i].deviceId = deviceId;
+            networkState.devicesInRange[i].deviceId   = deviceId;
             networkState.devicesInRange[i].lastCommMs = millis();
             networkState.devicesInRange[i].radioLevel = micronetCodec->CalculateSignalStrength(message);
-            deviceFound = true;
+            deviceFound                               = true;
             break;
         }
     }
 
     if ((!deviceFound) && (networkState.nbDevicesInRange < MICRONET_MAX_DEVICES_PER_NETWORK))
     {
-        networkState.devicesInRange[networkState.nbDevicesInRange].deviceId = deviceId;
+        networkState.devicesInRange[networkState.nbDevicesInRange].deviceId   = deviceId;
         networkState.devicesInRange[networkState.nbDevicesInRange].lastCommMs = millis();
-        networkState.devicesInRange[networkState.nbDevicesInRange].radioLevel =
-            micronetCodec->CalculateSignalStrength(message);
+        networkState.devicesInRange[networkState.nbDevicesInRange].radioLevel = micronetCodec->CalculateSignalStrength(message);
         networkState.nbDevicesInRange++;
     }
 }
@@ -274,16 +270,16 @@ void MicronetDevice::RemoveLostDevices()
 
 void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
 {
-    TxSlotDesc_t txSlot;
+    TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
-    uint32_t now = millis();
+    uint32_t          now = millis();
 
     if (now - pingTimeStamp > NETWORK_PING_PERIOD_MS)
     {
         pingTimeStamp = now;
-        txSlot = micronetCodec->GetAsyncTransmissionSlot(&networkState.networkMap);
+        txSlot        = micronetCodec->GetAsyncTransmissionSlot(&networkState.networkMap);
         micronetCodec->EncodePingMessage(&txMessage, 9, networkState.networkMap.networkId, networkState.deviceId);
-        txMessage.action = MICRONET_ACTION_RF_TRANSMIT;
+        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
         txMessage.startTime_us = txSlot.start_us;
         messageFifo->Push(txMessage);
     }
@@ -296,7 +292,7 @@ void MicronetDevice::Yield()
     RemoveLostDevices();
     if (now - networkState.lastMasterCommMs > NETWORK_LOST_TIME_MS)
     {
-        networkState.connected = false;
+        networkState.connected        = false;
         networkState.nbDevicesInRange = 0;
     }
 }

@@ -63,8 +63,7 @@
 /***************************************************************************/
 
 ConfigPage1::ConfigPage1()
-    : editMode(false), editPosition(0), configFreqSel(0), configNmeaSel(0), configRmbWorkaround(false),
-      configWindRepeater(false)
+    : editMode(false), editPosition(0), configFreqSel(0), configNmeaSel(0), configRmbWorkaround(false), configWindRepeater(false)
 {
 }
 
@@ -76,16 +75,16 @@ ConfigPage1::~ConfigPage1()
 // @param force Force redraw, even if the content did not change
 void ConfigPage1::Draw(bool force)
 {
-    int16_t xStr, yStr;
+    int16_t  xStr, yStr;
     uint16_t wStr, hStr;
 
     // Forced draw occurs when user enters the page : load configuration locally
     if (force)
     {
-        configFreqSel = (uint32_t)gConfiguration.eeprom.freqSystem;
-        configNmeaSel = (uint32_t)gConfiguration.eeprom.nmeaLink;
+        configFreqSel       = (uint32_t)gConfiguration.eeprom.freqSystem;
+        configNmeaSel       = (uint32_t)gConfiguration.eeprom.nmeaLink;
         configRmbWorkaround = gConfiguration.eeprom.rmbWorkaround;
-        configWindRepeater = gConfiguration.eeprom.windRepeater;
+        configWindRepeater  = gConfiguration.eeprom.windRepeater;
     }
 
     if (display != nullptr)
@@ -174,7 +173,7 @@ PageAction_t ConfigPage1::OnButtonPressed(bool longPress)
         {
             // Short press : cycle through configuration items
             editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
-            action = PAGE_ACTION_REFRESH;
+            action       = PAGE_ACTION_REFRESH;
         }
     }
     else
@@ -182,9 +181,9 @@ PageAction_t ConfigPage1::OnButtonPressed(bool longPress)
         if (longPress)
         {
             // Long press while not in edit mode : enter edit mode
-            editMode = true;
+            editMode     = true;
             editPosition = 0;
-            action = PAGE_ACTION_REFRESH;
+            action       = PAGE_ACTION_REFRESH;
         }
         else
         {
@@ -319,10 +318,10 @@ void ConfigPage1::ConfigWindRepeaterCycle()
 // EEPROM
 void ConfigPage1::DeployConfiguration()
 {
-    gConfiguration.eeprom.freqSystem = (FreqSystem_t)configFreqSel;
-    gConfiguration.eeprom.nmeaLink = (SerialType_t)configNmeaSel;
+    gConfiguration.eeprom.freqSystem    = (FreqSystem_t)configFreqSel;
+    gConfiguration.eeprom.nmeaLink      = (SerialType_t)configNmeaSel;
     gConfiguration.eeprom.rmbWorkaround = configRmbWorkaround;
-    gConfiguration.eeprom.windRepeater = configWindRepeater;
+    gConfiguration.eeprom.windRepeater  = configWindRepeater;
 
     gConfiguration.DeployConfiguration(&gMicronetDevice);
     gConfiguration.SaveToEeprom();

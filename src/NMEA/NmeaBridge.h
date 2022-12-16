@@ -41,7 +41,7 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define NMEA_SENTENCE_MAX_LENGTH 128
+#define NMEA_SENTENCE_MAX_LENGTH   128
 #define NMEA_SENTENCE_HISTORY_SIZE 24
 
 /***************************************************************************/
@@ -87,24 +87,24 @@ class NmeaBridge
 
   private:
     static const uint8_t asciiTable[128];
-    char nmeaExtBuffer[NMEA_SENTENCE_MAX_LENGTH];
-    char nmeaGnssBuffer[NMEA_SENTENCE_MAX_LENGTH];
-    int nmeaExtWriteIndex;
-    int nmeaGnssWriteIndex;
-    NmeaTimeStamps_t nmeaTimeStamps;
-    MicronetCodec *micronetCodec;
+    char                 nmeaExtBuffer[NMEA_SENTENCE_MAX_LENGTH];
+    char                 nmeaGnssBuffer[NMEA_SENTENCE_MAX_LENGTH];
+    int                  nmeaExtWriteIndex;
+    int                  nmeaGnssWriteIndex;
+    NmeaTimeStamps_t     nmeaTimeStamps;
+    MicronetCodec *      micronetCodec;
 
-    bool IsSentenceValid(char *nmeaBuffer);
+    bool     IsSentenceValid(char *nmeaBuffer);
     NmeaId_t SentenceId(char *nmeaBuffer);
-    void DecodeRMBSentence(char *sentence);
-    void DecodeRMCSentence(char *sentence);
-    void DecodeGGASentence(char *sentence);
-    void DecodeVTGSentence(char *sentence);
-    void DecodeMWVSentence(char *sentence);
-    void DecodeDPTSentence(char *sentence);
-    void DecodeVHWSentence(char *sentence);
-    void DecodeHDGSentence(char *sentence);
-    int16_t NibbleValue(char c);
+    void     DecodeRMBSentence(char *sentence);
+    void     DecodeRMCSentence(char *sentence);
+    void     DecodeGGASentence(char *sentence);
+    void     DecodeVTGSentence(char *sentence);
+    void     DecodeMWVSentence(char *sentence);
+    void     DecodeDPTSentence(char *sentence);
+    void     DecodeVHWSentence(char *sentence);
+    void     DecodeHDGSentence(char *sentence);
+    int16_t  NibbleValue(char c);
 
     void EncodeMWV_R();
     void EncodeMWV_T();

@@ -40,7 +40,7 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define DEVICE_ICON_WIDTH 32
+#define DEVICE_ICON_WIDTH  32
 #define DEVICE_ICON_HEIGHT 21
 
 /***************************************************************************/
@@ -70,8 +70,8 @@ NetworkPage::~NetworkPage()
 void NetworkPage::Draw(bool force)
 {
     static const char noNetStr[] = "No Network";
-    int16_t xStr, yStr;
-    uint16_t wStr, hStr;
+    int16_t           xStr, yStr;
+    uint16_t          wStr, hStr;
 
     if (display != nullptr)
     {
@@ -153,12 +153,12 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
 
 void NetworkPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
 {
-    networkConnected = networkStatus.connected;
-    deviceId = networkStatus.deviceId;
-    this->networkMap.networkId = networkStatus.networkMap.networkId;
-    this->networkMap.nbDevices = networkStatus.networkMap.nbDevices;
+    networkConnected              = networkStatus.connected;
+    deviceId                      = networkStatus.deviceId;
+    this->networkMap.networkId    = networkStatus.networkMap.networkId;
+    this->networkMap.nbDevices    = networkStatus.networkMap.nbDevices;
     this->networkMap.masterDevice = networkStatus.networkMap.masterDevice;
-    this->networkMap.nbSyncSlots = networkStatus.networkMap.nbSyncSlots;
+    this->networkMap.nbSyncSlots  = networkStatus.networkMap.nbSyncSlots;
     for (int i = 0; i < this->networkMap.nbSyncSlots; i++)
     {
         this->networkMap.syncSlot[i] = networkStatus.networkMap.syncSlot[i];

@@ -59,8 +59,8 @@ class PageHandler
     PageHandler();
     virtual ~PageHandler() = 0;
 
-    void SetDisplay(Adafruit_SSD1306 *display);
-    virtual void Draw(bool force) = 0;
+    void                 SetDisplay(Adafruit_SSD1306 *display);
+    virtual void         Draw(bool force) = 0;
     virtual PageAction_t OnButtonPressed(bool longPress);
 
   protected:

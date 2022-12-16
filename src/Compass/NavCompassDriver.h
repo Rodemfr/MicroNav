@@ -55,11 +55,11 @@ using string = std::string;
 class NavCompassDriver
 {
   public:
-    virtual ~NavCompassDriver() = 0;
-    virtual bool Init() = 0;
-    virtual string GetDeviceName() = 0;
-    virtual void GetMagneticField(vec *mag) = 0;
-    virtual void GetAcceleration(vec *acc) = 0;
+    virtual ~NavCompassDriver()               = 0;
+    virtual bool   Init()                     = 0;
+    virtual string GetDeviceName()            = 0;
+    virtual void   GetMagneticField(vec *mag) = 0;
+    virtual void   GetAcceleration(vec *acc)  = 0;
 };
 
 #endif /* NAVCOMPASSDRIVER_H_ */

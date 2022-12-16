@@ -53,16 +53,16 @@ class LSM303DLHDriver : public NavCompassDriver
     LSM303DLHDriver();
     virtual ~LSM303DLHDriver();
 
-    virtual bool Init() override;
+    virtual bool   Init() override;
     virtual string GetDeviceName() override;
-    virtual void GetMagneticField(vec *mag) override;
-    virtual void GetAcceleration(vec *acc) override;
+    virtual void   GetMagneticField(vec *mag) override;
+    virtual void   GetAcceleration(vec *acc) override;
 
   private:
     uint8_t accAddr, magAddr;
-    float LsbPerGaussXY;
-    float LsbPerGaussZ;
-    float GPerLsb;
+    float   LsbPerGaussXY;
+    float   LsbPerGaussZ;
+    float   GPerLsb;
 
     bool I2CRead(uint8_t i2cAddress, uint8_t address, uint8_t *data);
     bool I2CBurstRead(uint8_t i2cAddress, uint8_t address, uint8_t *buffer, uint8_t length);

@@ -55,7 +55,7 @@ class LogoPage : public PageHandler
     void Draw(bool force);
 
   private:
-    uint8_t swMajorVersion, swMinorVersion;
+    uint8_t  swMajorVersion, swMinorVersion;
     uint32_t swPatchVersion;
 };
 

@@ -50,17 +50,17 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
-RfDriver gRfDriver;                              // RF Driver object
-MenuManager gMenuManager;                        // Menu manager object
-MicronetCodec gMicronetCodec;                    // Codec used by MicronetDevice
-MicronetMessageFifo gRxMessageFifo;              // Micronet message fifo store
-Configuration gConfiguration;                    // Global configuration
-NavCompass gNavCompass;                          // Navigation compass
-M8NDriver gM8nDriver;                            // GNSS Driver
-PanelManager gPanelDriver;                       // Display driver
-BluetoothSerial gBtSerial;                       // Bluetooth driver
-NmeaBridge gDataBridge(&gMicronetCodec);         // NMEA Bridge
-MicronetDevice gMicronetDevice(&gMicronetCodec); // Micronet Device
+RfDriver            gRfDriver;                        // RF Driver object
+MenuManager         gMenuManager;                     // Menu manager object
+MicronetCodec       gMicronetCodec;                   // Codec used by MicronetDevice
+MicronetMessageFifo gRxMessageFifo;                   // Micronet message fifo store
+Configuration       gConfiguration;                   // Global configuration
+NavCompass          gNavCompass;                      // Navigation compass
+M8NDriver           gM8nDriver;                       // GNSS Driver
+PanelManager        gPanelDriver;                     // Display driver
+BluetoothSerial     gBtSerial;                        // Bluetooth driver
+NmeaBridge          gDataBridge(&gMicronetCodec);     // NMEA Bridge
+MicronetDevice      gMicronetDevice(&gMicronetCodec); // Micronet Device
 
 /***************************************************************************/
 /*                              Functions                                  */

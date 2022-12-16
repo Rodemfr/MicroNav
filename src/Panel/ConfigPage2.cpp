@@ -63,8 +63,7 @@
 /***************************************************************************/
 
 ConfigPage2::ConfigPage2()
-    : editMode(false), editPosition(0), configCompassSel(0), configGnssSel(0), configWindSel(0), configDepthSel(0),
-      configSpeedSel(0)
+    : editMode(false), editPosition(0), configCompassSel(0), configGnssSel(0), configWindSel(0), configDepthSel(0), configSpeedSel(0)
 {
 }
 
@@ -76,7 +75,7 @@ ConfigPage2::~ConfigPage2()
 // @param force Force redraw, even if the content did not change
 void ConfigPage2::Draw(bool force)
 {
-    int16_t xStr, yStr;
+    int16_t  xStr, yStr;
     uint16_t wStr, hStr;
 
     // Forced draw occurs when user enters the page : load configuration locally
@@ -227,16 +226,16 @@ PageAction_t ConfigPage2::OnButtonPressed(bool longPress)
         {
             // Short press : cycle through configuration items
             editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
-            action = PAGE_ACTION_REFRESH;
+            action       = PAGE_ACTION_REFRESH;
         }
     }
     else
     {
         if (longPress)
         {
-            editMode = true;
+            editMode     = true;
             editPosition = 0;
-            action = PAGE_ACTION_REFRESH;
+            action       = PAGE_ACTION_REFRESH;
         }
         else
         {

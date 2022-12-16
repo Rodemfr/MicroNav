@@ -81,28 +81,28 @@ class PanelManager
     void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
   private:
-    bool displayAvailable;
-    uint32_t pageNumber;
-    PageHandler *currentPage;
-    TaskHandle_t commandTaskHandle;
-    EventGroupHandle_t commandEventGroup;
-    LogoPage logoPage;
-    ClockPage clockPage;
-    NetworkPage networkPage;
-    ConfigPage1 configPage1;
-    ConfigPage2 configPage2;
-    portMUX_TYPE commandMutex;
-    portMUX_TYPE buttonMutex;
-    NavigationData *navData;
+    bool                   displayAvailable;
+    uint32_t               pageNumber;
+    PageHandler *          currentPage;
+    TaskHandle_t           commandTaskHandle;
+    EventGroupHandle_t     commandEventGroup;
+    LogoPage               logoPage;
+    ClockPage              clockPage;
+    NetworkPage            networkPage;
+    ConfigPage1            configPage1;
+    ConfigPage2            configPage2;
+    portMUX_TYPE           commandMutex;
+    portMUX_TYPE           buttonMutex;
+    NavigationData *       navData;
     MicronetNetworkState_t networkStatus;
-    uint32_t lastRelease = 0;
-    uint32_t lastPress = 0;
-    bool buttonPressed = false;
+    uint32_t               lastRelease   = 0;
+    uint32_t               lastPress     = 0;
+    bool                   buttonPressed = false;
 
     static PanelManager *objectPtr;
-    static void CommandProcessingTask(void *parameter);
-    static void StaticButtonIsr();
-    void ButtonIsr();
+    static void          CommandProcessingTask(void *parameter);
+    static void          StaticButtonIsr();
+    void                 ButtonIsr();
 
     void CommandCallback();
 };

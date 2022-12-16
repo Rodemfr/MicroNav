@@ -40,12 +40,11 @@
 /***************************************************************************/
 
 const uint8_t NmeaBridge::asciiTable[128] = {
-    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ', ' ', ' ', ' ', ' ',  ' ', ' ', ' ', ' ',
-    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '\"', ' ', ' ', '%', '&', '\'', ' ', ' ', ' ', '+',
-    ' ', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8',  '9', ':', ' ', '<', ' ',  '>', '?', ' ', 'A',
-    '(', 'C', ')', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',  'O', 'P', 'Q', 'R', 'S',  'T', 'U', 'V', 'W',
-    'X', 'Y', 'Z', ' ', ' ', ' ', ' ', ' ', ' ', 'A', '(', 'C', ')',  'E', 'F', 'G', 'H', 'I',  'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',  ' ', ' ', ' ', ' ', ' '};
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',  ' ', ' ', ' ', ' ', ' ',  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '\"', ' ', ' ', '%', '&', '\'', ' ', ' ', ' ', '+', ' ', '-', '.', '/', '0', '1', '2', '3',
+    '4', '5', '6', '7', '8', '9', ':', ' ', '<',  ' ', '>', '?', ' ', 'A',  '(', 'C', ')', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',  'W', 'X', 'Y', 'Z', ' ',  ' ', ' ', ' ', ' ', ' ', 'A', '(', 'C', ')', 'E', 'F', 'G',
+    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',  'Q', 'R', 'S', 'T', 'U',  'V', 'W', 'X', 'Y', 'Z', ' ', ' ', ' ', ' ', ' '};
 
 /***************************************************************************/
 /*                                Macros                                   */
@@ -69,10 +68,10 @@ const uint8_t NmeaBridge::asciiTable[128] = {
 
 NmeaBridge::NmeaBridge(MicronetCodec *micronetCodec)
 {
-    nmeaExtWriteIndex = 0;
-    nmeaExtBuffer[0] = 0;
+    nmeaExtWriteIndex  = 0;
+    nmeaExtBuffer[0]   = 0;
     nmeaGnssWriteIndex = 0;
-    nmeaGnssBuffer[0] = 0;
+    nmeaGnssBuffer[0]  = 0;
     memset(&nmeaTimeStamps, 0, sizeof(nmeaTimeStamps));
     this->micronetCodec = micronetCodec;
 }
@@ -83,17 +82,17 @@ NmeaBridge::~NmeaBridge()
 
 void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 {
-    char *nmeaBuffer = nullptr;
-    int *nmeaWriteIndex = 0;
+    char *nmeaBuffer     = nullptr;
+    int * nmeaWriteIndex = 0;
 
     switch (sourceLink)
     {
     case LINK_NMEA_EXT:
-        nmeaBuffer = nmeaExtBuffer;
+        nmeaBuffer     = nmeaExtBuffer;
         nmeaWriteIndex = &nmeaExtWriteIndex;
         break;
     case LINK_NMEA_GNSS:
-        nmeaBuffer = nmeaGnssBuffer;
+        nmeaBuffer     = nmeaGnssBuffer;
         nmeaWriteIndex = &nmeaGnssWriteIndex;
         break;
     default:
@@ -102,7 +101,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 
     if ((nmeaBuffer[0] != '$') || (c == '$'))
     {
-        nmeaBuffer[0] = c;
+        nmeaBuffer[0]   = c;
         *nmeaWriteIndex = 1;
         return;
     }
@@ -187,7 +186,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
         }
         else
         {
-            nmeaBuffer[0] = 0;
+            nmeaBuffer[0]   = 0;
             *nmeaWriteIndex = 0;
             return;
         }
@@ -198,7 +197,7 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 
     if (*nmeaWriteIndex >= NMEA_SENTENCE_MAX_LENGTH)
     {
-        nmeaBuffer[0] = 0;
+        nmeaBuffer[0]   = 0;
         *nmeaWriteIndex = 0;
         return;
     }
@@ -212,8 +211,8 @@ void NmeaBridge::UpdateCompassData(float heading_deg)
             heading_deg += 360.0f;
         if (heading_deg >= 360.0f)
             heading_deg -= 360.0f;
-        micronetCodec->navData.magHdg_deg.value = heading_deg;
-        micronetCodec->navData.magHdg_deg.valid = true;
+        micronetCodec->navData.magHdg_deg.value     = heading_deg;
+        micronetCodec->navData.magHdg_deg.valid     = true;
         micronetCodec->navData.magHdg_deg.timeStamp = millis();
         EncodeHDG();
     }
@@ -317,8 +316,8 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
     sentence++;
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.xte_nm.value = value;
-        micronetCodec->navData.xte_nm.valid = true;
+        micronetCodec->navData.xte_nm.value     = value;
+        micronetCodec->navData.xte_nm.valid     = true;
         micronetCodec->navData.xte_nm.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -339,7 +338,7 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
     if (sentence[0] != ',')
     {
         // We look for WP1 ID (target)
-        uint8_t c;
+        uint8_t  c;
         uint32_t i;
         for (i = 0; i < sizeof(micronetCodec->navData.waypoint.name); i++)
         {
@@ -354,8 +353,8 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
                 {
                     c = ' ';
                 }
-                micronetCodec->navData.waypoint.name[i] = c;
-                micronetCodec->navData.waypoint.valid = true;
+                micronetCodec->navData.waypoint.name[i]   = c;
+                micronetCodec->navData.waypoint.valid     = true;
                 micronetCodec->navData.waypoint.timeStamp = millis();
             }
             else
@@ -382,8 +381,8 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
     }
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.dtw_nm.value = value;
-        micronetCodec->navData.dtw_nm.valid = true;
+        micronetCodec->navData.dtw_nm.value     = value;
+        micronetCodec->navData.dtw_nm.valid     = true;
         micronetCodec->navData.dtw_nm.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -391,8 +390,8 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
     sentence++;
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.btw_deg.value = value;
-        micronetCodec->navData.btw_deg.valid = true;
+        micronetCodec->navData.btw_deg.value     = value;
+        micronetCodec->navData.btw_deg.valid     = true;
         micronetCodec->navData.btw_deg.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -400,8 +399,8 @@ void NmeaBridge::DecodeRMBSentence(char *sentence)
     sentence++;
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.vmgwp_kt.value = value;
-        micronetCodec->navData.vmgwp_kt.valid = true;
+        micronetCodec->navData.vmgwp_kt.value     = value;
+        micronetCodec->navData.vmgwp_kt.valid     = true;
         micronetCodec->navData.vmgwp_kt.timeStamp = millis();
     }
 }
@@ -412,9 +411,9 @@ void NmeaBridge::DecodeRMCSentence(char *sentence)
 
     if (sentence[0] != ',')
     {
-        micronetCodec->navData.time.hour = (sentence[0] - '0') * 10 + (sentence[1] - '0');
-        micronetCodec->navData.time.minute = (sentence[2] - '0') * 10 + (sentence[3] - '0');
-        micronetCodec->navData.time.valid = true;
+        micronetCodec->navData.time.hour      = (sentence[0] - '0') * 10 + (sentence[1] - '0');
+        micronetCodec->navData.time.minute    = (sentence[2] - '0') * 10 + (sentence[3] - '0');
+        micronetCodec->navData.time.valid     = true;
         micronetCodec->navData.time.timeStamp = millis();
     }
     for (int i = 0; i < 8; i++)
@@ -425,10 +424,10 @@ void NmeaBridge::DecodeRMCSentence(char *sentence)
     }
     if (sentence[0] != ',')
     {
-        micronetCodec->navData.date.day = (sentence[0] - '0') * 10 + (sentence[1] - '0');
-        micronetCodec->navData.date.month = (sentence[2] - '0') * 10 + (sentence[3] - '0');
-        micronetCodec->navData.date.year = (sentence[4] - '0') * 10 + (sentence[5] - '0');
-        micronetCodec->navData.date.valid = true;
+        micronetCodec->navData.date.day       = (sentence[0] - '0') * 10 + (sentence[1] - '0');
+        micronetCodec->navData.date.month     = (sentence[2] - '0') * 10 + (sentence[3] - '0');
+        micronetCodec->navData.date.year      = (sentence[4] - '0') * 10 + (sentence[5] - '0');
+        micronetCodec->navData.date.valid     = true;
         micronetCodec->navData.date.timeStamp = millis();
     }
 }
@@ -453,7 +452,7 @@ void NmeaBridge::DecodeGGASentence(char *sentence)
         sentence++;
         if (sentence[0] == 'S')
             micronetCodec->navData.latitude_deg.value = -micronetCodec->navData.latitude_deg.value;
-        micronetCodec->navData.latitude_deg.valid = true;
+        micronetCodec->navData.latitude_deg.valid     = true;
         micronetCodec->navData.latitude_deg.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -469,7 +468,7 @@ void NmeaBridge::DecodeGGASentence(char *sentence)
         sentence++;
         if (sentence[0] == 'W')
             micronetCodec->navData.longitude_deg.value = -micronetCodec->navData.longitude_deg.value;
-        micronetCodec->navData.longitude_deg.valid = true;
+        micronetCodec->navData.longitude_deg.valid     = true;
         micronetCodec->navData.longitude_deg.timeStamp = millis();
     }
 }
@@ -477,9 +476,9 @@ void NmeaBridge::DecodeGGASentence(char *sentence)
 void NmeaBridge::DecodeVTGSentence(char *sentence)
 {
     float value;
-    int comaCount = 0;
-    char *pChar = sentence;
-    int fieldsToSkip;
+    int   comaCount = 0;
+    char *pChar     = sentence;
+    int   fieldsToSkip;
 
     sentence += 7;
 
@@ -506,8 +505,8 @@ void NmeaBridge::DecodeVTGSentence(char *sentence)
         if (value < 0)
             value += 360.0f;
 
-        micronetCodec->navData.cog_deg.value = value;
-        micronetCodec->navData.cog_deg.valid = true;
+        micronetCodec->navData.cog_deg.value     = value;
+        micronetCodec->navData.cog_deg.valid     = true;
         micronetCodec->navData.cog_deg.timeStamp = millis();
     }
     for (int i = 0; i < fieldsToSkip; i++)
@@ -518,8 +517,8 @@ void NmeaBridge::DecodeVTGSentence(char *sentence)
     }
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.sog_kt.value = value;
-        micronetCodec->navData.sog_kt.valid = true;
+        micronetCodec->navData.sog_kt.value     = value;
+        micronetCodec->navData.sog_kt.valid     = true;
         micronetCodec->navData.sog_kt.timeStamp = millis();
     }
 }
@@ -547,8 +546,8 @@ void NmeaBridge::DecodeMWVSentence(char *sentence)
     {
         if (awa > 180.0)
             awa -= 360.0f;
-        micronetCodec->navData.awa_deg.value = awa;
-        micronetCodec->navData.awa_deg.valid = true;
+        micronetCodec->navData.awa_deg.value     = awa;
+        micronetCodec->navData.awa_deg.valid     = true;
         micronetCodec->navData.awa_deg.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -577,8 +576,8 @@ void NmeaBridge::DecodeMWVSentence(char *sentence)
         return;
     }
 
-    micronetCodec->navData.aws_kt.value = aws;
-    micronetCodec->navData.aws_kt.valid = true;
+    micronetCodec->navData.aws_kt.value     = aws;
+    micronetCodec->navData.aws_kt.valid     = true;
     micronetCodec->navData.aws_kt.timeStamp = millis();
     micronetCodec->CalculateTrueWind();
 }
@@ -601,8 +600,8 @@ void NmeaBridge::DecodeDPTSentence(char *sentence)
     sentence++;
     if (sscanf(sentence, "%f", &value) == 1)
     {
-        micronetCodec->navData.dpt_m.value = depth + value;
-        micronetCodec->navData.dpt_m.valid = true;
+        micronetCodec->navData.dpt_m.value     = depth + value;
+        micronetCodec->navData.dpt_m.valid     = true;
         micronetCodec->navData.dpt_m.timeStamp = millis();
     }
 }
@@ -628,8 +627,8 @@ void NmeaBridge::DecodeVHWSentence(char *sentence)
     {
         if (value < 0)
             value += 360.0f;
-        micronetCodec->navData.magHdg_deg.value = value;
-        micronetCodec->navData.magHdg_deg.valid = true;
+        micronetCodec->navData.magHdg_deg.value     = value;
+        micronetCodec->navData.magHdg_deg.valid     = true;
         micronetCodec->navData.magHdg_deg.timeStamp = millis();
     }
     if ((sentence = strchr(sentence, ',')) == nullptr)
@@ -642,8 +641,8 @@ void NmeaBridge::DecodeVHWSentence(char *sentence)
     sentence++;
     if (sentence[0] == 'N')
     {
-        micronetCodec->navData.spd_kt.value = value;
-        micronetCodec->navData.spd_kt.valid = true;
+        micronetCodec->navData.spd_kt.value     = value;
+        micronetCodec->navData.spd_kt.valid     = true;
         micronetCodec->navData.spd_kt.timeStamp = millis();
     }
 }
@@ -660,8 +659,8 @@ void NmeaBridge::DecodeHDGSentence(char *sentence)
         value += 360.0f;
     if (value >= 360.0)
         value -= 360.0f;
-    micronetCodec->navData.magHdg_deg.value = value;
-    micronetCodec->navData.magHdg_deg.valid = true;
+    micronetCodec->navData.magHdg_deg.value     = value;
+    micronetCodec->navData.magHdg_deg.valid     = true;
     micronetCodec->navData.magHdg_deg.timeStamp = millis();
 }
 
@@ -695,7 +694,7 @@ void NmeaBridge::EncodeMWV_R()
 
         if (update)
         {
-            char sentence[NMEA_SENTENCE_MAX_LENGTH];
+            char  sentence[NMEA_SENTENCE_MAX_LENGTH];
             float absAwa = micronetCodec->navData.awa_deg.value;
             if (absAwa < 0.0f)
                 absAwa += 360.0f;
@@ -719,7 +718,7 @@ void NmeaBridge::EncodeMWV_T()
 
         if (update)
         {
-            char sentence[NMEA_SENTENCE_MAX_LENGTH];
+            char  sentence[NMEA_SENTENCE_MAX_LENGTH];
             float absTwa = micronetCodec->navData.twa_deg.value;
             if (absTwa < 0.0f)
                 absTwa += 360.0f;
@@ -743,8 +742,7 @@ void NmeaBridge::EncodeDPT()
         if (update)
         {
             char sentence[NMEA_SENTENCE_MAX_LENGTH];
-            sprintf(sentence, "$INDPT,%.1f,%.1f,", micronetCodec->navData.dpt_m.value,
-                    micronetCodec->navData.depthOffset_m);
+            sprintf(sentence, "$INDPT,%.1f,%.1f,", micronetCodec->navData.dpt_m.value, micronetCodec->navData.depthOffset_m);
             AddNmeaChecksum(sentence);
             nmeaTimeStamps.dpt = millis();
             gConfiguration.ram.nmeaLink->println(sentence);
@@ -779,15 +777,13 @@ void NmeaBridge::EncodeVLW()
         bool update;
 
         update = (micronetCodec->navData.log_nm.timeStamp > nmeaTimeStamps.vlw + NMEA_SENTENCE_MIN_PERIOD_MS);
-        update =
-            update && (micronetCodec->navData.trip_nm.timeStamp > nmeaTimeStamps.vlw + NMEA_SENTENCE_MIN_PERIOD_MS);
+        update = update && (micronetCodec->navData.trip_nm.timeStamp > nmeaTimeStamps.vlw + NMEA_SENTENCE_MIN_PERIOD_MS);
         update = update && (micronetCodec->navData.log_nm.valid && micronetCodec->navData.trip_nm.valid);
 
         if (update)
         {
             char sentence[NMEA_SENTENCE_MAX_LENGTH];
-            sprintf(sentence, "$INVLW,%.1f,N,%.1f,N,,N,,N", micronetCodec->navData.log_nm.value,
-                    micronetCodec->navData.trip_nm.value);
+            sprintf(sentence, "$INVLW,%.1f,N,%.1f,N,,N,,N", micronetCodec->navData.log_nm.value, micronetCodec->navData.trip_nm.value);
             AddNmeaChecksum(sentence);
             nmeaTimeStamps.vlw = millis();
             gConfiguration.ram.nmeaLink->println(sentence);
@@ -799,16 +795,15 @@ void NmeaBridge::EncodeVHW()
 {
     if (gConfiguration.eeprom.speedSource == LINK_MICRONET)
     {
-        bool update = (micronetCodec->navData.spd_kt.timeStamp > nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS) &&
-                      (micronetCodec->navData.spd_kt.valid);
+        bool update =
+            (micronetCodec->navData.spd_kt.timeStamp > nmeaTimeStamps.vhw + NMEA_SENTENCE_MIN_PERIOD_MS) && (micronetCodec->navData.spd_kt.valid);
 
         if (update)
         {
             char sentence[NMEA_SENTENCE_MAX_LENGTH];
             if ((micronetCodec->navData.magHdg_deg.valid) && (micronetCodec->navData.spd_kt.valid))
             {
-                float trueHeading =
-                    micronetCodec->navData.magHdg_deg.value + micronetCodec->navData.magneticVariation_deg;
+                float trueHeading = micronetCodec->navData.magHdg_deg.value + micronetCodec->navData.magneticVariation_deg;
                 if (trueHeading < 0.0f)
                 {
                     trueHeading += 360.0f;
@@ -817,8 +812,8 @@ void NmeaBridge::EncodeVHW()
                 {
                     trueHeading -= 360.0f;
                 }
-                sprintf(sentence, "$INVHW,%.1f,T,%.1f,M,%.1f,N,,K", trueHeading,
-                        micronetCodec->navData.magHdg_deg.value, micronetCodec->navData.spd_kt.value);
+                sprintf(sentence, "$INVHW,%.1f,T,%.1f,M,%.1f,N,,K", trueHeading, micronetCodec->navData.magHdg_deg.value,
+                        micronetCodec->navData.spd_kt.value);
             }
             else if (micronetCodec->navData.spd_kt.valid)
             {
@@ -843,8 +838,7 @@ void NmeaBridge::EncodeHDG()
         if (update)
         {
             char sentence[NMEA_SENTENCE_MAX_LENGTH];
-            sprintf(sentence, "$INHDG,%.1f,0,E,%.1f,%c", micronetCodec->navData.magHdg_deg.value,
-                    fabsf(micronetCodec->navData.magneticVariation_deg),
+            sprintf(sentence, "$INHDG,%.1f,0,E,%.1f,%c", micronetCodec->navData.magHdg_deg.value, fabsf(micronetCodec->navData.magneticVariation_deg),
                     (micronetCodec->navData.magneticVariation_deg < 0.0f) ? 'W' : 'E');
             AddNmeaChecksum(sentence);
             nmeaTimeStamps.hdg = millis();
@@ -872,8 +866,8 @@ void NmeaBridge::EncodeXDR()
 uint8_t NmeaBridge::AddNmeaChecksum(char *sentence)
 {
     uint8_t crc = 0;
-    char crcString[8];
-    char *pChar = sentence + 1;
+    char    crcString[8];
+    char *  pChar = sentence + 1;
 
     while (*pChar != 0)
     {

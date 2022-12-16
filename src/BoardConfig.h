@@ -40,34 +40,34 @@
 // Selects on which I2C bus is connected compass as per Wiring library definition
 #define NAVCOMPASS_I2C Wire
 
-#define RF_CS0_PIN 18
+#define RF_CS0_PIN  18
 #define RF_MOSI_PIN 27
 #define RF_MISO_PIN 19
-#define RF_SCK_PIN 5
+#define RF_SCK_PIN  5
 #define RF_DIO0_PIN 26
 #define RF_DIO1_PIN 33
-#define RF_RST_PIN 23
+#define RF_RST_PIN  23
 #define RF_BUSY_PIN 32
 
 // NMEA GNSS UART pins
 #define GNSS_UBLOXM8N 1 // Set to one if your GNSS is a UBLOX M8N/M6N, 0 else.
-#define GNSS_SERIAL Serial2
+#define GNSS_SERIAL   Serial2
 #define GNSS_BAUDRATE 9600
-#define GNSS_RX_PIN 34
-#define GNSS_TX_PIN 12
+#define GNSS_RX_PIN   34
+#define GNSS_TX_PIN   12
 
 // The console to use for menu
-#define CONSOLE Serial
+#define CONSOLE          Serial
 #define CONSOLE_BAUDRATE 115200
 
 // Button for user interaction
-#define BUTTON_PIN 38
+#define BUTTON_PIN      38
 #define BUTTON_PIN_MASK GPIO_SEL_38
 
 // PMU connections
 #define PMU_I2C_SDA 21
 #define PMU_I2C_SCL 22
-#define PMU_IRQ 35
+#define PMU_IRQ     35
 
 /***************************************************************************/
 /*                                Types                                    */

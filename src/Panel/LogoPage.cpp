@@ -74,9 +74,9 @@ void LogoPage::SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint
 
 void LogoPage::Draw(bool force)
 {
-    char versionStr[10];
-    char networkIdStr[9];
-    int16_t xVersion, yVersion;
+    char     versionStr[10];
+    char     networkIdStr[9];
+    int16_t  xVersion, yVersion;
     uint16_t wVersion, hVersion;
 
     if (display != nullptr)
