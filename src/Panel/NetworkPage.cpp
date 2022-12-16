@@ -24,23 +24,23 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "NetworkPage.h"
-#include "PanelResources.h"
 #include "MicronetDevice.h"
+#include "PanelResources.h"
 
-#include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define DEVICE_ICON_WIDTH  32
+#define DEVICE_ICON_WIDTH 32
 #define DEVICE_ICON_HEIGHT 21
 
 /***************************************************************************/
@@ -59,7 +59,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-NetworkPage::NetworkPage(): deviceId(0), networkConnected(false)
+NetworkPage::NetworkPage() : deviceId(0), networkConnected(false)
 {
 }
 
@@ -96,23 +96,23 @@ void NetworkPage::Draw(bool force)
     }
 }
 
-void NetworkPage::DrawDeviceIcon(uint8_t const* icon, uint32_t position, uint32_t radioLevel)
+void NetworkPage::DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t radioLevel)
 {
     if (position > 12)
         return;
 
     uint32_t xPos = DEVICE_ICON_WIDTH * (position & 0x03);
     uint32_t yPos = DEVICE_ICON_HEIGHT * (position >> 2);
-    display->drawBitmap(xPos, yPos, (uint8_t*)icon, DEVICE_ICON_WIDTH, DEVICE_ICON_HEIGHT, 1);
+    display->drawBitmap(xPos, yPos, (uint8_t *)icon, DEVICE_ICON_WIDTH, DEVICE_ICON_HEIGHT, 1);
     if (radioLevel < 5)
     {
         display->fillRect(xPos + 26, yPos + 4, 6, 3 * (5 - radioLevel), 0);
     }
 }
 
-unsigned char const* NetworkPage::GetIconById(uint32_t deviceId)
+unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
 {
-    unsigned char const* bitmapPtr = T000_BITMAP;
+    unsigned char const *bitmapPtr = T000_BITMAP;
 
     switch (deviceId >> 24)
     {
@@ -151,7 +151,7 @@ unsigned char const* NetworkPage::GetIconById(uint32_t deviceId)
     return bitmapPtr;
 }
 
-void NetworkPage::SetNetworkStatus(MicronetNetworkState_t& networkStatus)
+void NetworkPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
 {
     networkConnected = networkStatus.connected;
     deviceId = networkStatus.deviceId;

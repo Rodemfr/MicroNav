@@ -50,17 +50,17 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
-RfDriver gRfDriver;               // RF Driver object
-MenuManager gMenuManager;           // Menu manager object
-MicronetCodec gMicronetCodec;
-MicronetMessageFifo gRxMessageFifo; // Micronet message fifo store, used for communication between CC1101 ISR and main loop code
-Configuration gConfiguration;
-NavCompass gNavCompass;
-M8NDriver gM8nDriver;
-PanelManager gPanelDriver;
-BluetoothSerial gBtSerial;
-NmeaBridge gDataBridge(&gMicronetCodec);
-MicronetDevice gMicronetDevice(&gMicronetCodec);
+RfDriver gRfDriver;                              // RF Driver object
+MenuManager gMenuManager;                        // Menu manager object
+MicronetCodec gMicronetCodec;                    // Codec used by MicronetDevice
+MicronetMessageFifo gRxMessageFifo;              // Micronet message fifo store
+Configuration gConfiguration;                    // Global configuration
+NavCompass gNavCompass;                          // Navigation compass
+M8NDriver gM8nDriver;                            // GNSS Driver
+PanelManager gPanelDriver;                       // Display driver
+BluetoothSerial gBtSerial;                       // Bluetooth driver
+NmeaBridge gDataBridge(&gMicronetCodec);         // NMEA Bridge
+MicronetDevice gMicronetDevice(&gMicronetCodec); // Micronet Device
 
 /***************************************************************************/
 /*                              Functions                                  */

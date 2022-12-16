@@ -27,18 +27,18 @@
 #ifndef PANELDRIVER_H_
 #define PANELDRIVER_H_
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
-#include "PageHandler.h"
-#include "LogoPage.h"
 #include "ClockPage.h"
-#include "NetworkPage.h"
 #include "ConfigPage1.h"
 #include "ConfigPage2.h"
-#include "NavigationData.h"
+#include "LogoPage.h"
 #include "MicronetDevice.h"
+#include "NavigationData.h"
+#include "NetworkPage.h"
+#include "PageHandler.h"
 
 #include <Arduino.h>
 
@@ -46,7 +46,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-enum {
+enum
+{
     PAGE_LOGO = 0,
     PAGE_CLOCK,
     PAGE_NETWORK,
@@ -65,7 +66,7 @@ enum {
 
 class PanelManager
 {
-public:
+  public:
     PanelManager();
     ~PanelManager();
 
@@ -76,13 +77,13 @@ public:
     void DrawPageISR();
     void NextPage();
     void NextPageISR();
-    void SetNavigationData(NavigationData* navData);
+    void SetNavigationData(NavigationData *navData);
     void SetNetworkStatus(MicronetNetworkState_t &networkStatus);
 
-private:
+  private:
     bool displayAvailable;
     uint32_t pageNumber;
-    PageHandler* currentPage;
+    PageHandler *currentPage;
     TaskHandle_t commandTaskHandle;
     EventGroupHandle_t commandEventGroup;
     LogoPage logoPage;
@@ -92,14 +93,14 @@ private:
     ConfigPage2 configPage2;
     portMUX_TYPE commandMutex;
     portMUX_TYPE buttonMutex;
-    NavigationData* navData;
+    NavigationData *navData;
     MicronetNetworkState_t networkStatus;
     uint32_t lastRelease = 0;
     uint32_t lastPress = 0;
     bool buttonPressed = false;
 
-    static PanelManager* objectPtr;
-    static void CommandProcessingTask(void* parameter);
+    static PanelManager *objectPtr;
+    static void CommandProcessingTask(void *parameter);
     static void StaticButtonIsr();
     void ButtonIsr();
 

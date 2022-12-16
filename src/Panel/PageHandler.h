@@ -42,7 +42,8 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum {
+typedef enum
+{
     PAGE_ACTION_NONE = 0,
     PAGE_ACTION_NEXT_PAGE,
     PAGE_ACTION_REFRESH
@@ -54,7 +55,7 @@ typedef enum {
 
 class PageHandler
 {
-public:
+  public:
     PageHandler();
     virtual ~PageHandler() = 0;
 
@@ -62,7 +63,7 @@ public:
     virtual void Draw(bool force) = 0;
     virtual PageAction_t OnButtonPressed(bool longPress);
 
-protected:
+  protected:
     Adafruit_SSD1306 *display;
 };
 

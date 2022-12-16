@@ -45,46 +45,47 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class ConfigPage2 : public PageHandler {
-public:
-  ConfigPage2();
-  virtual ~ConfigPage2();
+class ConfigPage2 : public PageHandler
+{
+  public:
+    ConfigPage2();
+    virtual ~ConfigPage2();
 
-  void Draw(bool force);
-  PageAction_t OnButtonPressed(bool longPress);
+    void Draw(bool force);
+    PageAction_t OnButtonPressed(bool longPress);
 
-private:
-  uint8_t swMajorVersion, swMinorVersion;
-  uint32_t swPatchVersion;
-  bool editMode;
-  uint32_t editPosition;
+  private:
+    uint8_t swMajorVersion, swMinorVersion;
+    uint32_t swPatchVersion;
+    bool editMode;
+    uint32_t editPosition;
 
-  uint32_t configCompassSel;
-  uint32_t configGnssSel;
-  uint32_t configWindSel;
-  uint32_t configDepthSel;
-  uint32_t configSpeedSel;
+    uint32_t configCompassSel;
+    uint32_t configGnssSel;
+    uint32_t configWindSel;
+    uint32_t configDepthSel;
+    uint32_t configSpeedSel;
 
-  void DeployConfiguration();
-  void DeployCompass();
-  void DeployGnss();
-  void DeployWind();
-  void DeployDepth();
-  void DeploySpeed();
+    void DeployConfiguration();
+    void DeployCompass();
+    void DeployGnss();
+    void DeployWind();
+    void DeployDepth();
+    void DeploySpeed();
 
-  char const *ConfigString(uint32_t index);
-  char const *ConfigCompassString();
-  char const *ConfigGnssString();
-  char const *ConfigWindString();
-  char const *ConfigDepthString();
-  char const *ConfigSpeedString();
+    char const *ConfigString(uint32_t index);
+    char const *ConfigCompassString();
+    char const *ConfigGnssString();
+    char const *ConfigWindString();
+    char const *ConfigDepthString();
+    char const *ConfigSpeedString();
 
-  void ConfigCycle(uint32_t index);
-  void ConfigCompassCycle();
-  void ConfigGnssCycle();
-  void ConfigWindCycle();
-  void ConfigDepthCycle();
-  void ConfigSpeedCycle();
+    void ConfigCycle(uint32_t index);
+    void ConfigCompassCycle();
+    void ConfigGnssCycle();
+    void ConfigWindCycle();
+    void ConfigDepthCycle();
+    void ConfigSpeedCycle();
 };
 
 #endif

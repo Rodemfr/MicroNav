@@ -27,21 +27,21 @@
 #ifndef GLOBALS_H_
 #define GLOBALS_H_
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
+#include "Configuration.h"
+#include "M8NDriver.h"
 #include "MenuManager.h"
-#include "Micronet/MicronetMessageFifo.h"
 #include "Micronet/MicronetCodec.h"
 #include "Micronet/MicronetDevice.h"
-#include "Configuration.h"
-#include "NmeaBridge.h"
-#include "NavigationData.h"
+#include "Micronet/MicronetMessageFifo.h"
 #include "NavCompass.h"
-#include "RfDriver.h"
-#include "M8NDriver.h"
+#include "NavigationData.h"
+#include "NmeaBridge.h"
 #include "PanelManager.h"
+#include "RfDriver.h"
 
 #include <BluetoothSerial.h>
 

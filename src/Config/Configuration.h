@@ -44,74 +44,83 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum { RF_FREQ_SYSTEM_868 = 0, RF_FREQ_SYSTEM_915 } FreqSystem_t;
+typedef enum
+{
+    RF_FREQ_SYSTEM_868 = 0,
+    RF_FREQ_SYSTEM_915
+} FreqSystem_t;
 
-typedef enum {
-  SERIAL_TYPE_USB = 0,
-  SERIAL_TYPE_BT,
-  SERIAL_TYPE_WIFI
+typedef enum
+{
+    SERIAL_TYPE_USB = 0,
+    SERIAL_TYPE_BT,
+    SERIAL_TYPE_WIFI
 } SerialType_t;
 
-typedef enum {
-  LINK_NMEA_EXT,
-  LINK_NMEA_GNSS,
-  LINK_MICRONET,
-  LINK_COMPASS
+typedef enum
+{
+    LINK_NMEA_EXT,
+    LINK_NMEA_GNSS,
+    LINK_MICRONET,
+    LINK_COMPASS
 } LinkId_t;
 
-typedef struct {
-  uint32_t networkId;
-  uint32_t deviceId;
-  float waterSpeedFactor_per;
-  float waterTemperatureOffset_C;
-  float depthOffset_m;
-  float windSpeedFactor_per;
-  float windDirectionOffset_deg;
-  float headingOffset_deg;
-  float magneticVariation_deg;
-  float windShift;
-  float xMagOffset;
-  float yMagOffset;
-  float zMagOffset;
-  FreqSystem_t freqSystem;
-  int8_t timeZone_h;
-  uint8_t rmbWorkaround;
-  uint8_t windRepeater;
-  uint8_t spare;
-  SerialType_t nmeaLink;
-  LinkId_t gnssSource;
-  LinkId_t windSource;
-  LinkId_t depthSource;
-  LinkId_t speedSource;
-  LinkId_t compassSource;
+typedef struct
+{
+    uint32_t networkId;
+    uint32_t deviceId;
+    float waterSpeedFactor_per;
+    float waterTemperatureOffset_C;
+    float depthOffset_m;
+    float windSpeedFactor_per;
+    float windDirectionOffset_deg;
+    float headingOffset_deg;
+    float magneticVariation_deg;
+    float windShift;
+    float xMagOffset;
+    float yMagOffset;
+    float zMagOffset;
+    FreqSystem_t freqSystem;
+    int8_t timeZone_h;
+    uint8_t rmbWorkaround;
+    uint8_t windRepeater;
+    uint8_t spare;
+    SerialType_t nmeaLink;
+    LinkId_t gnssSource;
+    LinkId_t windSource;
+    LinkId_t depthSource;
+    LinkId_t speedSource;
+    LinkId_t compassSource;
 } EEPROMConfig_t;
 
-typedef struct {
-  bool navCompassAvailable;
-  bool displayAvailable;
-  Stream *nmeaLink;
+typedef struct
+{
+    bool navCompassAvailable;
+    bool displayAvailable;
+    Stream *nmeaLink;
 } RAMConfig_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
-class Configuration {
-public:
-  Configuration();
-  virtual ~Configuration();
+class Configuration
+{
+  public:
+    Configuration();
+    virtual ~Configuration();
 
-  void Init();
-  void LoadFromEeprom();
-  void SaveToEeprom();
-  void SaveCalibration(MicronetCodec &micronetCodec);
-  void LoadCalibration(MicronetCodec *micronetCodec);
-  void DeployConfiguration(MicronetDevice *micronetDevice);
+    void Init();
+    void LoadFromEeprom();
+    void SaveToEeprom();
+    void SaveCalibration(MicronetCodec &micronetCodec);
+    void LoadCalibration(MicronetCodec *micronetCodec);
+    void DeployConfiguration(MicronetDevice *micronetDevice);
 
-  // The following parameters are loaded/saved from/to EEPROM
-  EEPROMConfig_t eeprom;
-  // The following parameters are NOT loaded/saved from/to EEPROM
-  RAMConfig_t ram;
+    // The following parameters are loaded/saved from/to EEPROM
+    EEPROMConfig_t eeprom;
+    // The following parameters are NOT loaded/saved from/to EEPROM
+    RAMConfig_t ram;
 };
 
 /***************************************************************************/

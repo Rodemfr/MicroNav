@@ -48,71 +48,74 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum {
-  NMEA_ID_UNKNOWN,
-  NMEA_ID_RMB,
-  NMEA_ID_RMC,
-  NMEA_ID_GGA,
-  NMEA_ID_VTG,
-  NMEA_ID_MWV,
-  NMEA_ID_DPT,
-  NMEA_ID_VHW,
-  NMEA_ID_HDG
+typedef enum
+{
+    NMEA_ID_UNKNOWN,
+    NMEA_ID_RMB,
+    NMEA_ID_RMC,
+    NMEA_ID_GGA,
+    NMEA_ID_VTG,
+    NMEA_ID_MWV,
+    NMEA_ID_DPT,
+    NMEA_ID_VHW,
+    NMEA_ID_HDG
 } NmeaId_t;
 
-typedef struct {
-  uint32_t vwr;
-  uint32_t vwt;
-  uint32_t dpt;
-  uint32_t mtw;
-  uint32_t vlw;
-  uint32_t vhw;
-  uint32_t hdg;
-  uint32_t vcc;
+typedef struct
+{
+    uint32_t vwr;
+    uint32_t vwt;
+    uint32_t dpt;
+    uint32_t mtw;
+    uint32_t vlw;
+    uint32_t vhw;
+    uint32_t hdg;
+    uint32_t vcc;
 } NmeaTimeStamps_t;
 
 #define NMEA_SENTENCE_MIN_PERIOD_MS 500
 
-class NmeaBridge {
-public:
-  NmeaBridge(MicronetCodec *micronetCodec);
-  virtual ~NmeaBridge();
+class NmeaBridge
+{
+  public:
+    NmeaBridge(MicronetCodec *micronetCodec);
+    virtual ~NmeaBridge();
 
-  void PushNmeaChar(char c, LinkId_t sourceLink);
-  void UpdateCompassData(float heading_deg);
-  void UpdateMicronetData();
+    void PushNmeaChar(char c, LinkId_t sourceLink);
+    void UpdateCompassData(float heading_deg);
+    void UpdateMicronetData();
 
-private:
-  static const uint8_t asciiTable[128];
-  char nmeaExtBuffer[NMEA_SENTENCE_MAX_LENGTH];
-  char nmeaGnssBuffer[NMEA_SENTENCE_MAX_LENGTH];
-  int nmeaExtWriteIndex;
-  int nmeaGnssWriteIndex;
-  NmeaTimeStamps_t nmeaTimeStamps;
-  MicronetCodec *micronetCodec;
+  private:
+    static const uint8_t asciiTable[128];
+    char nmeaExtBuffer[NMEA_SENTENCE_MAX_LENGTH];
+    char nmeaGnssBuffer[NMEA_SENTENCE_MAX_LENGTH];
+    int nmeaExtWriteIndex;
+    int nmeaGnssWriteIndex;
+    NmeaTimeStamps_t nmeaTimeStamps;
+    MicronetCodec *micronetCodec;
 
-  bool IsSentenceValid(char *nmeaBuffer);
-  NmeaId_t SentenceId(char *nmeaBuffer);
-  void DecodeRMBSentence(char *sentence);
-  void DecodeRMCSentence(char *sentence);
-  void DecodeGGASentence(char *sentence);
-  void DecodeVTGSentence(char *sentence);
-  void DecodeMWVSentence(char *sentence);
-  void DecodeDPTSentence(char *sentence);
-  void DecodeVHWSentence(char *sentence);
-  void DecodeHDGSentence(char *sentence);
-  int16_t NibbleValue(char c);
+    bool IsSentenceValid(char *nmeaBuffer);
+    NmeaId_t SentenceId(char *nmeaBuffer);
+    void DecodeRMBSentence(char *sentence);
+    void DecodeRMCSentence(char *sentence);
+    void DecodeGGASentence(char *sentence);
+    void DecodeVTGSentence(char *sentence);
+    void DecodeMWVSentence(char *sentence);
+    void DecodeDPTSentence(char *sentence);
+    void DecodeVHWSentence(char *sentence);
+    void DecodeHDGSentence(char *sentence);
+    int16_t NibbleValue(char c);
 
-  void EncodeMWV_R();
-  void EncodeMWV_T();
-  void EncodeDPT();
-  void EncodeMTW();
-  void EncodeVLW();
-  void EncodeVHW();
-  void EncodeHDG();
-  void EncodeXDR();
+    void EncodeMWV_R();
+    void EncodeMWV_T();
+    void EncodeDPT();
+    void EncodeMTW();
+    void EncodeVLW();
+    void EncodeVHW();
+    void EncodeHDG();
+    void EncodeXDR();
 
-  uint8_t AddNmeaChecksum(char *sentence);
+    uint8_t AddNmeaChecksum(char *sentence);
 };
 
 /***************************************************************************/

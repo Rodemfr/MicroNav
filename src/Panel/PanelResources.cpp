@@ -39,16 +39,11 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-GFXfont FreeSansBold9pt = {(uint8_t *)FreeSansBold9pt7bBitmaps,
-                           (GFXglyph *)FreeSansBold9pt7bGlyphs, 0x20, 0x7E, 22};
+GFXfont FreeSansBold9pt = {(uint8_t *)FreeSansBold9pt7bBitmaps, (GFXglyph *)FreeSansBold9pt7bGlyphs, 0x20, 0x7E, 22};
 
-GFXfont FreeSansBold12pt = {(uint8_t *)FreeSansBold12pt7bBitmaps,
-                            (GFXglyph *)FreeSansBold12pt7bGlyphs, 0x20, 0x7E,
-                            29};
+GFXfont FreeSansBold12pt = {(uint8_t *)FreeSansBold12pt7bBitmaps, (GFXglyph *)FreeSansBold12pt7bGlyphs, 0x20, 0x7E, 29};
 
-GFXfont FreeSansBold24pt = {(uint8_t *)FreeSansBold24pt7bBitmaps,
-                            (GFXglyph *)FreeSansBold24pt7bGlyphs, 0x20, 0x7E,
-                            56};
+GFXfont FreeSansBold24pt = {(uint8_t *)FreeSansBold24pt7bBitmaps, (GFXglyph *)FreeSansBold24pt7bGlyphs, 0x20, 0x7E, 56};
 
 /***************************************************************************/
 /*                             Local types                                 */

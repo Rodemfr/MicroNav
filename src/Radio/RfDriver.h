@@ -48,12 +48,13 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum {
-	RF_STATE_RX_WAIT_SYNC = 0,
-	RF_STATE_RX_HEADER,
-	RF_STATE_RX_PAYLOAD,
-	RF_STATE_TX_TRANSMIT,
-	RF_STATE_TX_LAST_TRANSMIT
+typedef enum
+{
+    RF_STATE_RX_WAIT_SYNC = 0,
+    RF_STATE_RX_HEADER,
+    RF_STATE_RX_PAYLOAD,
+    RF_STATE_TX_TRANSMIT,
+    RF_STATE_TX_LAST_TRANSMIT
 } RfDriverState_t;
 
 /***************************************************************************/
@@ -62,44 +63,45 @@ typedef enum {
 
 class RfDriver
 {
-public:
-	typedef enum {
-		RF_BANDWIDTH_LOW = 0,
-		RF_BANDWIDTH_MEDIUM,
-		RF_BANDWIDTH_HIGH
-	} RfBandwidth_t;
+  public:
+    typedef enum
+    {
+        RF_BANDWIDTH_LOW = 0,
+        RF_BANDWIDTH_MEDIUM,
+        RF_BANDWIDTH_HIGH
+    } RfBandwidth_t;
 
-	RfDriver();
-	virtual ~RfDriver();
+    RfDriver();
+    virtual ~RfDriver();
 
-	bool Init(MicronetMessageFifo *messageFifo);
-	void Start();
-	void SetFrequency(float frequency_MHz);
-	void SetBandwidth(RfBandwidth_t bandwidth);
-	void Transmit(MicronetMessageFifo *txMessageFifo);
-	void Transmit(MicronetMessage_t *message);
-	void EnableFrequencyTracking(uint32_t networkId);
-	void DisableFrequencyTracking();
+    bool Init(MicronetMessageFifo *messageFifo);
+    void Start();
+    void SetFrequency(float frequency_MHz);
+    void SetBandwidth(RfBandwidth_t bandwidth);
+    void Transmit(MicronetMessageFifo *txMessageFifo);
+    void Transmit(MicronetMessage_t *message);
+    void EnableFrequencyTracking(uint32_t networkId);
+    void DisableFrequencyTracking();
 
-private:
-	SX1276MnetDriver sx1276Driver;
-	MicronetMessageFifo *messageFifo;
-	MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];
-	volatile int nextTransmitIndex;
-	volatile int messageBytesSent;
-	uint32_t freqTrackingNID;
-	hw_timer_t *txTimer;
-	portMUX_TYPE timerMux;
+  private:
+    SX1276MnetDriver sx1276Driver;
+    MicronetMessageFifo *messageFifo;
+    MicronetMessage_t transmitList[TRANSMIT_LIST_SIZE];
+    volatile int nextTransmitIndex;
+    volatile int messageBytesSent;
+    uint32_t freqTrackingNID;
+    hw_timer_t *txTimer;
+    portMUX_TYPE timerMux;
 
-	static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
+    static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
 
-	void ScheduleTransmit();
-	int GetNextTransmitIndex();
-	int GetFreeTransmitSlot();
-	void TransmitCallback();
+    void ScheduleTransmit();
+    int GetNextTransmitIndex();
+    int GetFreeTransmitSlot();
+    void TransmitCallback();
 
-	static void TimerHandler();
-	static RfDriver *rfDriver;
+    static void TimerHandler();
+    static RfDriver *rfDriver;
 };
 
 #endif /* RFDRIVER_H_ */

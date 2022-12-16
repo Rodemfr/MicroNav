@@ -24,9 +24,9 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "PageHandler.h"
 
@@ -58,12 +58,12 @@ PageHandler::~PageHandler()
 {
 }
 
-void PageHandler::SetDisplay(Adafruit_SSD1306* display)
+void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
 {
     this->display = display;
 }
 
 PageAction_t PageHandler::OnButtonPressed(bool longPress)
 {
-    return (longPress?PAGE_ACTION_NONE:PAGE_ACTION_NEXT_PAGE);
+    return (longPress ? PAGE_ACTION_NONE : PAGE_ACTION_NEXT_PAGE);
 }

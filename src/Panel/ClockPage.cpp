@@ -24,22 +24,22 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "ClockPage.h"
 #include "PanelResources.h"
 
-#include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-const int gMonthLength[13] = { 0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+const int gMonthLength[13] = {0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -57,7 +57,9 @@ const int gMonthLength[13] = { 0, 31, 30, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 /*                              Functions                                  */
 /***************************************************************************/
 
-ClockPage::ClockPage(): prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(false), prevDateValid(false)
+ClockPage::ClockPage()
+    : prevNavDataValid(false), prevHour(0), prevMinute(0), prevDay(0), prevMonth(0), prevYear(0), prevTimeValid(false),
+      prevDateValid(false)
 {
 }
 
@@ -111,7 +113,8 @@ void ClockPage::Draw(bool force)
                 prevMinute = minute;
             }
         }
-        else {
+        else
+        {
             timeStr[0] = '-';
             timeStr[1] = '-';
             timeStr[3] = '-';
@@ -156,7 +159,8 @@ void ClockPage::Draw(bool force)
             dateStr[8] = ((year / 10) % 10) + '0';
             dateStr[9] = (year % 10) + '0';
 
-            if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) || (navData->date.year != prevYear))
+            if ((navData->date.day != prevDay) || (navData->date.month != prevMonth) ||
+                (navData->date.year != prevYear))
             {
                 updateDisplay = true;
                 prevDay = day;
@@ -164,7 +168,8 @@ void ClockPage::Draw(bool force)
                 prevYear = year;
             }
         }
-        else {
+        else
+        {
             dateStr[0] = '-';
             dateStr[1] = '-';
             dateStr[3] = '-';
@@ -203,7 +208,7 @@ void ClockPage::Draw(bool force)
     }
 }
 
-void ClockPage::SetNavData(NavigationData* navData)
+void ClockPage::SetNavData(NavigationData *navData)
 {
     this->navData = navData;
 }

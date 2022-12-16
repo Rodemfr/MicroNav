@@ -24,18 +24,18 @@
  ***************************************************************************
  */
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "LogoPage.h"
-#include "PanelResources.h"
-#include "MicronetDevice.h"
 #include "Globals.h"
+#include "MicronetDevice.h"
+#include "PanelResources.h"
 
-#include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -57,7 +57,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-LogoPage::LogoPage(): swMajorVersion(0), swMinorVersion(0), swPatchVersion(0)
+LogoPage::LogoPage() : swMajorVersion(0), swMinorVersion(0), swPatchVersion(0)
 {
 }
 
@@ -78,7 +78,6 @@ void LogoPage::Draw(bool force)
     char networkIdStr[9];
     int16_t xVersion, yVersion;
     uint16_t wVersion, hVersion;
-
 
     if (display != nullptr)
     {

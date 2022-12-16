@@ -27,9 +27,9 @@
 #ifndef LOGOPAGE_H_
 #define LOGOPAGE_H_
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
 #include "PageHandler.h"
 
@@ -47,14 +47,14 @@
 
 class LogoPage : public PageHandler
 {
-public:
+  public:
     LogoPage();
     virtual ~LogoPage();
 
     void SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint32_t swPatchVersion);
     void Draw(bool force);
 
-private:
+  private:
     uint8_t swMajorVersion, swMinorVersion;
     uint32_t swPatchVersion;
 };

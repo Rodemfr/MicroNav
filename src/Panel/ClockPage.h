@@ -27,12 +27,12 @@
 #ifndef CLOCKPAGE_H_
 #define CLOCKPAGE_H_
 
- /***************************************************************************/
- /*                              Includes                                   */
- /***************************************************************************/
+/***************************************************************************/
+/*                              Includes                                   */
+/***************************************************************************/
 
-#include "PageHandler.h"
 #include "NavigationData.h"
+#include "PageHandler.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -48,14 +48,14 @@
 
 class ClockPage : public PageHandler
 {
-public:
+  public:
     ClockPage();
     virtual ~ClockPage();
 
     void Draw(bool force);
     void SetNavData(NavigationData *navData);
 
-private:
+  private:
     bool prevNavDataValid, prevTimeValid, prevDateValid;
     uint8_t prevHour, prevMinute, prevDay, prevMonth, prevYear;
     NavigationData *navData;

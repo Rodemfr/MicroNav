@@ -45,38 +45,39 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class ConfigPage1 : public PageHandler {
-public:
-  ConfigPage1();
-  virtual ~ConfigPage1();
+class ConfigPage1 : public PageHandler
+{
+  public:
+    ConfigPage1();
+    virtual ~ConfigPage1();
 
-  void Draw(bool force);
-  PageAction_t OnButtonPressed(bool longPress);
+    void Draw(bool force);
+    PageAction_t OnButtonPressed(bool longPress);
 
-private:
-  uint8_t swMajorVersion, swMinorVersion;
-  uint32_t swPatchVersion;
-  bool editMode;
-  uint32_t editPosition;
+  private:
+    uint8_t swMajorVersion, swMinorVersion;
+    uint32_t swPatchVersion;
+    bool editMode;
+    uint32_t editPosition;
 
-  uint32_t configFreqSel;
-  uint32_t configNmeaSel;
-  bool configRmbWorkaround;
-  bool configWindRepeater;
+    uint32_t configFreqSel;
+    uint32_t configNmeaSel;
+    bool configRmbWorkaround;
+    bool configWindRepeater;
 
-  void DeployConfiguration();
+    void DeployConfiguration();
 
-  char const *ConfigString(uint32_t index);
-  char const *ConfigFreqString();
-  char const *ConfigNmeaString();
-  char const *ConfigRmbWorkaroundString();
-  char const *ConfigWindRepeaterString();
+    char const *ConfigString(uint32_t index);
+    char const *ConfigFreqString();
+    char const *ConfigNmeaString();
+    char const *ConfigRmbWorkaroundString();
+    char const *ConfigWindRepeaterString();
 
-  void ConfigCycle(uint32_t index);
-  void ConfigFreqCycle();
-  void ConfigNmeaCycle();
-  void ConfigRmbWorkaroundCycle();
-  void ConfigWindRepeaterCycle();
+    void ConfigCycle(uint32_t index);
+    void ConfigFreqCycle();
+    void ConfigNmeaCycle();
+    void ConfigRmbWorkaroundCycle();
+    void ConfigWindRepeaterCycle();
 };
 
 #endif

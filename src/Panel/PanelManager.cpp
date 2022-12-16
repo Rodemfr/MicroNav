@@ -75,206 +75,231 @@ PanelManager *PanelManager::objectPtr;
 /*                              Functions                                  */
 /***************************************************************************/
 
-PanelManager::PanelManager()
-    : displayAvailable(false), pageNumber(0),
-      currentPage((PageHandler *)&logoPage) {
-  memset(&networkStatus, 0, sizeof(networkStatus));
+PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler *)&logoPage)
+{
+    memset(&networkStatus, 0, sizeof(networkStatus));
 }
 
-PanelManager::~PanelManager() {}
-
-bool PanelManager::Init() {
-  displayAvailable = false;
-
-  if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    displayAvailable = true;
-
-    logoPage.SetDisplay(&display);
-    logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
-    clockPage.SetDisplay(&display);
-    networkPage.SetDisplay(&display);
-    configPage1.SetDisplay(&display);
-    configPage2.SetDisplay(&display);
-
-    pageNumber = 0;
-
-    commandMutex = portMUX_INITIALIZER_UNLOCKED;
-    buttonMutex = portMUX_INITIALIZER_UNLOCKED;
-    commandEventGroup = xEventGroupCreate();
-    xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5,
-                &commandTaskHandle);
-  }
-
-  // Register button's ISR
-  pinMode(BUTTON_PIN, INPUT);
-  objectPtr = this;
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), StaticButtonIsr, CHANGE);
-
-  DrawPage();
-
-  return displayAvailable;
+PanelManager::~PanelManager()
+{
 }
 
-void PanelManager::SetPage(uint32_t pageNumber) {
-  if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES)) {
-    portENTER_CRITICAL(&commandMutex);
-    this->pageNumber = pageNumber;
-    portEXIT_CRITICAL(&commandMutex);
-  }
-}
+bool PanelManager::Init()
+{
+    displayAvailable = false;
 
-void PanelManager::SetPageISR(uint32_t pageNumber) {
-  if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES)) {
-    portENTER_CRITICAL_ISR(&commandMutex);
-    this->pageNumber = pageNumber;
-    portEXIT_CRITICAL_ISR(&commandMutex);
-  }
-}
+    if (display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+    {
+        displayAvailable = true;
 
-void PanelManager::DrawPage() {
-  xEventGroupSetBits(commandEventGroup, COMMAND_EVENT_REFRESH);
-}
+        logoPage.SetDisplay(&display);
+        logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
+        clockPage.SetDisplay(&display);
+        networkPage.SetDisplay(&display);
+        configPage1.SetDisplay(&display);
+        configPage2.SetDisplay(&display);
 
-void PanelManager::DrawPageISR() {
-  BaseType_t scheduleChange = pdFALSE;
+        pageNumber = 0;
 
-  xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_REFRESH,
-                            &scheduleChange);
-  portYIELD_FROM_ISR(scheduleChange);
-}
-
-void PanelManager::NextPage() {
-  portENTER_CRITICAL(&commandMutex);
-  this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
-  portEXIT_CRITICAL(&commandMutex);
-}
-
-void PanelManager::NextPageISR() {
-  portENTER_CRITICAL_ISR(&commandMutex);
-  this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
-  portEXIT_CRITICAL_ISR(&commandMutex);
-}
-
-void PanelManager::SetNavigationData(NavigationData *navData) {
-  // FIXME : Work on a copy of data instead of a direct pointer
-  portENTER_CRITICAL(&commandMutex);
-  clockPage.SetNavData(navData);
-  portEXIT_CRITICAL(&commandMutex);
-}
-
-void PanelManager::SetNetworkStatus(MicronetNetworkState_t &networkStatus) {
-  portENTER_CRITICAL(&commandMutex);
-  networkPage.SetNetworkStatus(networkStatus);
-  portEXIT_CRITICAL(&commandMutex);
-}
-
-void PanelManager::CommandProcessingTask(void *parameter) {
-  ((PanelManager *)parameter)->CommandCallback();
-}
-
-void PanelManager::CommandCallback() {
-  uint32_t lastPageUpdate = 0;
-  uint32_t now;
-  uint32_t localLastPress;
-  uint32_t localLastRelease;
-  bool localButtonPressed;
-  bool longPress;
-
-  while (true) {
-    EventBits_t commandFlags =
-        xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE,
-                            pdFALSE, TASK_WAKEUP_PERIOD / portTICK_PERIOD_MS);
-    now = millis();
-
-    portENTER_CRITICAL(&buttonMutex);
-    localLastPress = lastPress;
-    localLastRelease = lastRelease;
-    localButtonPressed = buttonPressed;
-    portEXIT_CRITICAL(&buttonMutex);
-
-    if ((localButtonPressed == true) &&
-        ((now - localLastPress) > BUTTON_LONG_PRESS_DELAY) && !longPress) {
-      longPress = true;
-      switch (currentPage->OnButtonPressed(true)) {
-      case PAGE_ACTION_NEXT_PAGE:
-        NextPage();
-        commandFlags |= COMMAND_EVENT_NEW_PAGE;
-        break;
-      case PAGE_ACTION_REFRESH:
-        commandFlags |= COMMAND_EVENT_REFRESH;
-        break;
-      }
+        commandMutex = portMUX_INITIALIZER_UNLOCKED;
+        buttonMutex = portMUX_INITIALIZER_UNLOCKED;
+        commandEventGroup = xEventGroupCreate();
+        xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
 
-    if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) &&
-        (localButtonPressed == false) &&
-        ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN)) {
-      if (longPress) {
-        longPress = false;
-      } else {
-        // Short press
-        switch (currentPage->OnButtonPressed(false)) {
-        case PAGE_ACTION_NEXT_PAGE:
-          NextPage();
-          commandFlags |= COMMAND_EVENT_NEW_PAGE;
-          break;
-        case PAGE_ACTION_REFRESH:
-          commandFlags |= COMMAND_EVENT_REFRESH;
-          break;
-        }
-      }
-    }
+    // Register button's ISR
+    pinMode(BUTTON_PIN, INPUT);
+    objectPtr = this;
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), StaticButtonIsr, CHANGE);
 
-    if ((commandFlags & COMMAND_EVENT_REFRESH) ||
-        (commandFlags & COMMAND_EVENT_NEW_PAGE) ||
-        ((now - lastPageUpdate) > DISPLAY_UPDATE_PERIOD)) {
-      lastPageUpdate = now;
-      portENTER_CRITICAL(&commandMutex);
-      switch (pageNumber) {
-      case PAGE_LOGO:
-        currentPage = (PageHandler *)&logoPage;
-        break;
-      case PAGE_NETWORK:
-        currentPage = (PageHandler *)&networkPage;
-        break;
-      case PAGE_CLOCK:
-        currentPage = (PageHandler *)&clockPage;
-        break;
-      case PAGE_CONFIG1:
-        currentPage = (PageHandler *)&configPage1;
-        break;
-      case PAGE_CONFIG2:
-        currentPage = (PageHandler *)&configPage2;
-        break;
-      }
-      portEXIT_CRITICAL(&commandMutex);
+    DrawPage();
 
-      currentPage->Draw(commandFlags & COMMAND_EVENT_NEW_PAGE);
-    }
-  }
+    return displayAvailable;
 }
 
-void PanelManager::StaticButtonIsr() { objectPtr->ButtonIsr(); }
+void PanelManager::SetPage(uint32_t pageNumber)
+{
+    if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
+    {
+        portENTER_CRITICAL(&commandMutex);
+        this->pageNumber = pageNumber;
+        portEXIT_CRITICAL(&commandMutex);
+    }
+}
 
-void PanelManager::ButtonIsr() {
-  uint32_t now = millis();
-  BaseType_t scheduleChange = pdFALSE;
+void PanelManager::SetPageISR(uint32_t pageNumber)
+{
+    if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
+    {
+        portENTER_CRITICAL_ISR(&commandMutex);
+        this->pageNumber = pageNumber;
+        portEXIT_CRITICAL_ISR(&commandMutex);
+    }
+}
 
-  if (!digitalRead(BUTTON_PIN)) {
-    // Button pressed
-    portENTER_CRITICAL_ISR(&buttonMutex);
-    buttonPressed = true;
-    lastPress = now;
-    portEXIT_CRITICAL_ISR(&buttonMutex);
-  } else {
-    // Button released
-    portENTER_CRITICAL_ISR(&buttonMutex);
-    buttonPressed = false;
-    lastRelease = now;
-    portEXIT_CRITICAL_ISR(&buttonMutex);
+void PanelManager::DrawPage()
+{
+    xEventGroupSetBits(commandEventGroup, COMMAND_EVENT_REFRESH);
+}
 
-    xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED,
-                              &scheduleChange);
+void PanelManager::DrawPageISR()
+{
+    BaseType_t scheduleChange = pdFALSE;
+
+    xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_REFRESH, &scheduleChange);
     portYIELD_FROM_ISR(scheduleChange);
-  }
+}
+
+void PanelManager::NextPage()
+{
+    portENTER_CRITICAL(&commandMutex);
+    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    portEXIT_CRITICAL(&commandMutex);
+}
+
+void PanelManager::NextPageISR()
+{
+    portENTER_CRITICAL_ISR(&commandMutex);
+    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    portEXIT_CRITICAL_ISR(&commandMutex);
+}
+
+void PanelManager::SetNavigationData(NavigationData *navData)
+{
+    // FIXME : Work on a copy of data instead of a direct pointer
+    portENTER_CRITICAL(&commandMutex);
+    clockPage.SetNavData(navData);
+    portEXIT_CRITICAL(&commandMutex);
+}
+
+void PanelManager::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+{
+    portENTER_CRITICAL(&commandMutex);
+    networkPage.SetNetworkStatus(networkStatus);
+    portEXIT_CRITICAL(&commandMutex);
+}
+
+void PanelManager::CommandProcessingTask(void *parameter)
+{
+    ((PanelManager *)parameter)->CommandCallback();
+}
+
+void PanelManager::CommandCallback()
+{
+    uint32_t lastPageUpdate = 0;
+    uint32_t now;
+    uint32_t localLastPress;
+    uint32_t localLastRelease;
+    bool localButtonPressed;
+    bool longPress;
+
+    while (true)
+    {
+        EventBits_t commandFlags = xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE,
+                                                       TASK_WAKEUP_PERIOD / portTICK_PERIOD_MS);
+        now = millis();
+
+        portENTER_CRITICAL(&buttonMutex);
+        localLastPress = lastPress;
+        localLastRelease = lastRelease;
+        localButtonPressed = buttonPressed;
+        portEXIT_CRITICAL(&buttonMutex);
+
+        if ((localButtonPressed == true) && ((now - localLastPress) > BUTTON_LONG_PRESS_DELAY) && !longPress)
+        {
+            longPress = true;
+            switch (currentPage->OnButtonPressed(true))
+            {
+            case PAGE_ACTION_NEXT_PAGE:
+                NextPage();
+                commandFlags |= COMMAND_EVENT_NEW_PAGE;
+                break;
+            case PAGE_ACTION_REFRESH:
+                commandFlags |= COMMAND_EVENT_REFRESH;
+                break;
+            }
+        }
+
+        if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) && (localButtonPressed == false) &&
+            ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN))
+        {
+            if (longPress)
+            {
+                longPress = false;
+            }
+            else
+            {
+                // Short press
+                switch (currentPage->OnButtonPressed(false))
+                {
+                case PAGE_ACTION_NEXT_PAGE:
+                    NextPage();
+                    commandFlags |= COMMAND_EVENT_NEW_PAGE;
+                    break;
+                case PAGE_ACTION_REFRESH:
+                    commandFlags |= COMMAND_EVENT_REFRESH;
+                    break;
+                }
+            }
+        }
+
+        if ((commandFlags & COMMAND_EVENT_REFRESH) || (commandFlags & COMMAND_EVENT_NEW_PAGE) ||
+            ((now - lastPageUpdate) > DISPLAY_UPDATE_PERIOD))
+        {
+            lastPageUpdate = now;
+            portENTER_CRITICAL(&commandMutex);
+            switch (pageNumber)
+            {
+            case PAGE_LOGO:
+                currentPage = (PageHandler *)&logoPage;
+                break;
+            case PAGE_NETWORK:
+                currentPage = (PageHandler *)&networkPage;
+                break;
+            case PAGE_CLOCK:
+                currentPage = (PageHandler *)&clockPage;
+                break;
+            case PAGE_CONFIG1:
+                currentPage = (PageHandler *)&configPage1;
+                break;
+            case PAGE_CONFIG2:
+                currentPage = (PageHandler *)&configPage2;
+                break;
+            }
+            portEXIT_CRITICAL(&commandMutex);
+
+            currentPage->Draw(commandFlags & COMMAND_EVENT_NEW_PAGE);
+        }
+    }
+}
+
+void PanelManager::StaticButtonIsr()
+{
+    objectPtr->ButtonIsr();
+}
+
+void PanelManager::ButtonIsr()
+{
+    uint32_t now = millis();
+    BaseType_t scheduleChange = pdFALSE;
+
+    if (!digitalRead(BUTTON_PIN))
+    {
+        // Button pressed
+        portENTER_CRITICAL_ISR(&buttonMutex);
+        buttonPressed = true;
+        lastPress = now;
+        portEXIT_CRITICAL_ISR(&buttonMutex);
+    }
+    else
+    {
+        // Button released
+        portENTER_CRITICAL_ISR(&buttonMutex);
+        buttonPressed = false;
+        lastRelease = now;
+        portEXIT_CRITICAL_ISR(&buttonMutex);
+
+        xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);
+        portYIELD_FROM_ISR(scheduleChange);
+    }
 }
