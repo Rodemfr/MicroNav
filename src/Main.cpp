@@ -123,7 +123,7 @@ void setup()
 
 #if (GNSS_UBLOXM8N == 1)
     CONSOLE.println("Configuring UBlox GNSS");
-    gM8nDriver.Start(M8N_GGA_ENABLE | M8N_VTG_ENABLE | M8N_RMC_ENABLE);
+    gM8nDriver.Start(NMEA_GGA_ENABLE | NMEA_VTG_ENABLE | NMEA_RMC_ENABLE);
 #endif
 
     // Setup main menu
@@ -949,12 +949,12 @@ void MenuTestRfQuality()
 
 void MenuDebug1()
 {
-    CONSOLE.println("Down");
+    CONSOLE.println("Off");
     gPanelDriver.LowPower(true);
 }
 
 void MenuDebug2()
 {
+    CONSOLE.println("On");
     gPanelDriver.LowPower(false);
-    CONSOLE.println("Up");
 }

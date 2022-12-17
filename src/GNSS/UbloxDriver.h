@@ -24,21 +24,20 @@
  ***************************************************************************
  */
 
-#ifndef M8NDRIVER_H_
-#define M8NDRIVER_H_
+#ifndef UBLOXDRIVER_H_
+#define UBLOXDRIVER_H_
 
 #include <Arduino.h>
 
-#define M8N_GGA_ENABLE  0x00000001
-#define M8N_VTG_ENABLE  0x00000002
-#define M8N_RMC_ENABLE  0x00000004
-#define M8N_HISPEED_NAV 0x00000008
+#define NMEA_GGA_ENABLE 0x00000001
+#define NMEA_VTG_ENABLE 0x00000002
+#define NMEA_RMC_ENABLE 0x00000004
 
-class M8NDriver
+class UbloxDriver
 {
   public:
-    M8NDriver();
-    virtual ~M8NDriver();
+    UbloxDriver();
+    virtual ~UbloxDriver();
 
     void Start(uint32_t config);
     void Sleep();
@@ -46,12 +45,11 @@ class M8NDriver
   private:
     static const PROGMEM uint8_t ClearConfig[];
     static const PROGMEM uint8_t UART1_38400[];
-    static const PROGMEM uint8_t Navrate5hz[];
     static const PROGMEM uint8_t GNSSSetup[];
-    static const PROGMEM char    M8NDriver::SleepMode[];
+    static const PROGMEM char    SleepMode[];
 
     void GPS_SendConfig(const uint8_t *progmemPtr, uint8_t arraySize);
     void GPS_SendPUBX(const char pubxMsg[]);
 };
 
-#endif /* M8NDRIVER_H_ */
+#endif /* UBLOXDRIVER_H_ */

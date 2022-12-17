@@ -32,7 +32,7 @@
 /***************************************************************************/
 
 #include "Configuration.h"
-#include "M8NDriver.h"
+#include "UbloxDriver.h"
 #include "MenuManager.h"
 #include "Micronet/MicronetCodec.h"
 #include "Micronet/MicronetDevice.h"
@@ -63,7 +63,7 @@ extern MenuManager         gMenuManager;
 extern MicronetMessageFifo gRxMessageFifo;
 extern Configuration       gConfiguration;
 extern NavCompass          gNavCompass;
-extern M8NDriver           gM8nDriver;
+extern UbloxDriver           gM8nDriver;
 extern PanelManager        gPanelDriver;
 extern MicronetCodec       gMicronetCodec;
 extern BluetoothSerial     gBtSerial;

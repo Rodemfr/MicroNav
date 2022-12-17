@@ -28,25 +28,25 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "M8NDriver.h"
+#include "UbloxDriver.h"
 #include "BoardConfig.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-const PROGMEM uint8_t M8NDriver::ClearConfig[] = {0xB5, 0x62, 0x06, 0x09, 0x0D, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00,
+const PROGMEM uint8_t UbloxDriver::ClearConfig[] = {0xB5, 0x62, 0x06, 0x09, 0x0D, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00,
                                                   0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x01, 0x19, 0x98};
 
-const PROGMEM uint8_t M8NDriver::UART1_38400[] = {0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00,
+const PROGMEM uint8_t UbloxDriver::UART1_38400[] = {0xB5, 0x62, 0x06, 0x00, 0x14, 0x00, 0x01, 0x00, 0x00, 0x00, 0xD0, 0x08, 0x00, 0x00,
                                                   0x00, 0x96, 0x00, 0x00, 0x07, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x92, 0x8A};
 
-const PROGMEM uint8_t M8NDriver::GNSSSetup[]  = {0xB5, 0x62, 0x06, 0x3E, 0x3C, 0x00, 0x00, 0x00, 0x20, 0x07, 0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01,
+const PROGMEM uint8_t UbloxDriver::GNSSSetup[]  = {0xB5, 0x62, 0x06, 0x3E, 0x3C, 0x00, 0x00, 0x00, 0x20, 0x07, 0x00, 0x08, 0x10, 0x00, 0x01, 0x00, 0x01,
                                                 0x01, 0x01, 0x01, 0x03, 0x00, 0x01, 0x00, 0x01, 0x01, 0x02, 0x04, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,
                                                 0x03, 0x08, 0x10, 0x00, 0x00, 0x00, 0x01, 0x01, 0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x01, 0x05,
                                                 0x00, 0x03, 0x00, 0x01, 0x00, 0x01, 0x01, 0x06, 0x08, 0x0E, 0x00, 0x01, 0x00, 0x01, 0x01, 0x30, 0xAD};
 
-const PROGMEM char M8NDriver::SleepMode[] = {0xB5, 0x62, 0x02, 0x41, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+const PROGMEM char UbloxDriver::SleepMode[] = {0xB5, 0x62, 0x02, 0x41, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                              0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x61, 0x6B};
 
 // PUBX Messages
@@ -88,15 +88,15 @@ uint8_t gnss_serial_rx_buffer[GNSS_SERIAL_BUFFER_SIZE];
 /*                              Functions                                  */
 /***************************************************************************/
 
-M8NDriver::M8NDriver()
+UbloxDriver::UbloxDriver()
 {
 }
 
-M8NDriver::~M8NDriver()
+UbloxDriver::~UbloxDriver()
 {
 }
 
-void M8NDriver::GPS_SendConfig(const uint8_t *progmemPtr, uint8_t arraySize)
+void UbloxDriver::GPS_SendConfig(const uint8_t *progmemPtr, uint8_t arraySize)
 {
     uint8_t byteread, index;
     for (index = 0; index < arraySize; index++)
@@ -116,12 +116,12 @@ void M8NDriver::GPS_SendConfig(const uint8_t *progmemPtr, uint8_t arraySize)
     delay(100);
 }
 
-void M8NDriver::GPS_SendPUBX(const char pubxMsg[])
+void UbloxDriver::GPS_SendPUBX(const char pubxMsg[])
 {
     GNSS_SERIAL.println(pubxMsg);
 }
 
-void M8NDriver::Start(uint32_t config)
+void UbloxDriver::Start(uint32_t config)
 {
     GPS_SendConfig(ClearConfig, 21);
     delay(500);
@@ -134,7 +134,7 @@ void M8NDriver::Start(uint32_t config)
     GNSS_SERIAL.println("");
     GPS_SendPUBX(DTM_off);
     GPS_SendPUBX(GBS_off);
-    if (config & M8N_GGA_ENABLE)
+    if (config & NMEA_GGA_ENABLE)
         GPS_SendPUBX(GGA_on);
     else
         GPS_SendPUBX(GGA_off);
@@ -145,23 +145,21 @@ void M8NDriver::Start(uint32_t config)
     GPS_SendPUBX(GSA_off);
     GPS_SendPUBX(GST_off);
     GPS_SendPUBX(GSV_off);
-    if (config & M8N_RMC_ENABLE)
+    if (config & NMEA_RMC_ENABLE)
         GPS_SendPUBX(RMC_on);
     else
         GPS_SendPUBX(RMC_off);
 
     GPS_SendPUBX(VLW_off);
-    if (config & M8N_VTG_ENABLE)
+    if (config & NMEA_VTG_ENABLE)
         GPS_SendPUBX(VTG_on);
     else
         GPS_SendPUBX(VTG_off);
     // GPS_SendPUBX(THS_off);
     GPS_SendPUBX(ZDA_off);
-    if (config & M8N_HISPEED_NAV)
-        GPS_SendConfig(Navrate5hz, 14);
 }
 
-void M8NDriver::Sleep(void)
+void UbloxDriver::Sleep(void)
 {
     // first send dumb data to make sure its on
     GNSS_SERIAL.write(0xFF);
