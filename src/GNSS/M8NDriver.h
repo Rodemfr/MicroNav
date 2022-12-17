@@ -40,14 +40,16 @@ class M8NDriver
     M8NDriver();
     virtual ~M8NDriver();
 
+    void Start(uint32_t config);
+    void Sleep();
+
+  private:
     static const PROGMEM uint8_t ClearConfig[];
     static const PROGMEM uint8_t UART1_38400[];
     static const PROGMEM uint8_t Navrate5hz[];
     static const PROGMEM uint8_t GNSSSetup[];
+    static const PROGMEM char    M8NDriver::SleepMode[];
 
-    void Start(uint32_t nmeaSentences);
-
-  private:
     void GPS_SendConfig(const uint8_t *progmemPtr, uint8_t arraySize);
     void GPS_SendPUBX(const char pubxMsg[]);
 };
