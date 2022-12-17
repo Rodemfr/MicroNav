@@ -46,25 +46,32 @@
 /*                                Types                                    */
 /***************************************************************************/
 
+typedef enum
+{
+    DEVICE_STATE_SEARCH_NETWORK = 0,
+    DEVICE_STATE_LOW_POWER,
+    DEVICE_STATE_ACTIVE
+} DeviceState_t;
+
 typedef struct
 {
     uint32_t deviceId;
     uint8_t  radioLevel;
     uint32_t lastCommMs;
-} MicronetDeviceInfo_t;
+} ConnectionInfo_t;
 
 typedef struct
 {
-    bool                      connected;
-    uint32_t                  deviceId;
-    uint32_t                  networkId;
-    MicronetCodec::NetworkMap networkMap;
-    uint32_t                  lastMasterCommMs;
-    uint32_t                  dataFields;
-    uint32_t                  splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
-    uint32_t                  nbDevicesInRange;
-    MicronetDeviceInfo_t      devicesInRange[MAX_DEVICES_PER_NETWORK];
-} MicronetNetworkState_t;
+    DeviceState_t    state;
+    uint32_t         deviceId;
+    uint32_t         networkId;
+    NetworkMap_t     networkMap;
+    uint32_t         lastMasterCommMs;
+    uint32_t         dataFields;
+    uint32_t         splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
+    uint32_t         nbDevicesInRange;
+    ConnectionInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
+} MicronetDeviceInfo_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
@@ -76,19 +83,19 @@ class MicronetDevice
     MicronetDevice(MicronetCodec *micronetCodec);
     virtual ~MicronetDevice();
 
-    void                    SetDeviceId(uint32_t deviceId);
-    void                    SetNetworkId(uint32_t networkId);
-    void                    SetDataFields(uint32_t dataMask);
-    void                    AddDataFields(uint32_t dataMask);
-    void                    ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
-    MicronetNetworkState_t &GetNetworkStatus();
-    void                    Yield();
+    void                  SetDeviceId(uint32_t deviceId);
+    void                  SetNetworkId(uint32_t networkId);
+    void                  SetDataFields(uint32_t dataMask);
+    void                  AddDataFields(uint32_t dataMask);
+    void                  ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
+    MicronetDeviceInfo_t &GetDeviceInfo();
+    void                  Yield();
 
   private:
-    MicronetCodec *        micronetCodec;
-    uint8_t                latestSignalStrength;
-    MicronetNetworkState_t networkState;
-    uint32_t               pingTimeStamp;
+    MicronetCodec *      micronetCodec;
+    uint8_t              lastMasterSignalStrength;
+    MicronetDeviceInfo_t deviceInfo;
+    uint32_t             pingTimeStamp;
 
     void    SplitDataFields();
     uint8_t GetShortestDevice();

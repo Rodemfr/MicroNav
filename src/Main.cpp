@@ -60,7 +60,7 @@
 void PrintByte(uint8_t data);
 void PrintInt(uint32_t data);
 void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us);
-void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap);
+void PrintNetworkMap(NetworkMap_t *networkMap);
 void PrintMessageFifo(MicronetMessageFifo &messageFifo);
 
 void MenuAbout();
@@ -70,6 +70,8 @@ void MenuConvertToNmea();
 void MenuScanTraffic();
 void MenuCalibrateMagnetoMeter();
 void MenuTestRfQuality();
+void MenuDebug1();
+void MenuDebug2();
 
 /***************************************************************************/
 /*                               Globals                                   */
@@ -85,6 +87,8 @@ MenuEntry_t mainMenu[] = {{"MicroNav", nullptr},
                           {"Scan surrounding Micronet traffic", MenuScanTraffic},
                           {"Calibrate magnetometer", MenuCalibrateMagnetoMeter},
                           {"Test RF quality", MenuTestRfQuality},
+                          {"Debug 1", MenuDebug1},
+                          {"Debug 2", MenuDebug2},
                           {nullptr, nullptr}};
 
 /***************************************************************************/
@@ -132,8 +136,7 @@ void setup()
         while (1)
         {
             CONSOLE.println("Failed");
-            CONSOLE.println("Aborting execution : Verify connection to CC1101 board");
-            CONSOLE.println("Halted");
+            CONSOLE.println("System Halted");
             delay(1000);
         }
     }
@@ -259,7 +262,7 @@ void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us)
     CONSOLE.println();
 }
 
-void PrintNetworkMap(MicronetCodec::NetworkMap *networkMap)
+void PrintNetworkMap(NetworkMap_t *networkMap)
 {
     CONSOLE.print("Network ID : 0x");
     PrintInt(networkMap->networkId);
@@ -651,7 +654,7 @@ void MenuConvertToNmea()
         gMicronetCodec.navData.UpdateValidity();
 
         gMicronetDevice.Yield();
-        gPanelDriver.SetNetworkStatus(gMicronetDevice.GetNetworkStatus());
+        gPanelDriver.SetNetworkStatus(gMicronetDevice.GetDeviceInfo());
         yield();
 
     } while (!exitNmeaLoop);
@@ -661,9 +664,9 @@ void MenuConvertToNmea()
 
 void MenuScanTraffic()
 {
-    bool                      exitSniffLoop        = false;
-    uint32_t                  lastMasterRequest_us = 0;
-    MicronetCodec::NetworkMap networkMap;
+    bool         exitSniffLoop        = false;
+    uint32_t     lastMasterRequest_us = 0;
+    NetworkMap_t networkMap;
 
     CONSOLE.println("Starting Micronet traffic scanning.");
     CONSOLE.println("Press ESC key at any time to stop scanning and come back to menu.");
@@ -804,12 +807,12 @@ void MenuCalibrateMagnetoMeter()
 
 void MenuTestRfQuality()
 {
-    bool                      exitTestLoop = false;
-    MicronetCodec::NetworkMap networkMap;
-    float                     strength;
-    TxSlotDesc_t              txSlot;
-    MicronetMessage_t         txMessage;
-    uint32_t                  receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
+    bool              exitTestLoop = false;
+    NetworkMap_t      networkMap;
+    float             strength;
+    TxSlotDesc_t      txSlot;
+    MicronetMessage_t txMessage;
+    uint32_t          receivedDid[MICRONET_MAX_DEVICES_PER_NETWORK];
 
     CONSOLE.println("Starting RF signal quality test.");
     CONSOLE.println("Press ESC key at any time to stop testing and come back to menu.");
@@ -942,4 +945,16 @@ void MenuTestRfQuality()
         }
         yield();
     } while (!exitTestLoop);
+}
+
+void MenuDebug1()
+{
+    CONSOLE.println("Down");
+    gPanelDriver.LowPower(true);
+}
+
+void MenuDebug2()
+{
+    gPanelDriver.LowPower(false);
+    CONSOLE.println("Up");
 }

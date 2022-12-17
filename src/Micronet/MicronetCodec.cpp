@@ -1025,7 +1025,7 @@ uint8_t MicronetCodec::AddPositionField(uint8_t *buffer, float latitude, float l
     return offset;
 }
 
-bool MicronetCodec::GetNetworkMap(MicronetMessage_t *message, NetworkMap *networkMap)
+bool MicronetCodec::GetNetworkMap(MicronetMessage_t *message, NetworkMap_t *networkMap)
 {
     uint32_t messageLength = message->len;
     uint32_t offset;
@@ -1130,7 +1130,7 @@ bool MicronetCodec::GetNetworkMap(MicronetMessage_t *message, NetworkMap *networ
     return true;
 }
 
-TxSlotDesc_t MicronetCodec::GetSyncTransmissionSlot(NetworkMap *networkMap, uint32_t deviceId)
+TxSlotDesc_t MicronetCodec::GetSyncTransmissionSlot(NetworkMap_t *networkMap, uint32_t deviceId)
 {
     for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++)
     {
@@ -1143,12 +1143,12 @@ TxSlotDesc_t MicronetCodec::GetSyncTransmissionSlot(NetworkMap *networkMap, uint
     return {0, 0, 0, 0};
 }
 
-TxSlotDesc_t MicronetCodec::GetAsyncTransmissionSlot(NetworkMap *networkMap)
+TxSlotDesc_t MicronetCodec::GetAsyncTransmissionSlot(NetworkMap_t *networkMap)
 {
     return networkMap->asyncSlot;
 }
 
-TxSlotDesc_t MicronetCodec::GetAckTransmissionSlot(NetworkMap *networkMap, uint32_t deviceId)
+TxSlotDesc_t MicronetCodec::GetAckTransmissionSlot(NetworkMap_t *networkMap, uint32_t deviceId)
 {
     for (uint32_t i = 0; i < networkMap->nbAckSlots; i++)
     {
@@ -1159,17 +1159,17 @@ TxSlotDesc_t MicronetCodec::GetAckTransmissionSlot(NetworkMap *networkMap, uint3
     return {0, 0, 0, 0};
 }
 
-uint32_t MicronetCodec::GetStartOfNetwork(NetworkMap *networkMap)
+uint32_t MicronetCodec::GetStartOfNetwork(NetworkMap_t *networkMap)
 {
     return networkMap->networkStart;
 }
 
-uint32_t MicronetCodec::GetNextStartOfNetwork(NetworkMap *networkMap)
+uint32_t MicronetCodec::GetNextStartOfNetwork(NetworkMap_t *networkMap)
 {
     return networkMap->networkStart + 1000000;
 }
 
-uint32_t MicronetCodec::GetEndOfNetwork(NetworkMap *networkMap)
+uint32_t MicronetCodec::GetEndOfNetwork(NetworkMap_t *networkMap)
 {
     return networkMap->networkEnd;
 }

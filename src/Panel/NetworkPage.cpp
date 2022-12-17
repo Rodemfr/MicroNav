@@ -151,21 +151,21 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
     return bitmapPtr;
 }
 
-void NetworkPage::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+void NetworkPage::SetNetworkStatus(MicronetDeviceInfo_t &deviceInfo)
 {
-    networkConnected              = networkStatus.connected;
-    deviceId                      = networkStatus.deviceId;
-    this->networkMap.networkId    = networkStatus.networkMap.networkId;
-    this->networkMap.nbDevices    = networkStatus.networkMap.nbDevices;
-    this->networkMap.masterDevice = networkStatus.networkMap.masterDevice;
-    this->networkMap.nbSyncSlots  = networkStatus.networkMap.nbSyncSlots;
+    networkConnected              = (deviceInfo.state == DEVICE_STATE_ACTIVE);
+    deviceId                      = deviceInfo.deviceId;
+    this->networkMap.networkId    = deviceInfo.networkMap.networkId;
+    this->networkMap.nbDevices    = deviceInfo.networkMap.nbDevices;
+    this->networkMap.masterDevice = deviceInfo.networkMap.masterDevice;
+    this->networkMap.nbSyncSlots  = deviceInfo.networkMap.nbSyncSlots;
     for (int i = 0; i < this->networkMap.nbSyncSlots; i++)
     {
-        this->networkMap.syncSlot[i] = networkStatus.networkMap.syncSlot[i];
+        this->networkMap.syncSlot[i] = deviceInfo.networkMap.syncSlot[i];
     }
-    nbDevicesInRange = networkStatus.nbDevicesInRange;
+    nbDevicesInRange = deviceInfo.nbDevicesInRange;
     for (int i = 0; i < nbDevicesInRange; i++)
     {
-        devicesInRange[i] = networkStatus.devicesInRange[i];
+        devicesInRange[i] = deviceInfo.devicesInRange[i];
     }
 }

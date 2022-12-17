@@ -74,6 +74,21 @@ typedef struct
     uint8_t  payloadBytes;
 } TxSlotDesc_t;
 
+struct NetworkMap_t
+{
+    uint32_t     networkId;
+    uint32_t     nbDevices;
+    uint32_t     masterDevice;
+    uint32_t     networkStart;
+    uint32_t     networkEnd;
+    uint32_t     firstSlot;
+    uint32_t     nbSyncSlots;
+    TxSlotDesc_t syncSlot[MAX_DEVICES_PER_NETWORK];
+    TxSlotDesc_t asyncSlot;
+    uint32_t     nbAckSlots;
+    TxSlotDesc_t ackSlot[MAX_DEVICES_PER_NETWORK];
+};
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -81,22 +96,6 @@ typedef struct
 class MicronetCodec
 {
   public:
-    class NetworkMap
-    {
-      public:
-        uint32_t     networkId;
-        uint32_t     nbDevices;
-        uint32_t     masterDevice;
-        uint32_t     networkStart;
-        uint32_t     networkEnd;
-        uint32_t     firstSlot;
-        uint32_t     nbSyncSlots;
-        TxSlotDesc_t syncSlot[MAX_DEVICES_PER_NETWORK];
-        TxSlotDesc_t asyncSlot;
-        uint32_t     nbAckSlots;
-        TxSlotDesc_t ackSlot[MAX_DEVICES_PER_NETWORK];
-    };
-
     NavigationData navData;
 
     MicronetCodec();
@@ -114,13 +113,13 @@ class MicronetCodec
     bool     VerifyHeaderCrc(MicronetMessage_t *message);
 
     bool         DecodeMessage(MicronetMessage_t *message);
-    bool         GetNetworkMap(MicronetMessage_t *message, NetworkMap *networkMap);
-    TxSlotDesc_t GetSyncTransmissionSlot(NetworkMap *networkMap, uint32_t deviceId);
-    TxSlotDesc_t GetAsyncTransmissionSlot(NetworkMap *networkMap);
-    TxSlotDesc_t GetAckTransmissionSlot(NetworkMap *networkMap, uint32_t deviceId);
-    uint32_t     GetStartOfNetwork(NetworkMap *networkMap);
-    uint32_t     GetNextStartOfNetwork(NetworkMap *networkMap);
-    uint32_t     GetEndOfNetwork(NetworkMap *networkMap);
+    bool         GetNetworkMap(MicronetMessage_t *message, NetworkMap_t *networkMap);
+    TxSlotDesc_t GetSyncTransmissionSlot(NetworkMap_t *networkMap, uint32_t deviceId);
+    TxSlotDesc_t GetAsyncTransmissionSlot(NetworkMap_t *networkMap);
+    TxSlotDesc_t GetAckTransmissionSlot(NetworkMap_t *networkMap, uint32_t deviceId);
+    uint32_t     GetStartOfNetwork(NetworkMap_t *networkMap);
+    uint32_t     GetNextStartOfNetwork(NetworkMap_t *networkMap);
+    uint32_t     GetEndOfNetwork(NetworkMap_t *networkMap);
     uint8_t      CalculateSignalStrength(MicronetMessage_t *message);
     float        CalculateSignalFloatStrength(MicronetMessage_t *message);
     uint8_t      GetDataMessageLength(uint32_t dataFields);

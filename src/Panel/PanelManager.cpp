@@ -173,7 +173,7 @@ void PanelManager::SetNavigationData(NavigationData *navData)
     portEXIT_CRITICAL(&commandMutex);
 }
 
-void PanelManager::SetNetworkStatus(MicronetNetworkState_t &networkStatus)
+void PanelManager::SetNetworkStatus(MicronetDeviceInfo_t &networkStatus)
 {
     portENTER_CRITICAL(&commandMutex);
     networkPage.SetNetworkStatus(networkStatus);
@@ -276,7 +276,7 @@ void PanelManager::CommandCallback()
     }
 }
 
-void PanelManager::StaticButtonIsr()
+void IRAM_ATTR PanelManager::StaticButtonIsr()
 {
     objectPtr->ButtonIsr();
 }
@@ -305,4 +305,9 @@ void PanelManager::ButtonIsr()
         xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);
         portYIELD_FROM_ISR(scheduleChange);
     }
+}
+
+void PanelManager::LowPower(bool enable)
+{
+    display.dim(enable);
 }
