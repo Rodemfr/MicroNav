@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Global variables used by SW                                   *
+ * Purpose:  Power Manager                                                 *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,27 +24,15 @@
  ***************************************************************************
  */
 
-#ifndef GLOBALS_H_
-#define GLOBALS_H_
+#ifndef POWER_H_
+#define POWER_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "Configuration.h"
-#include "M8NDriver.h"
-#include "MenuManager.h"
-#include "Micronet/MicronetCodec.h"
-#include "Micronet/MicronetDevice.h"
-#include "Micronet/MicronetMessageFifo.h"
-#include "NavCompass.h"
-#include "NavigationData.h"
-#include "NmeaBridge.h"
-#include "PanelManager.h"
-#include "Power.h"
-#include "RfDriver.h"
-
-#include <BluetoothSerial.h>
+#include <Arduino.h>
+#include <axp20x.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -55,24 +43,24 @@
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Globals                                   */
+/*                               Classes                                   */
 /***************************************************************************/
 
-extern RfDriver            gRfDriver;
-extern MenuManager         gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration       gConfiguration;
-extern NavCompass          gNavCompass;
-extern M8NDriver           gM8nDriver;
-extern PanelManager        gPanelDriver;
-extern MicronetCodec       gMicronetCodec;
-extern BluetoothSerial     gBtSerial;
-extern NmeaBridge          gDataBridge;
-extern MicronetDevice      gMicronetDevice;
-extern Power               gPower;
+class Power
+{
+  public:
+    Power();
+    virtual ~Power();
+
+    bool Init();
+    void Shutdown();
+
+  private:
+    AXP20X_Class AXPDriver;
+};
 
 /***************************************************************************/
 /*                              Prototypes                                 */
 /***************************************************************************/
 
-#endif /* GNSSDECODER_H_ */
+#endif /* POWER_H_ */

@@ -31,7 +31,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <axp20x.h>
 
 #include "BoardConfig.h"
 #include "Configuration.h"
@@ -76,8 +75,6 @@ void MenuTestRfQuality();
 /*                               Globals                                   */
 /***************************************************************************/
 
-AXP20X_Class pmu;
-
 bool firstLoop;
 
 MenuEntry_t mainMenu[] = {{"MicroNav", nullptr},
@@ -98,18 +95,7 @@ void setup()
 {
     // Configure power supply
     Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
-    {
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON); // LoRa
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON); // OLED
-    }
-    else
-    {
-        CONSOLE.println("AXP192 Configuration failed");
-    }
+    gPower.Init();
 
     // Load configuration from EEPROM
     gConfiguration.Init();

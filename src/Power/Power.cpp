@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Global variables used by SW                                   *
+ * Purpose:  Power Manager                                                 *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,55 +24,61 @@
  ***************************************************************************
  */
 
-#ifndef GLOBALS_H_
-#define GLOBALS_H_
-
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "Configuration.h"
-#include "M8NDriver.h"
-#include "MenuManager.h"
-#include "Micronet/MicronetCodec.h"
-#include "Micronet/MicronetDevice.h"
-#include "Micronet/MicronetMessageFifo.h"
-#include "NavCompass.h"
-#include "NavigationData.h"
-#include "NmeaBridge.h"
-#include "PanelManager.h"
 #include "Power.h"
-#include "RfDriver.h"
 
-#include <BluetoothSerial.h>
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                                Types                                    */
+/*                             Local types                                 */
+/***************************************************************************/
+
+/***************************************************************************/
+/*                           Local prototypes                              */
 /***************************************************************************/
 
 /***************************************************************************/
 /*                               Globals                                   */
 /***************************************************************************/
 
-extern RfDriver            gRfDriver;
-extern MenuManager         gMenuManager;
-extern MicronetMessageFifo gRxMessageFifo;
-extern Configuration       gConfiguration;
-extern NavCompass          gNavCompass;
-extern M8NDriver           gM8nDriver;
-extern PanelManager        gPanelDriver;
-extern MicronetCodec       gMicronetCodec;
-extern BluetoothSerial     gBtSerial;
-extern NmeaBridge          gDataBridge;
-extern MicronetDevice      gMicronetDevice;
-extern Power               gPower;
-
 /***************************************************************************/
-/*                              Prototypes                                 */
+/*                              Functions                                  */
 /***************************************************************************/
 
-#endif /* GNSSDECODER_H_ */
+Power::Power()
+{
+}
+
+Power::~Power()
+{
+}
+
+bool Power::Init()
+{
+    bool initStatus = false;
+
+    if (!AXPDriver.begin(Wire, AXP192_SLAVE_ADDRESS))
+    {
+        AXPDriver.setPowerOutPut(AXP192_LDO2, AXP202_ON); // RF
+        AXPDriver.setPowerOutPut(AXP192_LDO3, AXP202_ON); // GPS
+        AXPDriver.setPowerOutPut(AXP192_DCDC2, AXP202_ON);
+        AXPDriver.setPowerOutPut(AXP192_EXTEN, AXP202_ON);
+        AXPDriver.setPowerOutPut(AXP192_DCDC1, AXP202_ON); // OLED
+
+        initStatus = true;
+    }
+
+    return initStatus;
+}
+
+void Power::Shutdown()
+{
+    AXPDriver.shutdown();
+}

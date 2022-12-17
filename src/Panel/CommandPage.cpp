@@ -165,13 +165,18 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         {
             if (editPosition == NUMBER_OF_COMMANDS)
             {
-                // Long press on "Save & Exit"
+                // Long press on "Exit"
                 editMode = false;
-                // Apply configuration
             }
             else
             {
-                // Long press on a configuration item : cycle its value
+                // Long press on a command
+                switch (editPosition)
+                {
+                case 0:
+                    gPower.Shutdown();
+                    break;
+                }
             }
             action = PAGE_ACTION_REFRESH;
         }

@@ -61,6 +61,7 @@ PanelManager        gPanelDriver;                     // Display driver
 BluetoothSerial     gBtSerial;                        // Bluetooth driver
 NmeaBridge          gDataBridge(&gMicronetCodec);     // NMEA Bridge
 MicronetDevice      gMicronetDevice(&gMicronetCodec); // Micronet Device
+Power               gPower;                           // Power Manager
 
 /***************************************************************************/
 /*                              Functions                                  */
