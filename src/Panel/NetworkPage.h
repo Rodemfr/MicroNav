@@ -53,7 +53,7 @@ class NetworkPage : public PageHandler
     virtual ~NetworkPage();
 
     void Draw(bool force);
-    void SetNetworkStatus(MicronetDeviceInfo_t &deviceInfo);
+    void SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
   private:
     bool             networkConnected;

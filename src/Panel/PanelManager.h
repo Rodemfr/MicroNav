@@ -80,7 +80,7 @@ class PanelManager
     void NextPage();
     void NextPageISR();
     void SetNavigationData(NavigationData *navData);
-    void SetNetworkStatus(MicronetDeviceInfo_t &networkStatus);
+    void SetNetworkStatus(DeviceInfo_t &networkStatus);
     void LowPower(bool enable);
 
   private:
@@ -98,7 +98,7 @@ class PanelManager
     portMUX_TYPE           commandMutex;
     portMUX_TYPE           buttonMutex;
     NavigationData *       navData;
-    MicronetDeviceInfo_t networkStatus;
+    DeviceInfo_t networkStatus;
     uint32_t               lastRelease   = 0;
     uint32_t               lastPress     = 0;
     bool                   buttonPressed = false;

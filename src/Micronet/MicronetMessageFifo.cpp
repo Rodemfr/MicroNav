@@ -190,6 +190,7 @@ MicronetMessage_t *MicronetMessageFifo::Peek()
 
 void MicronetMessageFifo::DeleteMessage()
 {
+    // FIXME : use FreeRTOS spinlocks for multicore protection
     noInterrupts();
 
     // Are there messages in the store ?

@@ -38,7 +38,7 @@
 #define NETWORK_PING_PERIOD_MS 20000
 // If a device does not communicate for this time, we consider it lost
 #define DEVICE_LOST_TIME_MS 60000
-// If we don't receive a request from the master for this time, we consider the network lost
+// If we don't receive a request from a network for this time, we consider the network lost
 #define NETWORK_LOST_TIME_MS 5000
 
 /***************************************************************************/
@@ -95,88 +95,90 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
 {
     TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
-
-    // Is the message addresses to us ?
-    if ((micronetCodec->GetNetworkId(message) == deviceInfo.networkId) && (micronetCodec->VerifyHeaderCrc(message)))
+    if (micronetCodec->VerifyHeaderCrc(message))
     {
-        UpdateDevicesInRange(message);
-
-        if (micronetCodec->GetMessageId(message) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
+        UpdateNetworkScan(message);
+        // Is the message addresses to us ?
+        if (micronetCodec->GetNetworkId(message) == deviceInfo.networkId)
         {
-            deviceInfo.state            = DEVICE_STATE_ACTIVE;
-            deviceInfo.lastMasterCommMs = millis();
-            micronetCodec->GetNetworkMap(message, &deviceInfo.networkMap);
+            UpdateDevicesInRange(message);
 
-            // We schedule the low power mode of CC1101 just at the end of the network cycle
-            txMessage.action       = MICRONET_ACTION_RF_LOW_POWER;
-            txMessage.startTime_us = micronetCodec->GetEndOfNetwork(&deviceInfo.networkMap);
-            txMessage.len          = 0;
-            messageFifo->Push(txMessage);
-
-            // We schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
-            // It will let time for the PLL calibration loop to complete.
-            txMessage.action       = MICRONET_ACTION_RF_ACTIVE_POWER;
-            txMessage.startTime_us = micronetCodec->GetNextStartOfNetwork(&deviceInfo.networkMap) - 1000;
-            txMessage.len          = 0;
-            messageFifo->Push(txMessage);
-
-            lastMasterSignalStrength = micronetCodec->CalculateSignalStrength(message);
-
-            for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
+            if (micronetCodec->GetMessageId(message) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
             {
-                txSlot = micronetCodec->GetSyncTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
-                if (txSlot.start_us != 0)
+                deviceInfo.state            = DEVICE_STATE_ACTIVE;
+                deviceInfo.lastMasterCommMs = millis();
+                micronetCodec->GetNetworkMap(message, &deviceInfo.networkMap);
+
+                // We schedule the low power mode of CC1101 just at the end of the network cycle
+                txMessage.action       = MICRONET_ACTION_RF_LOW_POWER;
+                txMessage.startTime_us = micronetCodec->GetEndOfNetwork(&deviceInfo.networkMap);
+                txMessage.len          = 0;
+                messageFifo->Push(txMessage);
+
+                // We schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
+                // It will let time for the PLL calibration loop to complete.
+                txMessage.action       = MICRONET_ACTION_RF_ACTIVE_POWER;
+                txMessage.startTime_us = micronetCodec->GetNextStartOfNetwork(&deviceInfo.networkMap) - 1000;
+                txMessage.len          = 0;
+                messageFifo->Push(txMessage);
+
+                lastMasterSignalStrength = micronetCodec->CalculateSignalStrength(message);
+
+                for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
                 {
-                    uint32_t payloadLength = micronetCodec->EncodeDataMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
-                                                                              deviceInfo.deviceId + i, deviceInfo.splitDataFields[i]);
-                    if (txSlot.payloadBytes < payloadLength)
+                    txSlot = micronetCodec->GetSyncTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
+                    if (txSlot.start_us != 0)
                     {
-                        // Sync slot is available but too small : request slot resize
-                        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-                        micronetCodec->EncodeSlotUpdateMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i,
-                                                               payloadLength);
-                        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                        txMessage.startTime_us = txSlot.start_us;
-                        messageFifo->Push(txMessage);
+                        uint32_t payloadLength = micronetCodec->EncodeDataMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
+                                                                                  deviceInfo.deviceId + i, deviceInfo.splitDataFields[i]);
+                        if (txSlot.payloadBytes < payloadLength)
+                        {
+                            // Sync slot is available but too small : request slot resize
+                            txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+                            micronetCodec->EncodeSlotUpdateMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
+                                                                   deviceInfo.deviceId + i, payloadLength);
+                            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+                            txMessage.startTime_us = txSlot.start_us;
+                            messageFifo->Push(txMessage);
+                        }
+                        else
+                        {
+                            // Sync slot is ok : transmit message
+                            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+                            txMessage.startTime_us = txSlot.start_us;
+                            messageFifo->Push(txMessage);
+                            // Also ping other devices to maintain a list of devices in range
+                            PingNetwork(messageFifo);
+                        }
                     }
                     else
                     {
-                        // Sync slot is ok : transmit message
+                        // No sync slot available : request a slot
+                        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+                        micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i,
+                                                                micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
                         txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                         txMessage.startTime_us = txSlot.start_us;
                         messageFifo->Push(txMessage);
-                        // Also ping other devices to maintain a list of devices in range
-                        PingNetwork(messageFifo);
                     }
                 }
-                else
-                {
-                    // No sync slot available : request a slot
-                    txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-                    micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i,
-                                                            micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
-                    txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                    txMessage.startTime_us = txSlot.start_us;
-                    messageFifo->Push(txMessage);
-                }
             }
-        }
-        else
-        {
-            if (micronetCodec->DecodeMessage(message))
+            else
             {
-                for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
+                if (micronetCodec->DecodeMessage(message))
                 {
-                    txSlot = micronetCodec->GetAckTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
-                    micronetCodec->EncodeAckParamMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i);
-                    txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                    txMessage.startTime_us = txSlot.start_us;
-                    messageFifo->Push(txMessage);
+                    for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
+                    {
+                        txSlot = micronetCodec->GetAckTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
+                        micronetCodec->EncodeAckParamMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i);
+                        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+                        txMessage.startTime_us = txSlot.start_us;
+                        messageFifo->Push(txMessage);
+                    }
                 }
             }
         }
     }
-
     RemoveLostDevices();
 }
 
@@ -219,7 +221,7 @@ uint8_t MicronetDevice::GetShortestDevice()
     return minDeviceIndex;
 }
 
-MicronetDeviceInfo_t &MicronetDevice::GetDeviceInfo()
+DeviceInfo_t &MicronetDevice::GetDeviceInfo()
 {
     return deviceInfo;
 }
@@ -250,6 +252,63 @@ void MicronetDevice::UpdateDevicesInRange(MicronetMessage_t *message)
     }
 }
 
+void MicronetDevice::UpdateNetworkScan(MicronetMessage_t *message)
+{
+    bool     networkFound = false;
+    uint32_t networkId    = micronetCodec->GetNetworkId(message);
+    uint32_t now          = millis();
+
+    // Check if the network is already in the list
+    for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
+    {
+        if (deviceInfo.networksInRange[i].networkId == networkId)
+        {
+            deviceInfo.networksInRange[i].networkId = networkId;
+            if ((message->rssi) > deviceInfo.networksInRange[i].rssi)
+            {
+                deviceInfo.networksInRange[i].rssi = message->rssi;
+            }
+            deviceInfo.networksInRange[i].timeStamp = now;
+            networkFound                            = true;
+            break;
+        }
+    }
+
+    // Network not found : add it to the list
+    if (!networkFound)
+    {
+        if (deviceInfo.nbNetworksInRange < MAX_NETWORK_TO_SCAN)
+        {
+            // The list is not full : add the new network to the list
+            deviceInfo.networksInRange[deviceInfo.nbNetworksInRange].networkId = networkId;
+            deviceInfo.networksInRange[deviceInfo.nbNetworksInRange].timeStamp = now;
+            deviceInfo.networksInRange[deviceInfo.nbNetworksInRange].rssi      = message->rssi;
+            deviceInfo.nbNetworksInRange++;
+        }
+        else
+        {
+            // The list is full : replace the weakest one
+            int16_t minRssi  = 1000;
+            int     minIndex = 0;
+            for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
+            {
+                if (deviceInfo.networksInRange[i].rssi < minRssi)
+                {
+                    minRssi  = deviceInfo.networksInRange[i].rssi;
+                    minIndex = i;
+                }
+            }
+            // Only replace if the new network is stronger
+            if (minRssi < message->rssi)
+            {
+                deviceInfo.networksInRange[minIndex].networkId = networkId;
+                deviceInfo.networksInRange[minIndex].timeStamp = now;
+                deviceInfo.networksInRange[minIndex].rssi      = message->rssi;
+            }
+        }
+    }
+}
+
 void MicronetDevice::RemoveLostDevices()
 {
     uint32_t now = millis();
@@ -260,10 +319,27 @@ void MicronetDevice::RemoveLostDevices()
         {
             if (i < deviceInfo.nbDevicesInRange - 1)
             {
-                memcpy(&deviceInfo.devicesInRange[i], &deviceInfo.devicesInRange[i + 1],
-                       sizeof(MicronetDeviceInfo_t) * deviceInfo.nbDevicesInRange - i - 1);
+                memcpy(&deviceInfo.devicesInRange[i], &deviceInfo.devicesInRange[i + 1], sizeof(DeviceInfo_t) * deviceInfo.nbDevicesInRange - i - 1);
             }
             deviceInfo.nbDevicesInRange--;
+        }
+    }
+}
+
+void MicronetDevice::RemoveLostNetworks()
+{
+    uint32_t now = millis();
+
+    for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
+    {
+        if ((now - deviceInfo.networksInRange[i].timeStamp) > DEVICE_LOST_TIME_MS)
+        {
+            if (i < deviceInfo.nbNetworksInRange - 1)
+            {
+                memcpy(&deviceInfo.networksInRange[i], &deviceInfo.networksInRange[i + 1],
+                       sizeof(DeviceInfo_t) * deviceInfo.nbNetworksInRange - i - 1);
+            }
+            deviceInfo.nbNetworksInRange--;
         }
     }
 }
@@ -290,6 +366,7 @@ void MicronetDevice::Yield()
     uint32_t now = millis();
 
     RemoveLostDevices();
+    RemoveLostNetworks();
     if ((deviceInfo.state == DEVICE_STATE_ACTIVE) && (now - deviceInfo.lastMasterCommMs > NETWORK_LOST_TIME_MS))
     {
         deviceInfo.state            = DEVICE_STATE_SEARCH_NETWORK;

@@ -173,7 +173,7 @@ void PanelManager::SetNavigationData(NavigationData *navData)
     portEXIT_CRITICAL(&commandMutex);
 }
 
-void PanelManager::SetNetworkStatus(MicronetDeviceInfo_t &networkStatus)
+void PanelManager::SetNetworkStatus(DeviceInfo_t &networkStatus)
 {
     portENTER_CRITICAL(&commandMutex);
     networkPage.SetNetworkStatus(networkStatus);

@@ -41,6 +41,7 @@
 /***************************************************************************/
 
 #define NUMBER_OF_VIRTUAL_DEVICES 3
+#define MAX_NETWORK_TO_SCAN       5
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -62,6 +63,13 @@ typedef struct
 
 typedef struct
 {
+    uint32_t networkId;
+    int16_t  rssi;
+    uint32_t timeStamp;
+} NetworkInfo_t;
+
+typedef struct
+{
     DeviceState_t    state;
     uint32_t         deviceId;
     uint32_t         networkId;
@@ -71,7 +79,9 @@ typedef struct
     uint32_t         splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
     uint32_t         nbDevicesInRange;
     ConnectionInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
-} MicronetDeviceInfo_t;
+    uint32_t         nbNetworksInRange;
+    NetworkInfo_t    networksInRange[MAX_NETWORK_TO_SCAN];
+} DeviceInfo_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
@@ -83,24 +93,26 @@ class MicronetDevice
     MicronetDevice(MicronetCodec *micronetCodec);
     virtual ~MicronetDevice();
 
-    void                  SetDeviceId(uint32_t deviceId);
-    void                  SetNetworkId(uint32_t networkId);
-    void                  SetDataFields(uint32_t dataMask);
-    void                  AddDataFields(uint32_t dataMask);
-    void                  ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
-    MicronetDeviceInfo_t &GetDeviceInfo();
-    void                  Yield();
+    void          SetDeviceId(uint32_t deviceId);
+    void          SetNetworkId(uint32_t networkId);
+    void          SetDataFields(uint32_t dataMask);
+    void          AddDataFields(uint32_t dataMask);
+    void          ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
+    DeviceInfo_t &GetDeviceInfo();
+    void          Yield();
 
   private:
-    MicronetCodec *      micronetCodec;
-    uint8_t              lastMasterSignalStrength;
-    MicronetDeviceInfo_t deviceInfo;
-    uint32_t             pingTimeStamp;
+    MicronetCodec *micronetCodec;
+    uint8_t        lastMasterSignalStrength;
+    DeviceInfo_t   deviceInfo;
+    uint32_t       pingTimeStamp;
 
     void    SplitDataFields();
     uint8_t GetShortestDevice();
     void    UpdateDevicesInRange(MicronetMessage_t *message);
+    void    UpdateNetworkScan(MicronetMessage_t *message);
     void    RemoveLostDevices();
+    void    RemoveLostNetworks();
     void    PingNetwork(MicronetMessageFifo *messageFifo);
 };
 

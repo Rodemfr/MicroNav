@@ -151,7 +151,7 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
     return bitmapPtr;
 }
 
-void NetworkPage::SetNetworkStatus(MicronetDeviceInfo_t &deviceInfo)
+void NetworkPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
 {
     networkConnected              = (deviceInfo.state == DEVICE_STATE_ACTIVE);
     deviceId                      = deviceInfo.deviceId;
