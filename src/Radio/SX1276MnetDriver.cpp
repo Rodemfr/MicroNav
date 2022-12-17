@@ -468,19 +468,19 @@ void SX1276MnetDriver::TransmitFromIsr(MicronetMessage_t &message)
     }
 }
 
-void SX1276MnetDriver::Dio0Isr()
+void IRAM_ATTR SX1276MnetDriver::Dio0Isr()
 {
     driverObject->IsrProcessing(ISR_EVENT_DIO0);
 }
 
-void SX1276MnetDriver::Dio1Isr()
+void IRAM_ATTR SX1276MnetDriver::Dio1Isr()
 {
     BaseType_t scheduleChange = pdFALSE;
 
     driverObject->IsrProcessing(ISR_EVENT_DIO1);
 }
 
-void SX1276MnetDriver::IsrProcessing(uint32_t flags)
+void IRAM_ATTR SX1276MnetDriver::IsrProcessing(uint32_t flags)
 {
     uint32_t isrTime = micros();
 

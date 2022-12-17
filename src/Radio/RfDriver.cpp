@@ -255,12 +255,12 @@ int RfDriver::GetFreeTransmitSlot()
     return freeIndex;
 }
 
-void RfDriver::TimerHandler()
+void IRAM_ATTR RfDriver::TimerHandler()
 {
     rfDriver->TransmitCallback();
 }
 
-void RfDriver::TransmitCallback()
+void IRAM_ATTR RfDriver::TransmitCallback()
 {
     portENTER_CRITICAL_ISR(&timerMux);
 
