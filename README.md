@@ -1,4 +1,5 @@
-![](images/micronav.png)
+![](images/micronav.svg#gh-light-mode-only)
+![](images/micronav_dark.svg#gh-dark-mode-only)
 
 **A Micronet / NMEA bridge for TTGO T-Beam V1.1 boards**
 

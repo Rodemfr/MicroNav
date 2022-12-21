@@ -13,7 +13,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
-   sodipodi:docname="micronav.svg"
+   sodipodi:docname="micronav_dark.svg"
    inkscape:export-filename="/home/ronan/Programmation/git/MicroNav/images/micronav.png"
    inkscape:export-xdpi="305.79999"
    inkscape:export-ydpi="305.79999">
@@ -65,14 +65,14 @@
     <text
        xml:space="preserve"
        id="text10"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:10.5833px;line-height:1.25;font-family:C059;-inkscape-font-specification:'C059 Bold';white-space:pre;shape-inside:url(#rect12);fill:#000000;fill-opacity:1;stroke:none;"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:10.5833px;line-height:1.25;font-family:C059;-inkscape-font-specification:'C059 Bold';white-space:pre;shape-inside:url(#rect12);fill:#faffff;fill-opacity:1;stroke:none;"
        transform="matrix(2.8232784,0,0,2.8232784,-116.44297,-176.04254)"><tspan
          x="33.410156"
          y="110.42749"><tspan
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:C059;-inkscape-font-specification:'C059 Bold'">MicroNav</tspan></tspan></text>
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:C059;-inkscape-font-specification:'C059 Bold';fill:#faffff;fill-opacity:1">MicroNav</tspan></tspan></text>
     <path
        id="path24"
-       style="fill:none;stroke:#000000;stroke-width:1.87748;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ffffff;stroke-width:1.87748;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 13.012532,109.92884 a 5.6973758,5.6042075 0 0 1 5.697376,5.60421"
        sodipodi:type="arc"
        sodipodi:arc-type="arc"
@@ -85,7 +85,7 @@
        sodipodi:open="true" />
     <path
        id="path24-5"
-       style="fill:none;stroke:#000000;stroke-width:1.87748;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ffffff;stroke-width:1.87748;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        sodipodi:type="arc"
        sodipodi:arc-type="arc"
        sodipodi:start="4.712389"
@@ -98,7 +98,7 @@
        d="m 13.044325,105.38067 a 10.214622,10.121453 0 0 1 10.214621,10.12145" />
     <path
        id="path24-5-8"
-       style="fill:none;stroke:#000000;stroke-width:1.87748;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#ffffff;stroke-width:1.87748;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        sodipodi:type="arc"
        sodipodi:arc-type="arc"
        sodipodi:start="4.712389"
