@@ -69,7 +69,7 @@
 /***************************************************************************/
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-PanelManager *   PanelManager::objectPtr;
+PanelManager    *PanelManager::objectPtr;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -206,44 +206,56 @@ void PanelManager::CommandCallback()
         localButtonPressed = buttonPressed;
         portEXIT_CRITICAL(&buttonMutex);
 
+        // Do we have a long press on the button ?
         if ((localButtonPressed == true) && ((now - localLastPress) > BUTTON_LONG_PRESS_DELAY) && !longPress)
         {
+            // Button is pressed for more than the long press time : handle long press processing
             longPress = true;
+            // Request action to the currently displayed page
             switch (currentPage->OnButtonPressed(true))
             {
             case PAGE_ACTION_NEXT_PAGE:
+                // Go to next page
                 NextPage();
                 commandFlags |= COMMAND_EVENT_NEW_PAGE;
                 break;
             case PAGE_ACTION_REFRESH:
+                // Refresh current page
                 commandFlags |= COMMAND_EVENT_REFRESH;
                 break;
             }
         }
 
-        if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) && (localButtonPressed == false) &&
-            ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN))
+        // Has button been released ?
+        if ((commandFlags & COMMAND_EVENT_BUTTON_RELEASED) && (localButtonPressed == false))
         {
+            // Are we exiting a long press ?
             if (longPress)
             {
+                // Yes : stop long press and don't check for short press
                 longPress = false;
             }
-            else
+            // Short press : is the press time above minimum time (anti rebound) ?
+            else if ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN)
             {
-                // Short press
+                // Yes : we have a short press
+                // Request action to the currently displayed page
                 switch (currentPage->OnButtonPressed(false))
                 {
                 case PAGE_ACTION_NEXT_PAGE:
+                    // Go to next page
                     NextPage();
                     commandFlags |= COMMAND_EVENT_NEW_PAGE;
                     break;
                 case PAGE_ACTION_REFRESH:
+                    // Refresh current page
                     commandFlags |= COMMAND_EVENT_REFRESH;
                     break;
                 }
             }
         }
 
+        // Process page change/refresh if requested
         if ((commandFlags & COMMAND_EVENT_REFRESH) || (commandFlags & COMMAND_EVENT_NEW_PAGE) || ((now - lastPageUpdate) > DISPLAY_UPDATE_PERIOD))
         {
             lastPageUpdate = now;

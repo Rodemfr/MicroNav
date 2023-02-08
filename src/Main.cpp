@@ -564,7 +564,7 @@ void MenuAttachNetwork()
 void MenuConvertToNmea()
 {
     bool                exitNmeaLoop = false;
-    MicronetMessage_t * rxMessage;
+    MicronetMessage_t  *rxMessage;
     MicronetMessageFifo txMessageFifo;
     uint32_t            lastHeadingTime = millis();
 
