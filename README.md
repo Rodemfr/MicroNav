@@ -71,7 +71,7 @@ Fully operational:
 - Micronet RX/TX with SX1276 at 868Mhz
 - GPS Decoding
 - NMEA through USB
-- NMEA through Bluetooh
+- NMEA through Bluetooth
 - Interactive configuration using OLED display & button
 
 Not tested:
@@ -80,4 +80,4 @@ Not tested:
 
 Not developped:
 - NMEA through Wifi
-- Power saving , power off & battery handling
+- Power saving & battery handling
