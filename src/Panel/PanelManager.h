@@ -84,27 +84,27 @@ class PanelManager
     void LowPower(bool enable);
 
   private:
-    bool                   displayAvailable;
-    uint32_t               pageNumber;
-    PageHandler *          currentPage;
-    TaskHandle_t           commandTaskHandle;
-    EventGroupHandle_t     commandEventGroup;
-    LogoPage               logoPage;
-    ClockPage              clockPage;
-    NetworkPage            networkPage;
-    ConfigPage1            configPage1;
-    ConfigPage2            configPage2;
-    CommandPage            commandPage;
-    portMUX_TYPE           commandMutex;
-    portMUX_TYPE           buttonMutex;
-    NavigationData *       navData;
-    DeviceInfo_t networkStatus;
-    uint32_t               lastRelease   = 0;
-    uint32_t               lastPress     = 0;
-    bool                   buttonPressed = false;
+    bool               displayAvailable;
+    uint32_t           pageNumber;
+    PageHandler       *currentPage;
+    TaskHandle_t       commandTaskHandle;
+    EventGroupHandle_t commandEventGroup;
+    LogoPage           logoPage;
+    ClockPage          clockPage;
+    NetworkPage        networkPage;
+    ConfigPage1        configPage1;
+    ConfigPage2        configPage2;
+    CommandPage        commandPage;
+    portMUX_TYPE       commandMutex;
+    portMUX_TYPE       buttonMutex;
+    NavigationData    *navData;
+    DeviceInfo_t       networkStatus;
+    uint32_t           lastRelease   = 0;
+    uint32_t           lastPress     = 0;
+    bool               buttonPressed = false;
 
     static PanelManager *objectPtr;
-    static void          CommandProcessingTask(void *parameter);
+    static void          CommandProcessingTask(void *callingObject);
     static void          StaticButtonIsr();
     void                 ButtonIsr();
 

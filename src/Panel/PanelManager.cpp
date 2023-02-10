@@ -43,18 +43,18 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define OLED_RESET     -1
-#define SCREEN_ADDRESS 0x3C
+#define OLED_RESET     -1   // Pin controlling OLED reset (-1 for none)
+#define SCREEN_ADDRESS 0x3C // I2C address of the display controller
 
-#define COMMAND_EVENT_REFRESH         0x00000001
-#define COMMAND_EVENT_BUTTON_RELEASED 0x00000002
-#define COMMAND_EVENT_NEW_PAGE        0x00000004
-#define COMMAND_EVENT_ALL             0x00000007
+#define COMMAND_EVENT_REFRESH         0x00000001 // Command flag requesting a page refresh/redraw
+#define COMMAND_EVENT_BUTTON_RELEASED 0x00000002 // Command flag signaling that the button has been released
+#define COMMAND_EVENT_NEW_PAGE        0x00000004 // Command flag requesting to select the next page
+#define COMMAND_EVENT_ALL             0x00000007 // Command mask
 
-#define TASK_WAKEUP_PERIOD      200
-#define DISPLAY_UPDATE_PERIOD   1000
-#define BUTTON_LONG_PRESS_DELAY 1000
-#define BUTTON_SHORT_PRESS_MIN  200
+#define TASK_WAKEUP_PERIOD_MS   200  // Wake-up period of the command task in milliseconds
+#define DISPLAY_UPDATE_PERIOD   1000 // Display update/refresh period in milliseconds
+#define BUTTON_LONG_PRESS_DELAY 1000 // Minimum time required to trigger a long button press
+#define BUTTON_SHORT_PRESS_MIN  200  // Minimum time to trigger a short button press
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -75,15 +75,25 @@ PanelManager    *PanelManager::objectPtr;
 /*                              Functions                                  */
 /***************************************************************************/
 
+/*
+  Constructor of the PanelManager class instance
+*/
 PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler *)&logoPage)
 {
     memset(&networkStatus, 0, sizeof(networkStatus));
 }
 
+/*
+  Destructor of the PanelManager class instance
+*/
 PanelManager::~PanelManager()
 {
 }
 
+/*
+  Initialize PanelManager.
+  @return true if initialization is successful
+*/
 bool PanelManager::Init()
 {
     displayAvailable = false;
@@ -118,6 +128,10 @@ bool PanelManager::Init()
     return displayAvailable;
 }
 
+/*
+  Set the page to be displayed
+  @param pageNumber Index of the page as per PanelPages_t enum definition
+*/
 void PanelManager::SetPage(uint32_t pageNumber)
 {
     if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
@@ -128,6 +142,10 @@ void PanelManager::SetPage(uint32_t pageNumber)
     }
 }
 
+/*
+  Set the page to be displayed (callable from ISR)
+  @param pageNumber Index of the page as per PanelPages_t enum definition
+*/
 void PanelManager::SetPageISR(uint32_t pageNumber)
 {
     if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
@@ -138,11 +156,17 @@ void PanelManager::SetPageISR(uint32_t pageNumber)
     }
 }
 
+/*
+  Request redraw of the current page
+*/
 void PanelManager::DrawPage()
 {
     xEventGroupSetBits(commandEventGroup, COMMAND_EVENT_REFRESH);
 }
 
+/*
+  Request redraw of the current page (callable from ISR)
+*/
 void PanelManager::DrawPageISR()
 {
     BaseType_t scheduleChange = pdFALSE;
@@ -151,6 +175,9 @@ void PanelManager::DrawPageISR()
     portYIELD_FROM_ISR(scheduleChange);
 }
 
+/*
+  Request change of the current page
+*/
 void PanelManager::NextPage()
 {
     portENTER_CRITICAL(&commandMutex);
@@ -158,6 +185,9 @@ void PanelManager::NextPage()
     portEXIT_CRITICAL(&commandMutex);
 }
 
+/*
+  Request change of the current page (callable from ISR)
+*/
 void PanelManager::NextPageISR()
 {
     portENTER_CRITICAL_ISR(&commandMutex);
@@ -165,6 +195,10 @@ void PanelManager::NextPageISR()
     portEXIT_CRITICAL_ISR(&commandMutex);
 }
 
+/*
+  Gives PanelManager the latest version of navigation data for pages which needs it
+  @param navData Pointer to the latest navigation dataset
+*/
 void PanelManager::SetNavigationData(NavigationData *navData)
 {
     // FIXME : Work on a copy of data instead of a direct pointer
@@ -173,6 +207,11 @@ void PanelManager::SetNavigationData(NavigationData *navData)
     portEXIT_CRITICAL(&commandMutex);
 }
 
+/*
+  Gives PanelManager the latest status of the network connection.
+  The structure will be copied internally and doesn't need to be kept allocated by the caller
+  @param networkStatus Pointer to the latest network status
+*/
 void PanelManager::SetNetworkStatus(DeviceInfo_t &networkStatus)
 {
     portENTER_CRITICAL(&commandMutex);
@@ -180,11 +219,19 @@ void PanelManager::SetNetworkStatus(DeviceInfo_t &networkStatus)
     portEXIT_CRITICAL(&commandMutex);
 }
 
-void PanelManager::CommandProcessingTask(void *parameter)
+/*
+  Static entry point of the command processing task
+  @param callingObject Pointer to the calling PanelManager instance
+*/
+void PanelManager::CommandProcessingTask(void *callingObject)
 {
-    ((PanelManager *)parameter)->CommandCallback();
+    // Task entry points are static -> switch to non static processing method
+    ((PanelManager *)callingObject)->CommandCallback();
 }
 
+/*
+  Non-static implementation of the command processing task
+*/
 void PanelManager::CommandCallback()
 {
     uint32_t lastPageUpdate = 0;
@@ -196,10 +243,12 @@ void PanelManager::CommandCallback()
 
     while (true)
     {
+        // Wait for the next command
         EventBits_t commandFlags =
-            xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, TASK_WAKEUP_PERIOD / portTICK_PERIOD_MS);
+            xEventGroupWaitBits(commandEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, TASK_WAKEUP_PERIOD_MS / portTICK_PERIOD_MS);
         now = millis();
 
+        // Collect latest status of press button
         portENTER_CRITICAL(&buttonMutex);
         localLastPress     = lastPress;
         localLastRelease   = lastRelease;
@@ -288,11 +337,18 @@ void PanelManager::CommandCallback()
     }
 }
 
+/*
+  Static entry point of the button ISR
+*/
 void IRAM_ATTR PanelManager::StaticButtonIsr()
 {
+    // Call non-static implementation of the ISR
     objectPtr->ButtonIsr();
 }
 
+/*
+  Non static implementation of button ISR
+*/
 void PanelManager::ButtonIsr()
 {
     uint32_t   now            = millis();
@@ -319,6 +375,9 @@ void PanelManager::ButtonIsr()
     }
 }
 
+/*
+  Enable/disable panel low power mode
+*/
 void PanelManager::LowPower(bool enable)
 {
     display.dim(enable);
