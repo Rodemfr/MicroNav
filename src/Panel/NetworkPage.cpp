@@ -80,7 +80,7 @@ void NetworkPage::Draw(bool force)
         {
             for (int i = 0; i < nbDevicesInRange; i++)
             {
-                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, (devicesInRange[i].radioLevel + 1) / 2);
+                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, (devicesInRange[i].localRadioLevel + 1) / 2);
             }
         }
         else

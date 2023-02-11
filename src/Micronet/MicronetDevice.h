@@ -57,7 +57,8 @@ typedef enum
 typedef struct
 {
     uint32_t deviceId;
-    uint8_t  radioLevel;
+    uint8_t  localRadioLevel;
+    uint8_t  remoteRadioLevel;
     uint32_t lastCommMs;
 } ConnectionInfo_t;
 

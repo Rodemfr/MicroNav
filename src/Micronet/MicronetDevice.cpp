@@ -57,33 +57,56 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
+/*
+  Class constructor
+*/
 MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0)
 {
     memset(&deviceInfo, 0, sizeof(deviceInfo));
     this->micronetCodec = micronetCodec;
 }
 
+/*
+  Class destructor
+*/
 MicronetDevice::~MicronetDevice()
 {
 }
 
+/*
+  Set the Device ID handled by MicronetDevice class.
+  @param deviceId 32bit device ID
+*/
 void MicronetDevice::SetDeviceId(uint32_t deviceId)
 {
     this->deviceInfo.deviceId = deviceId;
 }
 
+/*
+  Set the Network ID attached to the micronet device.
+  @param networkId 32bit network ID
+*/
 void MicronetDevice::SetNetworkId(uint32_t networkId)
 {
     this->deviceInfo.networkId = networkId;
 }
 
+/*
+  Set the data fields which must be sent by the Micronet device
+  @param dataFields 32bit bitfield
+*/
 void MicronetDevice::SetDataFields(uint32_t dataFields)
 {
     this->deviceInfo.dataFields = dataFields;
 
+    // 
     SplitDataFields();
 }
 
+/*
+  Add data fields to the list which must be sent by the Micronet device
+  @param dataFields 32bit bitfield
+*/
 void MicronetDevice::AddDataFields(uint32_t dataFields)
 {
     this->deviceInfo.dataFields |= dataFields;
@@ -91,49 +114,66 @@ void MicronetDevice::AddDataFields(uint32_t dataFields)
     SplitDataFields();
 }
 
+/*
+  Parse the incoming message, update the internal navigation data structure, and send back
+  potential response message in the message FIFO.
+  @param message Pointer to the micronet message
+  @param messageFifo Pointer to the outgoing message queue
+*/
 void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo)
 {
     TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
+    // Check if the header CRC is valid. If not, the message is ignored and discarded.
     if (micronetCodec->VerifyHeaderCrc(message))
     {
+        // Update the list of surrounding Micronet networks.
         UpdateNetworkScan(message);
-        // Is the message addresses to us ?
+        // Is the message addressed to our network ?
         if (micronetCodec->GetNetworkId(message) == deviceInfo.networkId)
         {
+            // Yes : update the list of detected devices in the network
             UpdateDevicesInRange(message);
 
+            // Is this the MASTER REQUEST message from the master device ?
             if (micronetCodec->GetMessageId(message) == MICRONET_MESSAGE_ID_MASTER_REQUEST)
             {
+                // Yes : decode the network map from the message
                 deviceInfo.state            = DEVICE_STATE_ACTIVE;
                 deviceInfo.lastMasterCommMs = millis();
                 micronetCodec->GetNetworkMap(message, &deviceInfo.networkMap);
 
-                // We schedule the low power mode of CC1101 just at the end of the network cycle
+                // Schedule the low power mode of CC1101 just at the end of the network cycle
                 txMessage.action       = MICRONET_ACTION_RF_LOW_POWER;
                 txMessage.startTime_us = micronetCodec->GetEndOfNetwork(&deviceInfo.networkMap);
                 txMessage.len          = 0;
                 messageFifo->Push(txMessage);
 
-                // We schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
+                // Schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
                 // It will let time for the PLL calibration loop to complete.
                 txMessage.action       = MICRONET_ACTION_RF_ACTIVE_POWER;
                 txMessage.startTime_us = micronetCodec->GetNextStartOfNetwork(&deviceInfo.networkMap) - 1000;
                 txMessage.len          = 0;
                 messageFifo->Push(txMessage);
 
+                // Calculate signal strength of the MASTER REQUEST message. This strength will be transmitted in our outgoing messages to allow master
+                // device to monitor the quality of the reception. It is used in the HEALTH page of Micronet displays.
                 lastMasterSignalStrength = micronetCodec->CalculateSignalStrength(message);
 
+                // For each virtual slave device...
                 for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
                 {
+                    // Find the synchronous slot of the virtual device
                     txSlot = micronetCodec->GetSyncTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
                     if (txSlot.start_us != 0)
                     {
+                        // Slot found : encode device data message
                         uint32_t payloadLength = micronetCodec->EncodeDataMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
                                                                                   deviceInfo.deviceId + i, deviceInfo.splitDataFields[i]);
+                        // Check that the sync slot is big enough for the encoded message
                         if (txSlot.payloadBytes < payloadLength)
                         {
-                            // Sync slot is available but too small : request slot resize
+                            // Sync slot is but too small : request slot resize
                             txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
                             micronetCodec->EncodeSlotUpdateMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
                                                                    deviceInfo.deviceId + i, payloadLength);
@@ -147,13 +187,17 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                             txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
                             txMessage.startTime_us = txSlot.start_us;
                             messageFifo->Push(txMessage);
-                            // Also ping other devices to maintain a list of devices in range
-                            PingNetwork(messageFifo);
+                            // If we are here, it means we don't need the asynchronous slot. So we can use it to ping other devices to maintain a list
+                            // of devices in range. We only ping when handling the first virtual slave device to avoid pinging too often.
+                            if (i == 0)
+                            {
+                                PingNetwork(messageFifo);
+                            }
                         }
                     }
                     else
                     {
-                        // No sync slot available : request a slot
+                        // No synchronous slot available : request a slot
                         txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
                         micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i,
                                                                 micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
@@ -165,10 +209,13 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
             }
             else
             {
+                // This is not the MASTER REQUEST message : decode it normally
                 if (micronetCodec->DecodeMessage(message))
                 {
+                    // If DecodeMessage return value is true, then the received message requires an aknowledge in the asynchronous slot
                     for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
                     {
+                        // Send a aknowledge for each of the virtual slave devices
                         txSlot = micronetCodec->GetAckTransmissionSlot(&deviceInfo.networkMap, deviceInfo.deviceId + i);
                         micronetCodec->EncodeAckParamMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i);
                         txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
@@ -179,7 +226,11 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
             }
         }
     }
+
+    // Remove inactive devices from network device list
     RemoveLostDevices();
+    // Remove inactive networks from surrounding network list
+    RemoveLostNetworks();
 }
 
 // Distribute requested data fields to the virtual devices
@@ -226,44 +277,66 @@ DeviceInfo_t &MicronetDevice::GetDeviceInfo()
     return deviceInfo;
 }
 
+/*
+  Update the list of devices of the attached network with the provided message
+  @param message Message received on the attached network
+*/
 void MicronetDevice::UpdateDevicesInRange(MicronetMessage_t *message)
 {
     bool     deviceFound = false;
     uint32_t deviceId    = micronetCodec->GetDeviceId(message);
 
+    // Check each device of the list
     for (int i = 0; i < deviceInfo.nbDevicesInRange; i++)
     {
+        // Is the received message device in the list ?
         if (deviceInfo.devicesInRange[i].deviceId == deviceId)
         {
-            deviceInfo.devicesInRange[i].deviceId   = deviceId;
-            deviceInfo.devicesInRange[i].lastCommMs = millis();
-            deviceInfo.devicesInRange[i].radioLevel = micronetCodec->CalculateSignalStrength(message);
-            deviceFound                             = true;
+            // Yes : update timestamp and signal strength
+            deviceInfo.devicesInRange[i].lastCommMs       = millis();
+            deviceInfo.devicesInRange[i].localRadioLevel  = micronetCodec->CalculateSignalStrength(message);
+            deviceInfo.devicesInRange[i].remoteRadioLevel = micronetCodec->GetSignalStrength(message);
+            deviceFound                                   = true;
             break;
         }
     }
 
+    // Was the device already in the list ?
     if ((!deviceFound) && (deviceInfo.nbDevicesInRange < MICRONET_MAX_DEVICES_PER_NETWORK))
     {
-        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].deviceId   = deviceId;
-        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].lastCommMs = millis();
-        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].radioLevel = micronetCodec->CalculateSignalStrength(message);
+        // No : add it
+        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].deviceId         = deviceId;
+        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].lastCommMs       = millis();
+        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].localRadioLevel  = micronetCodec->CalculateSignalStrength(message);
+        deviceInfo.devicesInRange[deviceInfo.nbDevicesInRange].remoteRadioLevel = micronetCodec->GetSignalStrength(message);
         deviceInfo.nbDevicesInRange++;
     }
 }
 
+/*
+  Update the list of surrounding networks with the provided message
+  @param message Message received from any network
+*/
 void MicronetDevice::UpdateNetworkScan(MicronetMessage_t *message)
 {
     bool     networkFound = false;
     uint32_t networkId    = micronetCodec->GetNetworkId(message);
     uint32_t now          = millis();
 
-    // Check if the network is already in the list
+    // Only take into account MASTER REQUEST message. This is to avoid attaching to a network from which we only detect a close slave device and not
+    // the master device.
+    if (micronetCodec->GetMessageId(message) != MICRONET_MESSAGE_ID_MASTER_REQUEST)
+    {
+        return;
+    }
+
+    // Check each network of the list
     for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
     {
+        // Is the network in the list ?
         if (deviceInfo.networksInRange[i].networkId == networkId)
         {
-            deviceInfo.networksInRange[i].networkId = networkId;
+            // Yes : update timestamp and RSSI
             if ((message->rssi) > deviceInfo.networksInRange[i].rssi)
             {
                 deviceInfo.networksInRange[i].rssi = message->rssi;
@@ -274,9 +347,10 @@ void MicronetDevice::UpdateNetworkScan(MicronetMessage_t *message)
         }
     }
 
-    // Network not found : add it to the list
+    // Was the network already in the list ?
     if (!networkFound)
     {
+        // No : add it
         if (deviceInfo.nbNetworksInRange < MAX_NETWORK_TO_SCAN)
         {
             // The list is not full : add the new network to the list
@@ -309,14 +383,20 @@ void MicronetDevice::UpdateNetworkScan(MicronetMessage_t *message)
     }
 }
 
+/*
+  Remove lost devices from network device list.
+*/
 void MicronetDevice::RemoveLostDevices()
 {
     uint32_t now = millis();
 
+    // Check every device of the list
     for (int i = 0; i < deviceInfo.nbDevicesInRange; i++)
     {
+        // Check last communication time of the device
         if ((now - deviceInfo.devicesInRange[i].lastCommMs) > DEVICE_LOST_TIME_MS)
         {
+            // No news for too long : remove the device
             if (i < deviceInfo.nbDevicesInRange - 1)
             {
                 memcpy(&deviceInfo.devicesInRange[i], &deviceInfo.devicesInRange[i + 1], sizeof(DeviceInfo_t) * deviceInfo.nbDevicesInRange - i - 1);
@@ -326,14 +406,20 @@ void MicronetDevice::RemoveLostDevices()
     }
 }
 
+/*
+  Remove lost networks from surrounding network lists.
+*/
 void MicronetDevice::RemoveLostNetworks()
 {
     uint32_t now = millis();
 
+    // Check every network of the list
     for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
     {
+        // Check last communication time of the network
         if ((now - deviceInfo.networksInRange[i].timeStamp) > DEVICE_LOST_TIME_MS)
         {
+            // No news for too long : remove the network
             if (i < deviceInfo.nbNetworksInRange - 1)
             {
                 memcpy(&deviceInfo.networksInRange[i], &deviceInfo.networksInRange[i + 1],
@@ -344,12 +430,17 @@ void MicronetDevice::RemoveLostNetworks()
     }
 }
 
+/*
+    Create a PING message.
+    @param messageFifo Pointer to the outgoing message FIFO
+*/
 void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
 {
     TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
     uint32_t          now = millis();
 
+    // Only send the ping message every NETWORK_PING_PERIOD_MS to avoid flooding asynchronous slot
     if (now - pingTimeStamp > NETWORK_PING_PERIOD_MS)
     {
         pingTimeStamp = now;
@@ -361,12 +452,17 @@ void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
     }
 }
 
+/*
+  Update device internal status (lists, timeouts, states, etc.)
+*/
 void MicronetDevice::Yield()
 {
     uint32_t now = millis();
 
     RemoveLostDevices();
     RemoveLostNetworks();
+
+    // Check if network has been lost
     if ((deviceInfo.state == DEVICE_STATE_ACTIVE) && (now - deviceInfo.lastMasterCommMs > NETWORK_LOST_TIME_MS))
     {
         deviceInfo.state            = DEVICE_STATE_SEARCH_NETWORK;
