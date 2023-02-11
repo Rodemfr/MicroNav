@@ -62,7 +62,7 @@ class NetworkPage : public PageHandler
     uint32_t         nbDevicesInRange;
     ConnectionInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
 
-    void                 DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t radioLevel);
+    void                 DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t localRadioLevel, uint32_t remoteRadioLevel);
     unsigned char const *GetIconById(uint32_t deviceId);
 };
 

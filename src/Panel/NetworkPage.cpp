@@ -40,8 +40,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define DEVICE_ICON_WIDTH  32
-#define DEVICE_ICON_HEIGHT 21
+#define DEVICE_ICON_WIDTH  32 // Width of device icons
+#define DEVICE_ICON_HEIGHT 21 // Height of device icons
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -59,32 +59,55 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
+/*
+  Class constructor
+*/
 NetworkPage::NetworkPage() : deviceId(0), networkConnected(false)
 {
 }
 
+/*
+  Class destructor
+*/
 NetworkPage::~NetworkPage()
 {
 }
 
+/*
+  Draw the page on display panel
+  @param force Force complete redraw of the page, even if there are no changes.
+*/
 void NetworkPage::Draw(bool force)
 {
     static const char noNetStr[] = "No Network";
     int16_t           xStr, yStr;
     uint16_t          wStr, hStr;
+    uint32_t          localRadioLevel;
+    uint32_t          remoteRadioLevel;
 
     if (display != nullptr)
     {
+        // Clear the display
         display->clearDisplay();
+        // Check if the network is connected
         if (networkConnected)
         {
+            // Yes : draw icons of each device
             for (int i = 0; i < nbDevicesInRange; i++)
             {
-                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, (devicesInRange[i].localRadioLevel + 1) / 2);
+                localRadioLevel  = devicesInRange[i].localRadioLevel;
+                remoteRadioLevel = devicesInRange[i].remoteRadioLevel;
+                if (networkMap.masterDevice == devicesInRange[i].deviceId)
+                {
+                    // If the device is the master device, force its remote reception level to maximum
+                    remoteRadioLevel = 9;
+                }
+                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, localRadioLevel, remoteRadioLevel);
             }
         }
         else
         {
+            // No : write status text
             display->setTextColor(SSD1306_WHITE);
             display->setTextSize(1);
             display->setFont(&FreeSansBold9pt);
@@ -92,26 +115,49 @@ void NetworkPage::Draw(bool force)
             display->setCursor((SCREEN_WIDTH - wStr) / 2, (SCREEN_HEIGHT - yStr) / 2);
             display->println(noNetStr);
         }
+        // Send rendered buffer to display
         display->display();
     }
 }
 
-void NetworkPage::DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t radioLevel)
+/*
+  Draw the icon of one device
+  @param icon Pointer to the icon to draw
+  @param position Poisiton of the device in the network
+  @param localRadioLevel Signal strength of the device as seen by MicroNav
+  @param remoteRadioLevel Signal strength of the network as seen by the micronet device
+*/
+void NetworkPage::DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t localRadioLevel, uint32_t remoteRadioLevel)
 {
+    // Only twelve icons can be displayed
     if (position > 12)
         return;
+
+    // Convert levels to 5-steps values
+    localRadioLevel =  (localRadioLevel + 1) / 2;
+    remoteRadioLevel =  (remoteRadioLevel + 1) / 2;
 
     uint32_t xPos = DEVICE_ICON_WIDTH * (position & 0x03);
     uint32_t yPos = DEVICE_ICON_HEIGHT * (position >> 2);
     display->drawBitmap(xPos, yPos, (uint8_t *)icon, DEVICE_ICON_WIDTH, DEVICE_ICON_HEIGHT, 1);
-    if (radioLevel < 5)
+    if (localRadioLevel < 5)
     {
-        display->fillRect(xPos + 26, yPos + 4, 6, 3 * (5 - radioLevel), 0);
+        display->fillRect(xPos + 30, yPos + 4, 2, 3 * (5 - localRadioLevel), 0);
+    }
+    if (remoteRadioLevel < 5)
+    {
+        display->fillRect(xPos + 27, yPos + 4, 2, 3 * (5 - remoteRadioLevel), 0);
     }
 }
 
+/*
+  Get a pointer to the icon corresponding to the provided device ID.
+  @param deviceId ID of the device to get the icon for
+  @return Pointer to the icon bitmap
+*/
 unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
 {
+    // Default icon to used if device ID is not identified
     unsigned char const *bitmapPtr = T000_BITMAP;
 
     switch (deviceId >> 24)
@@ -151,6 +197,10 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
     return bitmapPtr;
 }
 
+/*
+  Set the latest network status.
+  @param deviceInfo Structure 
+*/
 void NetworkPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
 {
     networkConnected              = (deviceInfo.state == DEVICE_STATE_ACTIVE);
