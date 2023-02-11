@@ -1,0 +1,10 @@
+#!/bin/sh
+for png_file in *.png
+do
+  raw_file=`basename $png_file .png`.gray
+  cpp_file=`basename $png_file .png`.cpp
+  convert $png_file -depth 1 $raw_file
+  xxd -i $raw_file >$cpp_file
+  rm -f $raw_file
+done
+
