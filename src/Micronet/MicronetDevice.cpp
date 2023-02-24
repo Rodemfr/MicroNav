@@ -417,7 +417,7 @@ void MicronetDevice::RemoveLostNetworks()
     for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
     {
         // Check last communication time of the network
-        if ((now - deviceInfo.networksInRange[i].timeStamp) > DEVICE_LOST_TIME_MS)
+        if ((now - deviceInfo.networksInRange[i].timeStamp) > NETWORK_LOST_TIME_MS)
         {
             // No news for too long : remove the network
             if (i < deviceInfo.nbNetworksInRange - 1)

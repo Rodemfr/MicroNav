@@ -148,7 +148,7 @@ void ConfigPage1::Draw(bool force)
 // @return Action to be executed by PanelManager
 PageAction_t ConfigPage1::OnButtonPressed(bool longPress)
 {
-    PageAction_t action = PAGE_ACTION_NEXT_PAGE;
+    PageAction_t action = PAGE_ACTION_EXIT;
 
     if (editMode)
     {
@@ -188,7 +188,7 @@ PageAction_t ConfigPage1::OnButtonPressed(bool longPress)
         else
         {
             // Short press while not in edit mode : cycle to next page
-            action = PAGE_ACTION_NEXT_PAGE;
+            action = PAGE_ACTION_EXIT;
         }
     }
 

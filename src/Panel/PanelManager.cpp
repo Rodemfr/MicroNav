@@ -216,6 +216,7 @@ void PanelManager::SetNetworkStatus(DeviceInfo_t &networkStatus)
 {
     portENTER_CRITICAL(&commandMutex);
     networkPage.SetNetworkStatus(networkStatus);
+    commandPage.SetNetworkStatus(networkStatus);
     portEXIT_CRITICAL(&commandMutex);
 }
 
@@ -263,7 +264,7 @@ void PanelManager::CommandCallback()
             // Request action to the currently displayed page
             switch (currentPage->OnButtonPressed(true))
             {
-            case PAGE_ACTION_NEXT_PAGE:
+            case PAGE_ACTION_EXIT:
                 // Go to next page
                 NextPage();
                 commandFlags |= COMMAND_EVENT_NEW_PAGE;
@@ -291,7 +292,7 @@ void PanelManager::CommandCallback()
                 // Request action to the currently displayed page
                 switch (currentPage->OnButtonPressed(false))
                 {
-                case PAGE_ACTION_NEXT_PAGE:
+                case PAGE_ACTION_EXIT:
                     // Go to next page
                     NextPage();
                     commandFlags |= COMMAND_EVENT_NEW_PAGE;

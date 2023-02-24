@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Command page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,15 +24,15 @@
  ***************************************************************************
  */
 
-#ifndef PAGEHANDLER_H_
-#define PAGEHANDLER_H_
+#ifndef ATTACHPAGE_H_
+#define ATTACHPAGE_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "MicronetDevice.h"
+#include "PageHandler.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -42,32 +42,30 @@
 /*                                Types                                    */
 /***************************************************************************/
 
-typedef enum
-{
-    PAGE_ACTION_NONE = 0,
-    PAGE_ACTION_EXIT,
-    PAGE_ACTION_REFRESH
-} PageAction_t;
-
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
-class PageHandler
+class AttachPage : public PageHandler
 {
   public:
-    PageHandler();
-    virtual ~PageHandler() = 0;
+    AttachPage();
+    virtual ~AttachPage();
 
-    virtual void         SetDisplay(Adafruit_SSD1306 *display);
-    virtual void         Draw(bool force) = 0;
-    virtual PageAction_t OnButtonPressed(bool longPress);
+    void         Draw(bool force);
+    PageAction_t OnButtonPressed(bool longPress);
+    void         SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
-  protected:
-    Adafruit_SSD1306 *display;
+  private:
+    uint32_t      menuSelection;
+    uint32_t      nbNetworksInRange;
+    NetworkInfo_t networksInRange[MAX_NETWORK_TO_SCAN];
+    uint32_t      nearestNetworkId;
+    int16_t       nearestNetworkRssi;
 
-    void PrintCentered(int32_t yPos, String const &text);
-    void PrintCentered(int32_t xPos, int32_t yPos, String const &text);
+    void ActionNull()
+    {
+    }
 };
 
 #endif

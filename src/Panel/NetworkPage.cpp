@@ -29,6 +29,7 @@
 /***************************************************************************/
 
 #include "NetworkPage.h"
+#include "Globals.h"
 #include "MicronetDevice.h"
 #include "PanelResources.h"
 
@@ -84,6 +85,7 @@ void NetworkPage::Draw(bool force)
     uint16_t          wStr, hStr;
     uint32_t          localRadioLevel;
     uint32_t          remoteRadioLevel;
+    char              lineStr[32];
 
     if (display != nullptr)
     {
@@ -115,6 +117,22 @@ void NetworkPage::Draw(bool force)
             display->setCursor((SCREEN_WIDTH - wStr) / 2, (SCREEN_HEIGHT - yStr) / 2);
             display->println(noNetStr);
         }
+
+        display->setTextSize(1);
+        display->setFont(nullptr);
+        display->setTextColor(SSD1306_WHITE);
+        if (gConfiguration.eeprom.networkId != 0)
+        {
+            snprintf(lineStr, sizeof(lineStr), "NID: %08x", gConfiguration.eeprom.networkId);
+            display->setCursor(0, SCREEN_HEIGHT - 8);
+            display->print(lineStr);
+        }
+        else
+        {
+            display->setCursor(0, SCREEN_HEIGHT - 8);
+            display->print("NID: Not attached");
+        }
+
         // Send rendered buffer to display
         display->display();
     }
@@ -129,13 +147,13 @@ void NetworkPage::Draw(bool force)
 */
 void NetworkPage::DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t localRadioLevel, uint32_t remoteRadioLevel)
 {
-    // Only twelve icons can be displayed
-    if (position > 12)
+    // Only 8 icons can be displayed
+    if (position >= 8)
         return;
 
     // Convert levels to 5-steps values
-    localRadioLevel =  (localRadioLevel + 1) / 2;
-    remoteRadioLevel =  (remoteRadioLevel + 1) / 2;
+    localRadioLevel  = (localRadioLevel + 1) / 2;
+    remoteRadioLevel = (remoteRadioLevel + 1) / 2;
 
     uint32_t xPos = DEVICE_ICON_WIDTH * (position & 0x03);
     uint32_t yPos = DEVICE_ICON_HEIGHT * (position >> 2);
@@ -199,7 +217,7 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
 
 /*
   Set the latest network status.
-  @param deviceInfo Structure 
+  @param deviceInfo Structure
 */
 void NetworkPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
 {

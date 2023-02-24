@@ -60,7 +60,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-CommandPage::CommandPage() : editMode(false), editPosition(0)
+CommandPage::CommandPage() : editMode(false), editPosition(0), subPage(nullptr)
 {
 }
 
@@ -68,15 +68,36 @@ CommandPage::~CommandPage()
 {
 }
 
-// @brief Draw the page on display
-// @param force Force redraw, even if the content did not change
+void CommandPage::SetDisplay(Adafruit_SSD1306 *display)
+{
+    this->display = display;
+    attachPage.SetDisplay(display);
+}
+
+/*
+  Set the latest network status.
+  @param deviceInfo Structure 
+*/
+void CommandPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
+{
+    attachPage.SetNetworkStatus(deviceInfo);
+}
+
+/*
+  Draw the page on display
+  @param force Force redraw, even if the content did not change
+*/
 void CommandPage::Draw(bool force)
 {
     char     lineStr[22];
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
 
-    if (display != nullptr)
+    if (subPage != nullptr)
+    {
+        subPage->Draw(force);
+    }
+    else if (display != nullptr)
     {
         display->clearDisplay();
 
@@ -84,6 +105,7 @@ void CommandPage::Draw(bool force)
         display->setTextSize(1);
         display->setFont(nullptr);
 
+        // TODO : Factorize draw of selection background
         if ((editPosition == 0) && (editMode))
         {
             display->fillRect(0, 0 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
@@ -156,7 +178,22 @@ void CommandPage::Draw(bool force)
 // @return Action to be executed by PanelManager
 PageAction_t CommandPage::OnButtonPressed(bool longPress)
 {
-    PageAction_t action = PAGE_ACTION_NEXT_PAGE;
+    // Check if we are currently displaying a sub page
+    if (subPage != nullptr)
+    {
+        // Yes : does the page request exit ?
+        PageAction_t subAction = subPage->OnButtonPressed(longPress);
+        if (subAction == PAGE_ACTION_EXIT)
+        {
+            // Yes : leave sub page mode and request a refresh of the page
+            subPage = nullptr;
+            return PAGE_ACTION_REFRESH;
+        }
+        // No : return action from the sub page
+        return subAction;
+    }
+
+    PageAction_t action = PAGE_ACTION_EXIT;
 
     if (editMode)
     {
@@ -175,6 +212,9 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
                 {
                 case 0:
                     gPower.Shutdown();
+                    break;
+                case 1:
+                    subPage = &attachPage;
                     break;
                 }
             }
@@ -199,19 +239,9 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         else
         {
             // Short press while not in edit mode : cycle to next page
-            action = PAGE_ACTION_NEXT_PAGE;
+            action = PAGE_ACTION_EXIT;
         }
     }
 
     return action;
-}
-
-void CommandPage::PrintCentered(int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor((SCREEN_WIDTH - wStr) / 2, yPos);
-    display->println(text);
 }

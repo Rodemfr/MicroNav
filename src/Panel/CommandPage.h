@@ -31,6 +31,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "AttachPage.h"
 #include "PageHandler.h"
 
 /***************************************************************************/
@@ -51,18 +52,17 @@ class CommandPage : public PageHandler
     CommandPage();
     virtual ~CommandPage();
 
+    virtual void SetDisplay(Adafruit_SSD1306 *display);
     void         Draw(bool force);
     PageAction_t OnButtonPressed(bool longPress);
+    void         SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
   private:
-    bool     editMode;
-    uint32_t editPosition;
+    PageHandler  *subPage;
+    bool          editMode;
+    uint32_t      editPosition;
 
-    void PrintCentered(int32_t yPos, String const &text);
-
-    void ActionNull()
-    {
-    }
+    AttachPage attachPage;
 };
 
 #endif

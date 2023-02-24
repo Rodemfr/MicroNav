@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Network Attachment page                        *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,7 +28,9 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "PageHandler.h"
+#include "AttachPage.h"
+#include "Globals.h"
+#include "MicronetDevice.h"
 #include "PanelResources.h"
 
 #include <Adafruit_GFX.h>
@@ -55,41 +57,107 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-PageHandler::PageHandler()
+AttachPage::AttachPage() : menuSelection(0), nearestNetworkId(0), nearestNetworkRssi(0)
 {
 }
 
-PageHandler::~PageHandler()
+AttachPage::~AttachPage()
 {
 }
 
-void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
+/*
+  Set the latest network status.
+  @param deviceInfo Structure
+*/
+void AttachPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
 {
-    this->display = display;
+    nearestNetworkId   = 0;
+    nearestNetworkRssi = -10000;
+
+    nbNetworksInRange = deviceInfo.nbNetworksInRange;
+    for (int i = 0; i < nbNetworksInRange; i++)
+    {
+        networksInRange[i] = deviceInfo.networksInRange[i];
+        if (networksInRange[i].rssi > nearestNetworkRssi)
+        {
+            nearestNetworkRssi = networksInRange[i].rssi;
+            nearestNetworkId   = networksInRange[i].networkId;
+        }
+    }
 }
 
-PageAction_t PageHandler::OnButtonPressed(bool longPress)
+/*
+  Draw the page on display
+  @param force Force redraw, even if the content did not change
+*/
+void AttachPage::Draw(bool force)
 {
-    return (longPress ? PAGE_ACTION_NONE : PAGE_ACTION_EXIT);
-}
-
-void PageHandler::PrintCentered(int32_t yPos, String const &text)
-{
-    PrintCentered(SCREEN_WIDTH / 2, yPos, text);
+    char     lineStr[22];
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
 
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor((SCREEN_WIDTH - wStr) / 2, yPos);
-    display->println(text);
+    if (display != nullptr)
+    {
+        display->clearDisplay();
+
+        // Config items
+        display->setTextSize(1);
+        display->setFont(nullptr);
+        display->setTextColor(SSD1306_WHITE);
+
+        if (nearestNetworkId != 0)
+        {
+            // Panel to be display when a network is detected
+            PrintCentered(0 * 8, "Nearest network");
+            snprintf(lineStr, sizeof(lineStr), "%0x", nearestNetworkId);
+            PrintCentered(1 * 8, lineStr);
+            display->setTextColor(SSD1306_WHITE);
+            display->fillRect(0 + (menuSelection * SCREEN_WIDTH / 2), 7 * 8, SCREEN_WIDTH / 2, 8, SSD1306_WHITE);
+            display->setTextColor((menuSelection == 0) ? SSD1306_BLACK : SSD1306_WHITE);
+            PrintCentered(SCREEN_WIDTH / 4, 7 * 8, "Attach");
+            display->setTextColor((menuSelection == 1) ? SSD1306_BLACK : SSD1306_WHITE);
+            PrintCentered(3 * SCREEN_WIDTH / 4, 7 * 8, "Exit");
+        }
+        else
+        {
+            // Panel to be displayed when no network is detected
+            PrintCentered(0 * 8, "No network detected");
+            display->setTextColor(SSD1306_WHITE);
+            display->fillRect(SCREEN_WIDTH / 4, 7 * 8, SCREEN_WIDTH / 2, 8, SSD1306_WHITE);
+            display->setTextColor(SSD1306_BLACK);
+            PrintCentered(SCREEN_WIDTH / 2, 7 * 8, "Exit");
+        }
+        display->setTextColor(SSD1306_WHITE);
+
+        display->display();
+    }
 }
 
-void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
+/*
+  Function called by PanelManager when the button is pressed
+  @param force Force redraw, even if the content did not change
+  @param longPress true if a long press was detected
+  @return Action to be executed by PanelManager
+*/
+PageAction_t AttachPage::OnButtonPressed(bool longPress)
 {
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
+    PageAction_t action = PAGE_ACTION_EXIT;
 
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(xPos - (wStr / 2), yPos);
-    display->println(text);
+    // On a long press, we execute the currently selected menu
+    if (longPress)
+    {
+        if ((menuSelection == 0) && (nearestNetworkId != 0))
+        {
+            // Long press on "Attach"
+            gConfiguration.eeprom.networkId = nearestNetworkId;
+        }
+    }
+    else
+    {
+        // Short press : cycle through menu items
+        menuSelection = (menuSelection + 1) & 0x01;
+        action        = PAGE_ACTION_REFRESH;
+    }
+
+    return action;
 }
