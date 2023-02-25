@@ -118,21 +118,6 @@ void NetworkPage::Draw(bool force)
             display->println(noNetStr);
         }
 
-        display->setTextSize(1);
-        display->setFont(nullptr);
-        display->setTextColor(SSD1306_WHITE);
-        if (gConfiguration.eeprom.networkId != 0)
-        {
-            snprintf(lineStr, sizeof(lineStr), "NID: %08x", gConfiguration.eeprom.networkId);
-            display->setCursor(0, SCREEN_HEIGHT - 8);
-            display->print(lineStr);
-        }
-        else
-        {
-            display->setCursor(0, SCREEN_HEIGHT - 8);
-            display->print("NID: Not attached");
-        }
-
         // Send rendered buffer to display
         display->display();
     }

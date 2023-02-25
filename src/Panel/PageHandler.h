@@ -72,6 +72,8 @@ class PageHandler
 
     void PrintCentered(int32_t yPos, String const &text);
     void PrintCentered(int32_t xPos, int32_t yPos, String const &text);
+    void PrintLeft(int32_t yPos, String const &text);
+    void PrintRight(int32_t yPos, String const &text);
 };
 
 #endif

@@ -33,7 +33,6 @@
 #include "MicronetDevice.h"
 #include "PanelResources.h"
 
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Arduino.h>
@@ -78,17 +77,48 @@ void InfoPage::Draw(bool force)
 
     display->clearDisplay();
 
-    // Config items
     display->setTextSize(1);
     display->setFont(nullptr);
     display->setTextColor(SSD1306_WHITE);
 
-    // TODO : Factorize draw of selection background
-    PrintCentered(0 * 8, "Info 1");
-    PrintCentered(1 * 8, "Info 2");
-    PrintCentered(2 * 8, "Info 3");
-    PrintCentered(3 * 8, "Info 4");
-    PrintCentered(64 - 8, "Info");
+    // NetworkID
+    PrintLeft(0, "NetworkID");
+    if (gConfiguration.eeprom.networkId != 0)
+    {
+        snprintf(lineStr, sizeof(lineStr), "%08x", gConfiguration.eeprom.networkId);
+        PrintRight(0, lineStr);
+    }
+    else
+    {
+        PrintRight(0, "---");
+    }
+
+    // Wind calibration
+    PrintLeft(8, "Wind");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0f%c", gConfiguration.eeprom.windSpeedFactor_per, gConfiguration.eeprom.windDirectionOffset_deg, 247);
+    PrintRight(8, lineStr);
+
+    // Water calibration
+    PrintLeft(16, "Water");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0fC", gConfiguration.eeprom.waterSpeedFactor_per, gConfiguration.eeprom.waterTemperatureOffset_C);
+    PrintRight(16, lineStr);
+
+    // Depth calibration
+    PrintLeft(24, "Depth");
+    snprintf(lineStr, sizeof(lineStr), "%.1fm", gConfiguration.eeprom.waterSpeedFactor_per);
+    PrintRight(24, lineStr);
+
+    // Heading offset
+    PrintLeft(32, "Heading");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.headingOffset_deg, 247);
+    PrintRight(32, lineStr);
+    
+    // Heading offset
+    PrintLeft(40, "MagVar");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.magneticVariation_deg, 247);
+    PrintRight(40, lineStr);
+    
+    PrintCentered(56, "Info");
 
     display->display();
 }

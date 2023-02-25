@@ -80,12 +80,6 @@ PageAction_t PageHandler::OnButtonPressed(bool longPress)
 void PageHandler::PrintCentered(int32_t yPos, String const &text)
 {
     PrintCentered(SCREEN_WIDTH / 2, yPos, text);
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor((SCREEN_WIDTH - wStr) / 2, yPos);
-    display->println(text);
 }
 
 void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
@@ -95,6 +89,22 @@ void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
 
     display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
     display->setCursor(xPos - (wStr / 2), yPos);
+    display->println(text);
+}
+
+void PageHandler::PrintLeft(int32_t yPos, String const &text)
+{
+    display->setCursor(0, yPos);
+    display->println(text);
+}
+
+void PageHandler::PrintRight(int32_t yPos, String const &text)
+{
+    int16_t  xStr, yStr;
+    uint16_t wStr, hStr;
+
+    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
+    display->setCursor(SCREEN_WIDTH - wStr, yPos);
     display->println(text);
 }
 
