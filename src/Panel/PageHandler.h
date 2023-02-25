@@ -31,6 +31,8 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "MicronetDevice.h"
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -59,12 +61,14 @@ class PageHandler
     PageHandler();
     virtual ~PageHandler() = 0;
 
-    virtual void         SetDisplay(Adafruit_SSD1306 *display);
+    static void          SetDisplay(Adafruit_SSD1306 *display);
     virtual void         Draw(bool force) = 0;
     virtual PageAction_t OnButtonPressed(bool longPress);
+    static void          SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
   protected:
-    Adafruit_SSD1306 *display;
+    static Adafruit_SSD1306 *display;
+    static DeviceInfo_t      deviceInfo;
 
     void PrintCentered(int32_t yPos, String const &text);
     void PrintCentered(int32_t xPos, int32_t yPos, String const &text);

@@ -102,13 +102,8 @@ bool PanelManager::Init()
     {
         displayAvailable = true;
 
-        logoPage.SetDisplay(&display);
+        PageHandler::SetDisplay(&display);
         logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
-        clockPage.SetDisplay(&display);
-        networkPage.SetDisplay(&display);
-        configPage1.SetDisplay(&display);
-        configPage2.SetDisplay(&display);
-        commandPage.SetDisplay(&display);
 
         pageNumber = 0;
 
@@ -215,8 +210,7 @@ void PanelManager::SetNavigationData(NavigationData *navData)
 void PanelManager::SetNetworkStatus(DeviceInfo_t &networkStatus)
 {
     portENTER_CRITICAL(&commandMutex);
-    networkPage.SetNetworkStatus(networkStatus);
-    commandPage.SetNetworkStatus(networkStatus);
+    PageHandler::SetNetworkStatus(networkStatus);
     portEXIT_CRITICAL(&commandMutex);
 }
 
@@ -317,6 +311,9 @@ void PanelManager::CommandCallback()
                 break;
             case PAGE_NETWORK:
                 currentPage = (PageHandler *)&networkPage;
+                break;
+            case PAGE_INFO:
+                currentPage = (PageHandler *)&infoPage;
                 break;
             case PAGE_CLOCK:
                 currentPage = (PageHandler *)&clockPage;

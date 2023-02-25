@@ -29,6 +29,7 @@
 /***************************************************************************/
 
 #include "PageHandler.h"
+#include "MicronetDevice.h"
 #include "PanelResources.h"
 
 #include <Adafruit_GFX.h>
@@ -51,6 +52,9 @@
 /*                           Static & Globals                              */
 /***************************************************************************/
 
+Adafruit_SSD1306 *PageHandler::display;
+DeviceInfo_t      PageHandler::deviceInfo;
+
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
@@ -65,7 +69,7 @@ PageHandler::~PageHandler()
 
 void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
 {
-    this->display = display;
+    PageHandler::display = display;
 }
 
 PageAction_t PageHandler::OnButtonPressed(bool longPress)
@@ -92,4 +96,14 @@ void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
     display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
     display->setCursor(xPos - (wStr / 2), yPos);
     display->println(text);
+}
+
+/*
+  Set the latest network status.
+  @param deviceInfo Structure
+*/
+void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
+{
+    // Copy it in a static local variable so that every child of PageHandler class will be able to access it
+    PageHandler::deviceInfo = deviceInfo;
 }

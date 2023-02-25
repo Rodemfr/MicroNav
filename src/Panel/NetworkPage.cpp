@@ -63,7 +63,7 @@
 /*
   Class constructor
 */
-NetworkPage::NetworkPage() : deviceId(0), networkConnected(false)
+NetworkPage::NetworkPage()
 {
 }
 
@@ -92,19 +92,19 @@ void NetworkPage::Draw(bool force)
         // Clear the display
         display->clearDisplay();
         // Check if the network is connected
-        if (networkConnected)
+        if (deviceInfo.state == DEVICE_STATE_ACTIVE)
         {
             // Yes : draw icons of each device
-            for (int i = 0; i < nbDevicesInRange; i++)
+            for (int i = 0; i < deviceInfo.nbDevicesInRange; i++)
             {
-                localRadioLevel  = devicesInRange[i].localRadioLevel;
-                remoteRadioLevel = devicesInRange[i].remoteRadioLevel;
-                if (networkMap.masterDevice == devicesInRange[i].deviceId)
+                localRadioLevel  = deviceInfo.devicesInRange[i].localRadioLevel;
+                remoteRadioLevel = deviceInfo.devicesInRange[i].remoteRadioLevel;
+                if (deviceInfo.networkMap.masterDevice == deviceInfo.devicesInRange[i].deviceId)
                 {
                     // If the device is the master device, force its remote reception level to maximum
                     remoteRadioLevel = 9;
                 }
-                DrawDeviceIcon(GetIconById(devicesInRange[i].deviceId), i, localRadioLevel, remoteRadioLevel);
+                DrawDeviceIcon(GetIconById(deviceInfo.devicesInRange[i].deviceId), i, localRadioLevel, remoteRadioLevel);
             }
         }
         else
@@ -213,27 +213,4 @@ unsigned char const *NetworkPage::GetIconById(uint32_t deviceId)
     }
 
     return bitmapPtr;
-}
-
-/*
-  Set the latest network status.
-  @param deviceInfo Structure
-*/
-void NetworkPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
-{
-    networkConnected              = (deviceInfo.state == DEVICE_STATE_ACTIVE);
-    deviceId                      = deviceInfo.deviceId;
-    this->networkMap.networkId    = deviceInfo.networkMap.networkId;
-    this->networkMap.nbDevices    = deviceInfo.networkMap.nbDevices;
-    this->networkMap.masterDevice = deviceInfo.networkMap.masterDevice;
-    this->networkMap.nbSyncSlots  = deviceInfo.networkMap.nbSyncSlots;
-    for (int i = 0; i < this->networkMap.nbSyncSlots; i++)
-    {
-        this->networkMap.syncSlot[i] = deviceInfo.networkMap.syncSlot[i];
-    }
-    nbDevicesInRange = deviceInfo.nbDevicesInRange;
-    for (int i = 0; i < nbDevicesInRange; i++)
-    {
-        devicesInRange[i] = deviceInfo.devicesInRange[i];
-    }
 }

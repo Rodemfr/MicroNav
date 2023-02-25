@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Handler of the Command page                                   *
+ * Purpose:  Handler of the Info page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,41 +24,92 @@
  ***************************************************************************
  */
 
-#ifndef ATTACHPAGE_H_
-#define ATTACHPAGE_H_
-
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
+#include "InfoPage.h"
+#include "Globals.h"
 #include "MicronetDevice.h"
-#include "PageHandler.h"
+#include "PanelResources.h"
+
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                                Types                                    */
+/*                             Local types                                 */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                               Classes                                   */
+/*                           Local prototypes                              */
 /***************************************************************************/
 
-class AttachPage : public PageHandler
+/***************************************************************************/
+/*                           Static & Globals                              */
+/***************************************************************************/
+
+/***************************************************************************/
+/*                              Functions                                  */
+/***************************************************************************/
+
+InfoPage::InfoPage()
 {
-  public:
-    AttachPage();
-    virtual ~AttachPage();
+}
 
-    void         Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+InfoPage::~InfoPage()
+{
+}
 
-  private:
-    uint32_t      menuSelection;
-    uint32_t      nearestNetworkId;
-    int16_t       nearestNetworkRssi;
-};
+/*
+  Draw the page on display
+  @param force Force redraw, even if the content did not change
+*/
+void InfoPage::Draw(bool force)
+{
+    char     lineStr[22];
+    int16_t  xStr, yStr;
+    uint16_t wStr, hStr;
 
-#endif
+    display->clearDisplay();
+
+    // Config items
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    // TODO : Factorize draw of selection background
+    PrintCentered(0 * 8, "Info 1");
+    PrintCentered(1 * 8, "Info 2");
+    PrintCentered(2 * 8, "Info 3");
+    PrintCentered(3 * 8, "Info 4");
+    PrintCentered(64 - 8, "Info");
+
+    display->display();
+}
+
+// @brief Function called by PanelManager when the button is pressed
+// @param longPress true if a long press was detected
+// @return Action to be executed by PanelManager
+PageAction_t InfoPage::OnButtonPressed(bool longPress)
+{
+    PageAction_t action = PAGE_ACTION_EXIT;
+
+    if (longPress)
+    {
+        // Long press : do nothing
+        action = PAGE_ACTION_REFRESH;
+    }
+    else
+    {
+        // Short press : cycle to next page
+        action = PAGE_ACTION_EXIT;
+    }
+
+    return action;
+}

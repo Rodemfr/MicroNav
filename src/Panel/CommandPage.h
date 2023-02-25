@@ -52,10 +52,8 @@ class CommandPage : public PageHandler
     CommandPage();
     virtual ~CommandPage();
 
-    virtual void SetDisplay(Adafruit_SSD1306 *display);
     void         Draw(bool force);
     PageAction_t OnButtonPressed(bool longPress);
-    void         SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
   private:
     PageHandler  *subPage;

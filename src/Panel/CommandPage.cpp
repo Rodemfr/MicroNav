@@ -68,21 +68,6 @@ CommandPage::~CommandPage()
 {
 }
 
-void CommandPage::SetDisplay(Adafruit_SSD1306 *display)
-{
-    this->display = display;
-    attachPage.SetDisplay(display);
-}
-
-/*
-  Set the latest network status.
-  @param deviceInfo Structure 
-*/
-void CommandPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
-{
-    attachPage.SetNetworkStatus(deviceInfo);
-}
-
 /*
   Draw the page on display
   @param force Force redraw, even if the content did not change

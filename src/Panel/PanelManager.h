@@ -35,11 +35,13 @@
 #include "CommandPage.h"
 #include "ConfigPage1.h"
 #include "ConfigPage2.h"
+#include "InfoPage.h"
 #include "LogoPage.h"
 #include "MicronetDevice.h"
 #include "NavigationData.h"
 #include "NetworkPage.h"
 #include "PageHandler.h"
+
 
 #include <Arduino.h>
 
@@ -52,6 +54,7 @@ enum
     PAGE_LOGO = 0,
     PAGE_CLOCK,
     PAGE_NETWORK,
+    PAGE_INFO,
     PAGE_CONFIG1,
     PAGE_CONFIG2,
     PAGE_COMMAND,
@@ -92,6 +95,7 @@ class PanelManager
     LogoPage           logoPage;
     ClockPage          clockPage;
     NetworkPage        networkPage;
+    InfoPage           infoPage;
     ConfigPage1        configPage1;
     ConfigPage2        configPage2;
     CommandPage        commandPage;

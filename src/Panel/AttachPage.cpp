@@ -66,27 +66,6 @@ AttachPage::~AttachPage()
 }
 
 /*
-  Set the latest network status.
-  @param deviceInfo Structure
-*/
-void AttachPage::SetNetworkStatus(DeviceInfo_t &deviceInfo)
-{
-    nearestNetworkId   = 0;
-    nearestNetworkRssi = -10000;
-
-    nbNetworksInRange = deviceInfo.nbNetworksInRange;
-    for (int i = 0; i < nbNetworksInRange; i++)
-    {
-        networksInRange[i] = deviceInfo.networksInRange[i];
-        if (networksInRange[i].rssi > nearestNetworkRssi)
-        {
-            nearestNetworkRssi = networksInRange[i].rssi;
-            nearestNetworkId   = networksInRange[i].networkId;
-        }
-    }
-}
-
-/*
   Draw the page on display
   @param force Force redraw, even if the content did not change
 */
@@ -95,6 +74,20 @@ void AttachPage::Draw(bool force)
     char     lineStr[22];
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
+
+    // Update nearest network
+    nearestNetworkId             = 0;
+    nearestNetworkRssi           = -10000;
+    deviceInfo.nbNetworksInRange = deviceInfo.nbNetworksInRange;
+    for (int i = 0; i < deviceInfo.nbNetworksInRange; i++)
+    {
+        deviceInfo.networksInRange[i] = deviceInfo.networksInRange[i];
+        if (deviceInfo.networksInRange[i].rssi > nearestNetworkRssi)
+        {
+            nearestNetworkRssi = deviceInfo.networksInRange[i].rssi;
+            nearestNetworkId   = deviceInfo.networksInRange[i].networkId;
+        }
+    }
 
     if (display != nullptr)
     {

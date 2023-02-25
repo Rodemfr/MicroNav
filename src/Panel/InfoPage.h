@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Handler of the Command page                                   *
+ * Purpose:  Handler of the Info page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,14 +24,13 @@
  ***************************************************************************
  */
 
-#ifndef ATTACHPAGE_H_
-#define ATTACHPAGE_H_
+#ifndef INFOPAGE_H_
+#define INFOPAGE_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "MicronetDevice.h"
 #include "PageHandler.h"
 
 /***************************************************************************/
@@ -46,19 +45,14 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class AttachPage : public PageHandler
+class InfoPage : public PageHandler
 {
   public:
-    AttachPage();
-    virtual ~AttachPage();
+    InfoPage();
+    virtual ~InfoPage();
 
     void         Draw(bool force);
     PageAction_t OnButtonPressed(bool longPress);
-
-  private:
-    uint32_t      menuSelection;
-    uint32_t      nearestNetworkId;
-    int16_t       nearestNetworkRssi;
 };
 
 #endif
