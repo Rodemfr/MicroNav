@@ -53,6 +53,13 @@ class InfoPage : public PageHandler
 
     void         Draw(bool force);
     PageAction_t OnButtonPressed(bool longPress);
+  
+  private:
+    uint32_t subPageIndex;
+
+    void DrawCalibrationInfoPage();
+    void DrawNetworkInfoPage();
+    void DrawCompassInfoPage();
 };
 
 #endif

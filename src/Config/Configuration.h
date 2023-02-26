@@ -65,32 +65,43 @@ typedef enum
     LINK_COMPASS
 } LinkId_t;
 
+typedef enum
+{
+    COMPASS_HDG_VECTOR_X = 0,
+    COMPASS_HDG_VECTOR_Y,
+    COMPASS_HDG_VECTOR_Z,
+    COMPASS_HDG_VECTOR_MX,
+    COMPASS_HDG_VECTOR_MY,
+    COMPASS_HDG_VECTOR_MZ
+} CompassHdgVec_t;
+
 typedef struct
 {
-    uint32_t     networkId;
-    uint32_t     deviceId;
-    float        waterSpeedFactor_per;
-    float        waterTemperatureOffset_C;
-    float        depthOffset_m;
-    float        windSpeedFactor_per;
-    float        windDirectionOffset_deg;
-    float        headingOffset_deg;
-    float        magneticVariation_deg;
-    float        windShift;
-    float        xMagOffset;
-    float        yMagOffset;
-    float        zMagOffset;
-    FreqSystem_t freqSystem;
-    int8_t       timeZone_h;
-    uint8_t      rmbWorkaround;
-    uint8_t      windRepeater;
-    uint8_t      spare;
-    SerialType_t nmeaLink;
-    LinkId_t     gnssSource;
-    LinkId_t     windSource;
-    LinkId_t     depthSource;
-    LinkId_t     speedSource;
-    LinkId_t     compassSource;
+    uint32_t        networkId;
+    uint32_t        deviceId;
+    float           waterSpeedFactor_per;
+    float           waterTemperatureOffset_C;
+    float           depthOffset_m;
+    float           windSpeedFactor_per;
+    float           windDirectionOffset_deg;
+    float           headingOffset_deg;
+    float           magneticVariation_deg;
+    float           windShift;
+    float           xMagOffset;
+    float           yMagOffset;
+    float           zMagOffset;
+    FreqSystem_t    freqSystem;
+    int8_t          timeZone_h;
+    uint8_t         rmbWorkaround;
+    uint8_t         windRepeater;
+    uint8_t         spare;
+    SerialType_t    nmeaLink;
+    LinkId_t        gnssSource;
+    LinkId_t        windSource;
+    LinkId_t        depthSource;
+    LinkId_t        speedSource;
+    LinkId_t        compassSource;
+    CompassHdgVec_t compassHdgVector;
 } EEPROMConfig_t;
 
 typedef struct
@@ -116,11 +127,16 @@ class Configuration
     void SaveCalibration(MicronetCodec &micronetCodec);
     void LoadCalibration(MicronetCodec *micronetCodec);
     void DeployConfiguration(MicronetDevice *micronetDevice);
+    bool GetModifiedFlag();
+    void SetModifiedFlag();
 
     // The following parameters are loaded/saved from/to EEPROM
     EEPROMConfig_t eeprom;
     // The following parameters are NOT loaded/saved from/to EEPROM
     RAMConfig_t ram;
+
+  private:
+    bool configModified;
 };
 
 /***************************************************************************/
