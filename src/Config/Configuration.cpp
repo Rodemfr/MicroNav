@@ -73,7 +73,7 @@ void Configuration::Init()
     EEPROM.begin(CONFIGURATION_EEPROM_SIZE);
 }
 
-Configuration::Configuration()
+Configuration::Configuration() : configModified(false)
 {
     // Set default configuration
     ram.navCompassAvailable = false;
@@ -144,6 +144,8 @@ void Configuration::SaveToEeprom()
 
 void Configuration::SaveCalibration(MicronetCodec &micronetCodec)
 {
+    configModified = false;
+
     eeprom.waterSpeedFactor_per     = micronetCodec.navData.waterSpeedFactor_per;
     eeprom.waterTemperatureOffset_C = micronetCodec.navData.waterTemperatureOffset_degc;
     eeprom.depthOffset_m            = micronetCodec.navData.depthOffset_m;
@@ -175,13 +177,24 @@ void Configuration::DeployConfiguration(MicronetDevice *micronetDevice)
     switch (eeprom.nmeaLink)
     {
     case SERIAL_TYPE_USB:
+        if (ram.nmeaLink == &gBtSerial)
+        {
+            gBtSerial.end();
+        }
         ram.nmeaLink = &Serial;
         break;
     case SERIAL_TYPE_BT:
-        gBtSerial.begin(String("MicroNav"));
-        ram.nmeaLink = &gBtSerial;
+        if (ram.nmeaLink != &gBtSerial)
+        {
+            gBtSerial.begin(String("MicroNav"));
+            ram.nmeaLink = &gBtSerial;
+        }
         break;
     case SERIAL_TYPE_WIFI:
+        if (ram.nmeaLink == &gBtSerial)
+        {
+            gBtSerial.end();
+        }
         // TODO : Implement WiFi serial link
         ram.nmeaLink = &Serial;
         break;
@@ -215,4 +228,14 @@ void Configuration::DeployConfiguration(MicronetDevice *micronetDevice)
             micronetDevice->AddDataFields(DATA_FIELD_AWS | DATA_FIELD_AWA);
         }
     }
+}
+
+void Configuration::SetModifiedFlag()
+{
+    configModified = true;
+}
+
+bool Configuration::GetModifiedFlag()
+{
+    return configModified;
 }

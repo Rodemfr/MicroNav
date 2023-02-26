@@ -143,6 +143,7 @@ PageAction_t AttachPage::OnButtonPressed(bool longPress)
         {
             // Long press on "Attach"
             gConfiguration.eeprom.networkId = nearestNetworkId;
+            gConfiguration.SetModifiedFlag();
         }
     }
     else

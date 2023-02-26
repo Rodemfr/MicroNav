@@ -127,11 +127,16 @@ class Configuration
     void SaveCalibration(MicronetCodec &micronetCodec);
     void LoadCalibration(MicronetCodec *micronetCodec);
     void DeployConfiguration(MicronetDevice *micronetDevice);
+    bool GetModifiedFlag();
+    void SetModifiedFlag();
 
     // The following parameters are loaded/saved from/to EEPROM
     EEPROMConfig_t eeprom;
     // The following parameters are NOT loaded/saved from/to EEPROM
     RAMConfig_t ram;
+
+  private:
+    bool configModified;
 };
 
 /***************************************************************************/

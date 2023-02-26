@@ -41,7 +41,12 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define NB_SUBPAGES 3
+typedef enum{
+    INFO_SUBPAGE_NETWORK = 0,
+    INFO_SUBPAGE_CALIBRATION,
+    INFO_SUBPAGE_COMPASS,
+    INFO_SUBPAGE_NB_SUBPAGES
+} InfoSubPage_t;
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -80,18 +85,18 @@ void InfoPage::Draw(bool force)
     // Draw selected sub info page
     switch (subPageIndex)
     {
-    case 0:
-        DrawCalibrationInfoPage();
-        break;
-    case 1:
+    case INFO_SUBPAGE_NETWORK:
         DrawNetworkInfoPage();
         break;
-    case 2:
+    case INFO_SUBPAGE_CALIBRATION:
+        DrawCalibrationInfoPage();
+        break;
+    case INFO_SUBPAGE_COMPASS:
         DrawCompassInfoPage();
         break;
     }
 
-    snprintf(lineStr, sizeof(lineStr), "Info %d/%d", subPageIndex + 1, NB_SUBPAGES);
+    snprintf(lineStr, sizeof(lineStr), "Info %d/%d", subPageIndex + 1, INFO_SUBPAGE_NB_SUBPAGES);
     PrintCentered(56, lineStr);
 
     display->display();
@@ -232,7 +237,7 @@ PageAction_t InfoPage::OnButtonPressed(bool longPress)
     {
         // Long press : do nothing
         subPageIndex++;
-        if (subPageIndex >= NB_SUBPAGES)
+        if (subPageIndex >= INFO_SUBPAGE_NB_SUBPAGES)
         {
             subPageIndex = 0;
         }
