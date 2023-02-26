@@ -80,11 +80,10 @@ Configuration::Configuration()
     ram.displayAvailable    = false;
 
     memset(&eeprom, 0, sizeof(eeprom));
-
     eeprom.waterSpeedFactor_per = 1.0;
     eeprom.windSpeedFactor_per  = 1.0;
     eeprom.windShift            = 10;
-    eeprom.deviceId             = 0x03123456;
+    eeprom.deviceId             = (0x03c00000 | (esp_random() & 0x03ffff0));
     eeprom.nmeaLink             = SERIAL_TYPE_BT;
     eeprom.gnssSource           = LINK_NMEA_GNSS;
     eeprom.windSource           = LINK_MICRONET;
@@ -93,6 +92,7 @@ Configuration::Configuration()
     eeprom.compassSource        = LINK_MICRONET;
     eeprom.rmbWorkaround        = false;
     eeprom.windRepeater         = true;
+    eeprom.compassHdgVector     = COMPASS_HDG_VECTOR_X;
 }
 
 Configuration::~Configuration()

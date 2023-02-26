@@ -41,8 +41,14 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-// @brief Number of configuration items on this page
-#define NUMBER_OF_COMMANDS 4
+// @brief Configuration items int the menu
+typedef enum
+{
+    COMMAND_POSITION_SHUTDOWN = 0,
+    COMMAND_POSITION_ATTACH,
+    COMMAND_POSITION_CALCOMPASS,
+    COMMAND_POSITION_EXIT
+} CmdPos_t;
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -91,7 +97,7 @@ void CommandPage::Draw(bool force)
         display->setFont(nullptr);
 
         // TODO : Factorize draw of selection background
-        if ((editPosition == 0) && (editMode))
+        if ((editPosition == COMMAND_POSITION_SHUTDOWN) && (editMode))
         {
             display->fillRect(0, 0 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -102,7 +108,7 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(0 * 8, "Shutdown MicroNav");
 
-        if ((editPosition == 1) && (editMode))
+        if ((editPosition == COMMAND_POSITION_ATTACH) && (editMode))
         {
             display->fillRect(0, 1 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -113,7 +119,7 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(1 * 8, "Attach to network");
 
-        if ((editPosition == 2) && (editMode))
+        if ((editPosition == COMMAND_POSITION_CALCOMPASS) && (editMode))
         {
             display->fillRect(0, 2 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -124,20 +130,9 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(2 * 8, "Calibrate compass");
 
-        if ((editPosition == 3) && (editMode))
-        {
-            display->fillRect(0, 3 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
-            display->setTextColor(SSD1306_BLACK);
-        }
-        else
-        {
-            display->setTextColor(SSD1306_WHITE);
-        }
-        PrintCentered(3 * 8, "Select Heading Vector");
-
         if (editMode)
         {
-            if (editPosition == 4)
+            if (editPosition == COMMAND_POSITION_EXIT)
             {
                 display->fillRect(0, 64 - 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
@@ -185,7 +180,7 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         // In edit mode, the button is used to cycle through the configuration items
         if (longPress)
         {
-            if (editPosition == NUMBER_OF_COMMANDS)
+            if (editPosition == COMMAND_POSITION_EXIT)
             {
                 // Long press on "Exit"
                 editMode = false;
@@ -208,7 +203,7 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         else
         {
             // Short press : cycle through configuration items
-            editPosition = (editPosition + 1) % (NUMBER_OF_COMMANDS + 1);
+            editPosition = (editPosition + 1) % (COMMAND_POSITION_EXIT + 1);
             action       = PAGE_ACTION_REFRESH;
         }
     }

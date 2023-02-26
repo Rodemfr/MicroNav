@@ -41,6 +41,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+#define NB_SUBPAGES 3
+
 /***************************************************************************/
 /*                             Local types                                 */
 /***************************************************************************/
@@ -57,7 +59,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-InfoPage::InfoPage()
+InfoPage::InfoPage() : subPageIndex(0)
 {
 }
 
@@ -71,11 +73,68 @@ InfoPage::~InfoPage()
 */
 void InfoPage::Draw(bool force)
 {
-    char     lineStr[22];
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
+    char lineStr[22];
 
     display->clearDisplay();
+
+    // Draw selected sub info page
+    switch (subPageIndex)
+    {
+    case 0:
+        DrawCalibrationInfoPage();
+        break;
+    case 1:
+        DrawNetworkInfoPage();
+        break;
+    case 2:
+        DrawCompassInfoPage();
+        break;
+    }
+
+    snprintf(lineStr, sizeof(lineStr), "Info %d/%d", subPageIndex + 1, NB_SUBPAGES);
+    PrintCentered(56, lineStr);
+
+    display->display();
+}
+
+void InfoPage::DrawCalibrationInfoPage()
+{
+    char lineStr[22];
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    // Wind calibration
+    PrintLeft(0, "Wind");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0f%c", (gConfiguration.eeprom.windSpeedFactor_per - 1.0f) * 100.f, gConfiguration.eeprom.windDirectionOffset_deg,
+             247);
+    PrintRight(0, lineStr);
+
+    // Water calibration
+    PrintLeft(8, "Water");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0fC", (gConfiguration.eeprom.waterSpeedFactor_per - 1.0f) * 100.f, gConfiguration.eeprom.waterTemperatureOffset_C);
+    PrintRight(8, lineStr);
+
+    // Depth calibration
+    PrintLeft(16, "Depth");
+    snprintf(lineStr, sizeof(lineStr), "%.1fm", (gConfiguration.eeprom.waterSpeedFactor_per - 1.0f) * 100.f);
+    PrintRight(16, lineStr);
+
+    // Heading offset
+    PrintLeft(24, "Heading");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.headingOffset_deg, 247);
+    PrintRight(24, lineStr);
+
+    // Heading offset
+    PrintLeft(32, "MagVar");
+    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.magneticVariation_deg, 247);
+    PrintRight(32, lineStr);
+}
+
+void InfoPage::DrawNetworkInfoPage()
+{
+    char lineStr[22];
 
     display->setTextSize(1);
     display->setFont(nullptr);
@@ -93,34 +152,73 @@ void InfoPage::Draw(bool force)
         PrintRight(0, "---");
     }
 
-    // Wind calibration
-    PrintLeft(8, "Wind");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0f%c", gConfiguration.eeprom.windSpeedFactor_per, gConfiguration.eeprom.windDirectionOffset_deg, 247);
+    // DeviceID
+    PrintLeft(8, "DeviceID");
+    snprintf(lineStr, sizeof(lineStr), "%08x", gConfiguration.eeprom.deviceId);
     PrintRight(8, lineStr);
 
-    // Water calibration
-    PrintLeft(16, "Water");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0fC", gConfiguration.eeprom.waterSpeedFactor_per, gConfiguration.eeprom.waterTemperatureOffset_C);
+    // Network status
+    PrintLeft(16, "Connected");
+    if (deviceInfo.state == DEVICE_STATE_ACTIVE)
+    {
+        PrintRight(16, "YES");
+    }
+    else
+    {
+        PrintRight(16, "NO");
+    }
+
+    // Number of devices
+    PrintLeft(24, "Nb devices");
+    if (deviceInfo.state == DEVICE_STATE_ACTIVE)
+    {
+        snprintf(lineStr, sizeof(lineStr), "%d", deviceInfo.nbDevicesInRange);
+        PrintRight(24, lineStr);
+    }
+    else
+    {
+        PrintRight(24, "---");
+    }
+
+    // Other networks in range
+    PrintLeft(32, "Networks in range");
+    snprintf(lineStr, sizeof(lineStr), "%d", deviceInfo.nbNetworksInRange);
+    PrintRight(32, lineStr);
+}
+
+void InfoPage::DrawCompassInfoPage()
+{
+    char lineStr[22];
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    // Compass connected ?
+    PrintLeft(0, "NavCompass");
+    if (gConfiguration.ram.navCompassAvailable != 0)
+    {
+        PrintRight(0, "LSM303");
+    }
+    else
+    {
+        PrintRight(0, "No");
+    }
+
+    // X axis offset
+    PrintLeft(8, "X offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.xMagOffset);
+    PrintRight(8, lineStr);
+
+    // Y axis offset
+    PrintLeft(16, "Y offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.yMagOffset);
     PrintRight(16, lineStr);
 
-    // Depth calibration
-    PrintLeft(24, "Depth");
-    snprintf(lineStr, sizeof(lineStr), "%.1fm", gConfiguration.eeprom.waterSpeedFactor_per);
+    // Z axis offset
+    PrintLeft(24, "Z offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.zMagOffset);
     PrintRight(24, lineStr);
-
-    // Heading offset
-    PrintLeft(32, "Heading");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.headingOffset_deg, 247);
-    PrintRight(32, lineStr);
-    
-    // Heading offset
-    PrintLeft(40, "MagVar");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.magneticVariation_deg, 247);
-    PrintRight(40, lineStr);
-    
-    PrintCentered(56, "Info");
-
-    display->display();
 }
 
 // @brief Function called by PanelManager when the button is pressed
@@ -133,6 +231,11 @@ PageAction_t InfoPage::OnButtonPressed(bool longPress)
     if (longPress)
     {
         // Long press : do nothing
+        subPageIndex++;
+        if (subPageIndex >= NB_SUBPAGES)
+        {
+            subPageIndex = 0;
+        }
         action = PAGE_ACTION_REFRESH;
     }
     else
