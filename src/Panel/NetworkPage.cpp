@@ -43,6 +43,7 @@
 
 #define DEVICE_ICON_WIDTH  32 // Width of device icons
 #define DEVICE_ICON_HEIGHT 21 // Height of device icons
+#define NB_ICONS_PER_PAGE  12 // Maximum number of icons that can be displayed on a page
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -132,8 +133,8 @@ void NetworkPage::Draw(bool force)
 */
 void NetworkPage::DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t localRadioLevel, uint32_t remoteRadioLevel)
 {
-    // Only 8 icons can be displayed
-    if (position >= 8)
+    // Only NB_ICONS_PER_PAGE icons can be displayed on one page
+    if (position >= NB_ICONS_PER_PAGE)
         return;
 
     // Convert levels to 5-steps values

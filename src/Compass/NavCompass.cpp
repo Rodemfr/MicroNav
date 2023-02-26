@@ -106,9 +106,31 @@ float NavCompass::GetHeading()
 {
     vec accel;
     vec mag;
-    vec from = {1.0f, 0.0f, 0.0f}; // x axis is reference direction
+    vec from;
     vec E;
     vec N;
+
+    switch (gConfiguration.eeprom.compassHdgVector)
+    {
+    case COMPASS_HDG_VECTOR_X:
+        from = {1.0f, 0.0f, 0.0f};
+        break;
+    case COMPASS_HDG_VECTOR_Y:
+        from = {0.0f, 1.0f, 0.0f};
+        break;
+    case COMPASS_HDG_VECTOR_Z:
+        from = {0.0f, 0.0f, 1.0f};
+        break;
+    case COMPASS_HDG_VECTOR_MX:
+        from = {-1.0f, 0.0f, 0.0f};
+        break;
+    case COMPASS_HDG_VECTOR_MY:
+        from = {0.0f, -1.0f, 0.0f};
+        break;
+    case COMPASS_HDG_VECTOR_MZ:
+        from = {0.0f, 0.0f, -1.0f};
+        break;
+    }
 
     // Get Acceleration and Magnetic data from LSM303
     // Note that we don't care about units of both acceleration and magnetic field since we

@@ -9,6 +9,9 @@ MicroNav is a ESP32/Arduino project aiming at converting data from Raymarine/Tac
 
 MicroNav is the successor of [MicronetToNMEA](https://github.com/Rodemfr/MicronetToNMEA) project. It aims at using a simpler, cheaper hardware platform with less soldering work.
 
+> **WARNING** : MicroNav is still in early phase of development. It is unstable and unfinished. You should not use it for navigation purpose, only for development. If you need a stable project to connect your Micronet network to your PC/Tablet/Phone, [MicronetToNMEA](https://github.com/Rodemfr/MicronetToNMEA) is a better choice as it has now reached a good stability level and is reported to work fine by several users.
+
+
 MicroNav can :
 
 - Send T-Beam's GPS data to your Micronet network (Position, COG, SOG, DATE, TIME) and to the NMEA link (GGA, RMC, VTG)
