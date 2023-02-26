@@ -192,14 +192,14 @@ void ClockPage::Draw(bool force)
         display->setTextSize(1);
         display->setFont(&FreeSansBold24pt);
         display->getTextBounds(String(timeStr), 0, 0, &xTime, &yTime, &wTime, &hTime);
-        display->setFont(&FreeSansBold12pt);
+        display->setFont(&FreeSansBold9pt);
         display->getTextBounds(dateStr, 0, 0, &xDate, &yDate, &wDate, &hDate);
 
         display->setFont(&FreeSansBold24pt);
         display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
         display->println(timeStr);
 
-        display->setFont(&FreeSansBold12pt);
+        display->setFont(&FreeSansBold9pt);
         display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
         display->println(dateStr);
         display->display();

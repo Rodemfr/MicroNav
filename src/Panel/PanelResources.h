@@ -59,7 +59,6 @@
 /***************************************************************************/
 
 extern GFXfont FreeSansBold9pt;
-extern GFXfont FreeSansBold12pt;
 extern GFXfont FreeSansBold24pt;
 
 #endif
