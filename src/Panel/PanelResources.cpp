@@ -31,7 +31,7 @@
 #include <Adafruit_GFX.h>
 #include <Arduino.h>
 
-#include <Fonts/FreeSansBold24pt7b.h>
+#include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
 /***************************************************************************/
@@ -39,7 +39,7 @@
 /***************************************************************************/
 
 GFXfont FreeSansBold9pt = {(uint8_t *)FreeSansBold9pt7bBitmaps, (GFXglyph *)FreeSansBold9pt7bGlyphs, 0x20, 0x7E, 22};
-GFXfont FreeSansBold24pt = {(uint8_t *)FreeSansBold24pt7bBitmaps, (GFXglyph *)FreeSansBold24pt7bGlyphs, 0x20, 0x7E, 56};
+GFXfont FreeSansBold18pt = {(uint8_t *)FreeSansBold18pt7bBitmaps, (GFXglyph *)FreeSansBold18pt7bGlyphs, 0x20, 0x7E, 42};
 
 /***************************************************************************/
 /*                             Local types                                 */
