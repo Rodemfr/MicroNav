@@ -83,7 +83,7 @@ Configuration::Configuration() : configModified(false)
     eeprom.waterSpeedFactor_per = 1.0;
     eeprom.windSpeedFactor_per  = 1.0;
     eeprom.windShift            = 10;
-    eeprom.deviceId             = (0x03c00000 | (esp_random() & 0x03ffff0));
+    eeprom.deviceId             = (0x03100000 | (esp_random() & 0x000ffff8));
     eeprom.nmeaLink             = SERIAL_TYPE_BT;
     eeprom.gnssSource           = LINK_NMEA_GNSS;
     eeprom.windSource           = LINK_MICRONET;
@@ -110,7 +110,7 @@ void Configuration::LoadFromEeprom()
     {
         if (CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t)) == configBlock.checksum)
         {
-            eeprom = configBlock.config;
+            eeprom                      = configBlock.config;
             DeployConfiguration(nullptr);
         }
     }

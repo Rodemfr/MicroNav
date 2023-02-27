@@ -50,7 +50,7 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-MicronetMessageFifo::MicronetMessageFifo()
+MicronetMessageFifo::MicronetMessageFifo() : fifoMutex(portMUX_INITIALIZER_UNLOCKED)
 {
     // Reset packet store
     memset(store, 0, sizeof(store));
@@ -66,7 +66,8 @@ MicronetMessageFifo::~MicronetMessageFifo()
 bool MicronetMessageFifo::Push(MicronetMessage_t const &message)
 {
     // Disable interrupts to avoid race conditions
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
+
     // Check if there is space in store. If not, the message is just dropped/ignored.
     if (nbMessages < MESSAGE_STORE_SIZE)
     {
@@ -86,11 +87,11 @@ bool MicronetMessageFifo::Push(MicronetMessage_t const &message)
     }
     else
     {
-        interrupts();
+        portEXIT_CRITICAL(&fifoMutex);
         return false;
     }
-    interrupts();
 
+    portEXIT_CRITICAL(&fifoMutex);
     return true;
 }
 
@@ -124,7 +125,7 @@ bool MicronetMessageFifo::PushIsr(MicronetMessage_t const &message)
 bool MicronetMessageFifo::Pop(MicronetMessage_t *message)
 {
     // Disable interrupts to avoid race conditions
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
 
     // Are there messages in the store ?
     if (nbMessages > 0)
@@ -141,11 +142,11 @@ bool MicronetMessageFifo::Pop(MicronetMessage_t *message)
     }
     else
     {
-        interrupts();
+        portEXIT_CRITICAL(&fifoMutex);
         return false;
     }
-    interrupts();
 
+    portEXIT_CRITICAL(&fifoMutex);
     return true;
 }
 
@@ -154,7 +155,7 @@ MicronetMessage_t *MicronetMessageFifo::Peek(int index)
     MicronetMessage_t *pMessage = nullptr;
 
     // Disable interrupts to avoid race conditions
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
 
     // Are there messages in the store ?
     if (nbMessages > index)
@@ -165,7 +166,7 @@ MicronetMessage_t *MicronetMessageFifo::Peek(int index)
         pMessage = &(store[bufferIndex]);
     }
 
-    interrupts();
+    portEXIT_CRITICAL(&fifoMutex);
 
     return pMessage;
 }
@@ -175,7 +176,7 @@ MicronetMessage_t *MicronetMessageFifo::Peek()
     MicronetMessage_t *pMessage = nullptr;
 
     // Disable interrupts to avoid race conditions
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
 
     // Are there messages in the store ?
     if (nbMessages > 0)
@@ -183,15 +184,14 @@ MicronetMessage_t *MicronetMessageFifo::Peek()
         pMessage = &(store[readIndex]);
     }
 
-    interrupts();
-
+    portEXIT_CRITICAL(&fifoMutex);
     return pMessage;
 }
 
 void MicronetMessageFifo::DeleteMessage()
 {
     // FIXME : use FreeRTOS spinlocks for multicore protection
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
 
     // Are there messages in the store ?
     if (nbMessages > 0)
@@ -205,15 +205,15 @@ void MicronetMessageFifo::DeleteMessage()
         }
     }
 
-    interrupts();
+    portEXIT_CRITICAL(&fifoMutex);
 }
 
 void MicronetMessageFifo::ResetFifo()
 {
-    noInterrupts();
+    portENTER_CRITICAL(&fifoMutex);
     readIndex  = writeIndex;
     nbMessages = 0;
-    interrupts();
+    portEXIT_CRITICAL(&fifoMutex);
 }
 
 int MicronetMessageFifo::GetNbMessages()
