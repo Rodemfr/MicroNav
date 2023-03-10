@@ -31,8 +31,11 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
+// Using AXP192
+#define XPOWERS_CHIP_AXP192
+
+#include "XPowersLib.h"
 #include <Arduino.h>
-#include <axp20x.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -41,6 +44,19 @@
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
+
+typedef struct
+{
+    bool    batteryConnected;
+    bool    batteryCharging;
+    int16_t batteryLevel_per;
+    float   batteryVoltage_V;
+    float   batteryCurrent_mA;
+    bool    usbConnected;
+    float   usbVoltage_V;
+    float   usbCurrent_mA;
+    float   temperature_C;
+} PowerStatus_t;
 
 /***************************************************************************/
 /*                               Classes                                   */
@@ -52,11 +68,21 @@ class Power
     Power();
     virtual ~Power();
 
-    bool Init();
-    void Shutdown();
+    bool           Init();
+    void           Shutdown();
+    PowerStatus_t &GetStatus();
+    void           PrintStatus();
 
   private:
-    AXP20X_Class AXPDriver;
+    XPowersPMU         AXPDriver;
+    PowerStatus_t      powerStatus;
+    TaskHandle_t       powerTaskHandle;
+    EventGroupHandle_t powerEventGroup;
+
+    static void PowerProcessingTask(void *callingObject);
+    void        PowerProcessingLoop();
+    void        UpdateStatus();
+    void        CommandShutdown();
 };
 
 /***************************************************************************/

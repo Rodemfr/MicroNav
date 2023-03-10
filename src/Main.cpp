@@ -402,12 +402,11 @@ void MenuConvertToNmea()
 
 void MenuDebug1()
 {
-    CONSOLE.println("Off");
-    gPanelDriver.LowPower(true);
+    // CONSOLE.println("Off");
+    // gPanelDriver.LowPower(true);
+    gPower.PrintStatus();
 }
 
 void MenuDebug2()
 {
-    CONSOLE.println("On");
-    gPanelDriver.LowPower(false);
 }
