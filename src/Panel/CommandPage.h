@@ -57,8 +57,8 @@ class CommandPage : public PageHandler
 
   private:
     PageHandler  *subPage;
-    bool          editMode;
-    uint32_t      editPosition;
+    bool          selectionMode;
+    uint32_t      selectionPosition;
 
     AttachPage attachPage;
 };
