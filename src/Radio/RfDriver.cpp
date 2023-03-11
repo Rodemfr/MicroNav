@@ -208,7 +208,7 @@ int32_t RfDriver::GetNextTransmitIndex()
     {
         if (transmitList[i].action != MICRONET_ACTION_RF_NO_ACTION)
         {
-            if (transmitList[i].startTime_us > 0x80000000UL)
+            if (transmitList[i].startTime_us > 0xC0000000UL)
             {
                 upperTimestamps = true;
             }
@@ -225,17 +225,13 @@ int32_t RfDriver::GetNextTransmitIndex()
     {
         if (transmitList[i].action != MICRONET_ACTION_RF_NO_ACTION)
         {
-            if ((!timeWrap) || (transmitList[i].startTime_us > 0x80000000UL))
+            if ((!timeWrap) || (transmitList[i].startTime_us > 0xC0000000UL))
             {
                 if (transmitList[i].startTime_us <= minTime)
                 {
                     minTime  = transmitList[i].startTime_us;
                     minIndex = i;
                 }
-            }
-            else
-            {
-                transmitList[i].action = MICRONET_ACTION_RF_NO_ACTION;
             }
         }
     }
