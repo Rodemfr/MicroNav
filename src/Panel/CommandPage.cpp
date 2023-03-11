@@ -156,13 +156,13 @@ void CommandPage::Draw(bool force)
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t CommandPage::OnButtonPressed(bool longPress)
+PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
     // Check if we are currently displaying a sub page
     if (subPage != nullptr)
     {
         // Yes : does the page request exit ?
-        PageAction_t subAction = subPage->OnButtonPressed(longPress);
+        PageAction_t subAction = subPage->OnButtonPressed(buttonId, longPress);
         if (subAction == PAGE_ACTION_EXIT)
         {
             // Yes : leave sub page mode and request a refresh of the page

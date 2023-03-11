@@ -42,7 +42,6 @@
 #include "NetworkPage.h"
 #include "PageHandler.h"
 
-
 #include <Arduino.h>
 
 /***************************************************************************/
@@ -111,6 +110,7 @@ class PanelManager
     static void          CommandProcessingTask(void *callingObject);
     static void          StaticButtonIsr();
     void                 ButtonIsr();
+    static void          PowerButtonCallback(bool longPress);
 
     void CommandCallback();
 };

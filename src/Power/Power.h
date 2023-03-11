@@ -58,6 +58,8 @@ typedef struct
     float   temperature_C;
 } PowerStatus_t;
 
+typedef void (*ButtonCallback_t)(bool);
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -71,16 +73,19 @@ class Power
     bool           Init();
     void           Shutdown();
     PowerStatus_t &GetStatus();
-    void           PrintStatus();
+    void           RegisterButtonCallback(ButtonCallback_t callback);
 
   private:
     XPowersPMU         AXPDriver;
     PowerStatus_t      powerStatus;
     TaskHandle_t       powerTaskHandle;
     EventGroupHandle_t powerEventGroup;
+    static Power      *objectPtr;
+    ButtonCallback_t   buttonCallback;
 
-    static void PowerProcessingTask(void *callingObject);
-    void        PowerProcessingLoop();
+    static void StaticProcessingTask(void *callingObject);
+    void        ProcessingTask();
+    static void StaticIrqCallback();
     void        UpdateStatus();
     void        CommandShutdown();
 };

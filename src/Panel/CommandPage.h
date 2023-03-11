@@ -53,7 +53,7 @@ class CommandPage : public PageHandler
     virtual ~CommandPage();
 
     void         Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+    PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:
     PageHandler  *subPage;

@@ -39,22 +39,15 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#ifndef CONFIG_PMU_SDA
-#define CONFIG_PMU_SDA 21
-#endif
-
-#ifndef CONFIG_PMU_SCL
-#define CONFIG_PMU_SCL 22
-#endif
-
-#ifndef CONFIG_PMU_IRQ
-#define CONFIG_PMU_IRQ 35
-#endif
-
-#define COMMAND_EVENT_SHUTDOWN 0x00000001
-#define COMMAND_EVENT_ALL      0x00000001
+#define POWER_EVENT_SHUTDOWN 0x00000001
+#define POWER_EVENT_IRQ      0x00000002
+#define POWER_EVENT_ALL      0x00000003
 
 #define TASK_WAKEUP_PERIOD_MS 100 // Wake-up period of the processing task in milliseconds
+
+#define VOLTAGE_FILTERING_FACTOR     0.8f
+#define CURRENT_FILTERING_FACTOR     0.96f
+#define TEMPERATURE_FILTERING_FACTOR 0.98f
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -68,11 +61,13 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
+Power *Power::objectPtr;
+
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-Power::Power()
+Power::Power() : buttonCallback(nullptr)
 {
 }
 
@@ -87,13 +82,22 @@ bool Power::Init()
         return false;
     }
 
+    objectPtr = this;
+
     AXPDriver.setSysPowerDownVoltage(2700);
+    AXPDriver.setVbusVoltageLimit(XPOWERS_AXP192_VBUS_VOL_LIM_4V5);
+    AXPDriver.setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
+    AXPDriver.setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
 
     AXPDriver.enableLDO2();        // RF
     AXPDriver.enableLDO3();        // GPS
     AXPDriver.disableDC2();        // Unused
     AXPDriver.enableExternalPin(); // ?
     AXPDriver.enableDC1();         // OLED
+
+    AXPDriver.setPowerKeyLongPressOnTime(XPOWERS_AXP192_LONGPRESS_1000MS);
+    AXPDriver.setPowerKeyPressOffTime(XPOWERS_AXP192_POWEROFF_8S);
+    AXPDriver.setPowerKeyPressOnTime(XPOWERS_POWERON_128MS);
 
     AXPDriver.disableTSPinMeasure();
 
@@ -113,25 +117,28 @@ bool Power::Init()
     // Set the timing after one minute, the isWdtExpireIrq will be triggered in the loop interrupt function
     AXPDriver.setTimerout(1);
 
-    AXPDriver.enableIRQ(XPOWERS_AXP192_BAT_INSERT_IRQ | XPOWERS_AXP192_BAT_REMOVE_IRQ |      // BATTERY
-                        XPOWERS_AXP192_VBUS_INSERT_IRQ | XPOWERS_AXP192_VBUS_REMOVE_IRQ |    // VBUS
-                        XPOWERS_AXP192_PKEY_SHORT_IRQ | XPOWERS_AXP192_PKEY_LONG_IRQ |       // POWER KEY
-                        XPOWERS_AXP192_BAT_CHG_DONE_IRQ | XPOWERS_AXP192_BAT_CHG_START_IRQ | // CHARGE
-                        // XPOWERS_AXP192_PKEY_NEGATIVE_IRQ | XPOWERS_AXP192_PKEY_POSITIVE_IRQ   |   //POWER KEY
-                        XPOWERS_AXP192_TIMER_TIMEOUT_IRQ // Timer
-    );
-
     UpdateStatus();
 
     powerEventGroup = xEventGroupCreate();
-    xTaskCreate(PowerProcessingTask, "PowerTask", 16384, (void *)this, 6, &powerTaskHandle);
+    xTaskCreate(StaticProcessingTask, "PowerTask", 16384, (void *)this, 6, &powerTaskHandle);
+
+    AXPDriver.disableIRQ(XPOWERS_AXP192_ALL_IRQ);
+    AXPDriver.clearIrqStatus();
+    AXPDriver.enableIRQ(XPOWERS_AXP192_PKEY_SHORT_IRQ | XPOWERS_AXP192_PKEY_LONG_IRQ);
+    pinMode(PMU_IRQ, INPUT);
+    attachInterrupt(PMU_IRQ, StaticIrqCallback, FALLING);
 
     return true;
 }
 
+void Power::RegisterButtonCallback(ButtonCallback_t callback)
+{
+    buttonCallback = callback;
+}
+
 void Power::Shutdown()
 {
-    xEventGroupSetBits(powerEventGroup, COMMAND_EVENT_SHUTDOWN);
+    xEventGroupSetBits(powerEventGroup, POWER_EVENT_SHUTDOWN);
 }
 
 PowerStatus_t &Power::GetStatus()
@@ -139,63 +146,60 @@ PowerStatus_t &Power::GetStatus()
     return powerStatus;
 }
 
-void Power::PrintStatus()
-{
-    CONSOLE.print("Battery connected : ");
-    CONSOLE.println(powerStatus.batteryConnected);
-    CONSOLE.print("Battery charging : ");
-    CONSOLE.println(powerStatus.batteryCharging);
-    CONSOLE.print("Battery level : ");
-    CONSOLE.println(powerStatus.batteryLevel_per);
-    CONSOLE.print("Battery voltage : ");
-    CONSOLE.println(powerStatus.batteryVoltage_V);
-    CONSOLE.print("Battery current : ");
-    CONSOLE.println(powerStatus.batteryCurrent_mA);
-    CONSOLE.print("USB connected : ");
-    CONSOLE.println(powerStatus.usbConnected);
-    CONSOLE.print("USB voltage : ");
-    CONSOLE.println(powerStatus.usbVoltage_V);
-    CONSOLE.print("USB current : ");
-    CONSOLE.println(powerStatus.usbCurrent_mA);
-    CONSOLE.print("Temperature : ");
-    CONSOLE.println(powerStatus.temperature_C);
-}
-
 /*
   Static entry point of the command processing task
   @param callingObject Pointer to the calling PanelManager instance
 */
-void Power::PowerProcessingTask(void *callingObject)
+void Power::StaticProcessingTask(void *callingObject)
 {
     // Task entry points are static -> switch to non static processing method
-    ((Power *)callingObject)->PowerProcessingLoop();
+    ((Power *)callingObject)->ProcessingTask();
 }
 
-void Power::PowerProcessingLoop()
+void Power::ProcessingTask()
 {
-    uint32_t now;
-
     while (true)
     {
         // Wait for the next command
-        EventBits_t commandFlags =
-            xEventGroupWaitBits(powerEventGroup, COMMAND_EVENT_ALL, pdTRUE, pdFALSE, TASK_WAKEUP_PERIOD_MS / portTICK_PERIOD_MS);
-        now = millis();
+        EventBits_t commandFlags = xEventGroupWaitBits(powerEventGroup, POWER_EVENT_ALL, pdTRUE, pdFALSE, TASK_WAKEUP_PERIOD_MS / portTICK_PERIOD_MS);
 
-        if (commandFlags & COMMAND_EVENT_SHUTDOWN)
+        if (commandFlags & POWER_EVENT_SHUTDOWN)
         {
             CommandShutdown();
+        }
+        if (commandFlags & POWER_EVENT_IRQ)
+        {
+            AXPDriver.getIrqStatus();
+            
+            if (buttonCallback != nullptr)
+            {
+                if (AXPDriver.isPekeyShortPressIrq())
+                {
+                    buttonCallback(false);
+                }
+                if (AXPDriver.isPekeyLongPressIrq())
+                {
+                    buttonCallback(true);
+                }
+            }
+
+            AXPDriver.clearIrqStatus();
         }
 
         UpdateStatus();
     }
 }
 
+void IRAM_ATTR Power::StaticIrqCallback()
+{
+    BaseType_t scheduleChange = pdFALSE;
+
+    xEventGroupSetBitsFromISR(objectPtr->powerEventGroup, POWER_EVENT_IRQ, &scheduleChange);
+    portYIELD_FROM_ISR(scheduleChange);
+}
+
 void Power::UpdateStatus()
 {
-#define VOLTAGE_FILTERING_FACTOR     0.8f
-#define CURRENT_FILTERING_FACTOR     0.95f
-#define TEMPERATURE_FILTERING_FACTOR 0.9f
     powerStatus.batteryConnected = AXPDriver.isBatteryConnect();
     powerStatus.batteryCharging  = AXPDriver.isCharging();
     powerStatus.batteryLevel_per = AXPDriver.getBatteryPercent();

@@ -199,14 +199,14 @@ void ConfigPage2::Draw(bool force)
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t ConfigPage2::OnButtonPressed(bool longPress)
+PageAction_t ConfigPage2::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
-    PageAction_t action = PAGE_ACTION_EXIT;
+    PageAction_t action = PAGE_ACTION_NONE;
 
     if (editMode)
     {
         // In edit mode, the button is used to cycle through the configuration items
-        if (longPress)
+        if ((buttonId == BUTTON_ID_1) && !longPress)
         {
             if (editPosition == NUMBER_OF_CONFIG_ITEMS)
             {
@@ -222,7 +222,7 @@ PageAction_t ConfigPage2::OnButtonPressed(bool longPress)
             }
             action = PAGE_ACTION_REFRESH;
         }
-        else
+        else if ((buttonId == BUTTON_ID_0) && !longPress)
         {
             // Short press : cycle through configuration items
             editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
@@ -231,13 +231,13 @@ PageAction_t ConfigPage2::OnButtonPressed(bool longPress)
     }
     else
     {
-        if (longPress)
+        if ((buttonId == BUTTON_ID_0) && longPress)
         {
             editMode     = true;
             editPosition = 0;
             action       = PAGE_ACTION_REFRESH;
         }
-        else
+        else if ((buttonId == BUTTON_ID_0) && !longPress)
         {
             action = PAGE_ACTION_EXIT;
         }

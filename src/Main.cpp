@@ -402,9 +402,6 @@ void MenuConvertToNmea()
 
 void MenuDebug1()
 {
-    // CONSOLE.println("Off");
-    // gPanelDriver.LowPower(true);
-    gPower.PrintStatus();
 }
 
 void MenuDebug2()

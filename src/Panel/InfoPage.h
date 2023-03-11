@@ -52,7 +52,7 @@ class InfoPage : public PageHandler
     virtual ~InfoPage();
 
     void         Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+    PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
   
   private:
     uint32_t subPageIndex;
@@ -60,6 +60,7 @@ class InfoPage : public PageHandler
     void DrawCalibrationInfoPage();
     void DrawNetworkInfoPage();
     void DrawCompassInfoPage();
+    void DrawBatteryInfoPage();
 };
 
 #endif

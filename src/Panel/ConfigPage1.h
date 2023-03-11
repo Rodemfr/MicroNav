@@ -52,7 +52,7 @@ class ConfigPage1 : public PageHandler
     virtual ~ConfigPage1();
 
     void         Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+    PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:
     uint8_t  swMajorVersion, swMinorVersion;
