@@ -60,7 +60,7 @@
 /*
   Class constructor
 */
-MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0)
+MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0), nextAsyncSlot(0)
 {
     memset(&deviceInfo, 0, sizeof(deviceInfo));
     this->micronetCodec = micronetCodec;
@@ -99,7 +99,7 @@ void MicronetDevice::SetDataFields(uint32_t dataFields)
 {
     this->deviceInfo.dataFields = dataFields;
 
-    // 
+    //
     SplitDataFields();
 }
 
@@ -189,22 +189,36 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                             messageFifo->Push(txMessage);
                             // If we are here, it means we don't need the asynchronous slot. So we can use it to ping other devices to maintain a list
                             // of devices in range. We only ping when handling the first virtual slave device to avoid pinging too often.
-                            if (i == 0)
+                            if (i == NUMBER_OF_VIRTUAL_DEVICES - 1)
                             {
+                                // Only the last virtual device will ping the network
+                                // PingNetwork function will ensure that we will not flood the network with ping requests by enforcing a minimum delay
+                                // wetween each ping
                                 PingNetwork(messageFifo);
                             }
                         }
                     }
                     else
                     {
-                        // No synchronous slot available : request a slot
-                        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-                        micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceInfo.deviceId + i,
-                                                                micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
-                        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                        txMessage.startTime_us = txSlot.start_us;
-                        messageFifo->Push(txMessage);
+                        // Check if the Async slot is available
+                        if (RequestAsyncSlot())
+                        {
+                            // No synchronous slot available : request a slot
+                            txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+                            micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
+                                                                    deviceInfo.deviceId + i,
+                                                                    micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
+                            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+                            txMessage.startTime_us = txSlot.start_us;
+                            messageFifo->Push(txMessage);
+                        }
                     }
+                }
+
+                // Dcrease the Async sot availability counter at each network cycle
+                if (nextAsyncSlot > 0)
+                {
+                    nextAsyncSlot--;
                 }
             }
             else
@@ -443,13 +457,29 @@ void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
     // Only send the ping message every NETWORK_PING_PERIOD_MS to avoid flooding asynchronous slot
     if (now - pingTimeStamp > NETWORK_PING_PERIOD_MS)
     {
-        pingTimeStamp = now;
-        txSlot        = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-        micronetCodec->EncodePingMessage(&txMessage, 9, deviceInfo.networkMap.networkId, deviceInfo.deviceId);
-        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-        txMessage.startTime_us = txSlot.start_us;
-        messageFifo->Push(txMessage);
+        if (RequestAsyncSlot())
+        {
+            pingTimeStamp = now;
+            txSlot        = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+            micronetCodec->EncodePingMessage(&txMessage, 9, deviceInfo.networkMap.networkId, deviceInfo.deviceId);
+            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+            txMessage.startTime_us = txSlot.start_us;
+            messageFifo->Push(txMessage);
+        }
     }
+}
+
+bool MicronetDevice::RequestAsyncSlot()
+{
+    bool asyncSlotAvailable = false;
+
+    if (nextAsyncSlot == 0)
+    {
+        nextAsyncSlot      = 3 + (esp_random() & 0x00000003);
+        asyncSlotAvailable = true;
+    }
+
+    return asyncSlotAvailable;
 }
 
 /*

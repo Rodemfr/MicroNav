@@ -46,10 +46,12 @@
 #define OLED_RESET     -1   // Pin controlling OLED reset (-1 for none)
 #define SCREEN_ADDRESS 0x3C // I2C address of the display controller
 
-#define COMMAND_EVENT_REFRESH         0x00000001 // Command flag requesting a page refresh/redraw
-#define COMMAND_EVENT_BUTTON_RELEASED 0x00000002 // Command flag signaling that the button has been released
-#define COMMAND_EVENT_NEW_PAGE        0x00000004 // Command flag requesting to select the next page
-#define COMMAND_EVENT_ALL             0x00000007 // Command mask
+#define COMMAND_EVENT_REFRESH            0x00000001 // Command flag requesting a page refresh/redraw
+#define COMMAND_EVENT_BUTTON_RELEASED    0x00000002 // Command flag signaling that the button has been released
+#define COMMAND_EVENT_NEW_PAGE           0x00000004 // Command flag requesting to select the next page
+#define COMMAND_EVENT_POWER_BUTTON_SHORT 0x00000008 // Command flag signaling that the power button has been short pressed
+#define COMMAND_EVENT_POWER_BUTTON_LONG  0x00000010 // Command flag signaling that the power button has been short pressed
+#define COMMAND_EVENT_ALL                0x0000001F // Command mask
 
 #define TASK_WAKEUP_PERIOD_MS   200  // Wake-up period of the command task in milliseconds
 #define DISPLAY_UPDATE_PERIOD   1000 // Display update/refresh period in milliseconds
@@ -117,6 +119,9 @@ bool PanelManager::Init()
     pinMode(BUTTON_PIN, INPUT);
     objectPtr = this;
     attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), StaticButtonIsr, CHANGE);
+
+    // Register Power button callback
+    gPower.RegisterButtonCallback(PowerButtonCallback);
 
     DrawPage();
 
@@ -256,7 +261,7 @@ void PanelManager::CommandCallback()
             // Button is pressed for more than the long press time : handle long press processing
             longPress = true;
             // Request action to the currently displayed page
-            switch (currentPage->OnButtonPressed(true))
+            switch (currentPage->OnButtonPressed(BUTTON_ID_1, true))
             {
             case PAGE_ACTION_EXIT:
                 // Go to next page
@@ -284,7 +289,7 @@ void PanelManager::CommandCallback()
             {
                 // Yes : we have a short press
                 // Request action to the currently displayed page
-                switch (currentPage->OnButtonPressed(false))
+                switch (currentPage->OnButtonPressed(BUTTON_ID_1, false))
                 {
                 case PAGE_ACTION_EXIT:
                     // Go to next page
@@ -296,6 +301,25 @@ void PanelManager::CommandCallback()
                     commandFlags |= COMMAND_EVENT_REFRESH;
                     break;
                 }
+            }
+        }
+
+        // Has button been released ?
+        if (commandFlags & (COMMAND_EVENT_POWER_BUTTON_SHORT | COMMAND_EVENT_POWER_BUTTON_LONG))
+        {
+            // Yes : we have a short press
+            // Request action to the currently displayed page
+            switch (currentPage->OnButtonPressed(BUTTON_ID_0, commandFlags & COMMAND_EVENT_POWER_BUTTON_LONG))
+            {
+            case PAGE_ACTION_EXIT:
+                // Go to next page
+                NextPage();
+                commandFlags |= COMMAND_EVENT_NEW_PAGE;
+                break;
+            case PAGE_ACTION_REFRESH:
+                // Refresh current page
+                commandFlags |= COMMAND_EVENT_REFRESH;
+                break;
             }
         }
 
@@ -370,6 +394,18 @@ void PanelManager::ButtonIsr()
 
         xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);
         portYIELD_FROM_ISR(scheduleChange);
+    }
+}
+
+void PanelManager::PowerButtonCallback(bool longPress)
+{
+    if (longPress)
+    {
+        xEventGroupSetBits(objectPtr->commandEventGroup, COMMAND_EVENT_POWER_BUTTON_LONG);
+    }
+    else
+    {
+        xEventGroupSetBits(objectPtr->commandEventGroup, COMMAND_EVENT_POWER_BUTTON_SHORT);
     }
 }
 

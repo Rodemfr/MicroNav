@@ -65,6 +65,7 @@ class MicronetMessageFifo
     volatile int      readIndex;
     volatile int      nbMessages;
     MicronetMessage_t store[MESSAGE_STORE_SIZE];
+    portMUX_TYPE      fifoMutex;
 };
 
 /***************************************************************************/

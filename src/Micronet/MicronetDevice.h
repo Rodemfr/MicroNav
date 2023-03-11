@@ -107,6 +107,7 @@ class MicronetDevice
     uint8_t        lastMasterSignalStrength;
     DeviceInfo_t   deviceInfo;
     uint32_t       pingTimeStamp;
+    uint32_t       nextAsyncSlot;
 
     void    SplitDataFields();
     uint8_t GetShortestDevice();
@@ -115,6 +116,7 @@ class MicronetDevice
     void    RemoveLostDevices();
     void    RemoveLostNetworks();
     void    PingNetwork(MicronetMessageFifo *messageFifo);
+    bool    RequestAsyncSlot();
 };
 
 #endif /* MICRONETDEVICE_H_ */

@@ -41,10 +41,12 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-typedef enum{
+typedef enum
+{
     INFO_SUBPAGE_NETWORK = 0,
     INFO_SUBPAGE_CALIBRATION,
     INFO_SUBPAGE_COMPASS,
+    INFO_SUBPAGE_BATTERY,
     INFO_SUBPAGE_NB_SUBPAGES
 } InfoSubPage_t;
 
@@ -94,6 +96,9 @@ void InfoPage::Draw(bool force)
     case INFO_SUBPAGE_COMPASS:
         DrawCompassInfoPage();
         break;
+    case INFO_SUBPAGE_BATTERY:
+        DrawBatteryInfoPage();
+        break;
     }
 
     snprintf(lineStr, sizeof(lineStr), "Info %d/%d", subPageIndex + 1, INFO_SUBPAGE_NB_SUBPAGES);
@@ -112,13 +117,14 @@ void InfoPage::DrawCalibrationInfoPage()
 
     // Wind calibration
     PrintLeft(0, "Wind");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0f%c", (gConfiguration.eeprom.windSpeedFactor_per - 1.0f) * 100.f, gConfiguration.eeprom.windDirectionOffset_deg,
-             247);
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0f%c", (gConfiguration.eeprom.windSpeedFactor_per - 1.0f) * 100.f,
+             gConfiguration.eeprom.windDirectionOffset_deg, 247);
     PrintRight(0, lineStr);
 
     // Water calibration
     PrintLeft(8, "Water");
-    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0fC", (gConfiguration.eeprom.waterSpeedFactor_per - 1.0f) * 100.f, gConfiguration.eeprom.waterTemperatureOffset_C);
+    snprintf(lineStr, sizeof(lineStr), "%.0f%% %.0fC", (gConfiguration.eeprom.waterSpeedFactor_per - 1.0f) * 100.f,
+             gConfiguration.eeprom.waterTemperatureOffset_C);
     PrintRight(8, lineStr);
 
     // Depth calibration
@@ -226,14 +232,62 @@ void InfoPage::DrawCompassInfoPage()
     PrintRight(24, lineStr);
 }
 
+void InfoPage::DrawBatteryInfoPage()
+{
+    char lineStr[22];
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    PowerStatus_t powerStatus = gPower.GetStatus();
+
+    PrintLeft(0, "BAT level");
+    PrintLeft(8, "BAT");
+    if (powerStatus.batteryConnected != 0)
+    {
+        if (powerStatus.batteryCharging)
+        {
+            snprintf(lineStr, sizeof(lineStr), "%c%d%%", 0x18, powerStatus.batteryLevel_per);
+        }
+        else
+        {
+            snprintf(lineStr, sizeof(lineStr), "%d%%", powerStatus.batteryLevel_per);
+        }
+        PrintRight(0, lineStr);
+        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.batteryVoltage_V, powerStatus.batteryCurrent_mA);
+        PrintRight(8, lineStr);
+    }
+    else
+    {
+        PrintRight(0, "---");
+        PrintRight(8, "--/--");
+    }
+
+    PrintLeft(16, "USB");
+    if (powerStatus.usbConnected != 0)
+    {
+        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.usbVoltage_V, powerStatus.usbCurrent_mA);
+        PrintRight(16, lineStr);
+    }
+    else
+    {
+        PrintRight(16, "--/--");
+    }
+
+    PrintLeft(24, "Temp");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%cC", powerStatus.temperature_C, 247);
+    PrintRight(24, lineStr);
+}
+
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t InfoPage::OnButtonPressed(bool longPress)
+PageAction_t InfoPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
-    PageAction_t action = PAGE_ACTION_EXIT;
+    PageAction_t action = PAGE_ACTION_NONE;
 
-    if (longPress)
+    if ((buttonId == BUTTON_ID_1) && !longPress)
     {
         // Long press : do nothing
         subPageIndex++;
@@ -243,7 +297,8 @@ PageAction_t InfoPage::OnButtonPressed(bool longPress)
         }
         action = PAGE_ACTION_REFRESH;
     }
-    else
+    else if ((buttonId == BUTTON_ID_0) && !longPress)
+
     {
         // Short press : cycle to next page
         action = PAGE_ACTION_EXIT;

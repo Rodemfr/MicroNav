@@ -66,7 +66,7 @@ typedef enum
 /*                              Functions                                  */
 /***************************************************************************/
 
-CommandPage::CommandPage() : editMode(false), editPosition(0), subPage(nullptr)
+CommandPage::CommandPage() : selectionMode(false), selectionPosition(0), subPage(nullptr)
 {
 }
 
@@ -97,7 +97,7 @@ void CommandPage::Draw(bool force)
         display->setFont(nullptr);
 
         // TODO : Factorize draw of selection background
-        if ((editPosition == COMMAND_POSITION_SHUTDOWN) && (editMode))
+        if ((selectionPosition == COMMAND_POSITION_SHUTDOWN) && (selectionMode))
         {
             display->fillRect(0, 0 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -108,7 +108,7 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(0 * 8, "Shutdown MicroNav");
 
-        if ((editPosition == COMMAND_POSITION_ATTACH) && (editMode))
+        if ((selectionPosition == COMMAND_POSITION_ATTACH) && (selectionMode))
         {
             display->fillRect(0, 1 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -119,7 +119,7 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(1 * 8, "Attach to network");
 
-        if ((editPosition == COMMAND_POSITION_CALCOMPASS) && (editMode))
+        if ((selectionPosition == COMMAND_POSITION_CALCOMPASS) && (selectionMode))
         {
             display->fillRect(0, 2 * 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
@@ -130,9 +130,9 @@ void CommandPage::Draw(bool force)
         }
         PrintCentered(2 * 8, "Calibrate compass");
 
-        if (editMode)
+        if (selectionMode)
         {
-            if (editPosition == COMMAND_POSITION_EXIT)
+            if (selectionPosition == COMMAND_POSITION_EXIT)
             {
                 display->fillRect(0, 64 - 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
@@ -156,13 +156,13 @@ void CommandPage::Draw(bool force)
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t CommandPage::OnButtonPressed(bool longPress)
+PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
     // Check if we are currently displaying a sub page
     if (subPage != nullptr)
     {
         // Yes : does the page request exit ?
-        PageAction_t subAction = subPage->OnButtonPressed(longPress);
+        PageAction_t subAction = subPage->OnButtonPressed(buttonId, longPress);
         if (subAction == PAGE_ACTION_EXIT)
         {
             // Yes : leave sub page mode and request a refresh of the page
@@ -175,20 +175,20 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
 
     PageAction_t action = PAGE_ACTION_EXIT;
 
-    if (editMode)
+    if (selectionMode)
     {
-        // In edit mode, the button is used to cycle through the configuration items
+        // In selection mode, the button is used to cycle through the command items
         if (longPress)
         {
-            if (editPosition == COMMAND_POSITION_EXIT)
+            if (selectionPosition == COMMAND_POSITION_EXIT)
             {
                 // Long press on "Exit"
-                editMode = false;
+                selectionMode = false;
             }
             else
             {
                 // Long press on a command
-                switch (editPosition)
+                switch (selectionPosition)
                 {
                 case 0:
                     gPower.Shutdown();
@@ -203,7 +203,7 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         else
         {
             // Short press : cycle through configuration items
-            editPosition = (editPosition + 1) % (COMMAND_POSITION_EXIT + 1);
+            selectionPosition = (selectionPosition + 1) % (COMMAND_POSITION_EXIT + 1);
             action       = PAGE_ACTION_REFRESH;
         }
     }
@@ -212,8 +212,8 @@ PageAction_t CommandPage::OnButtonPressed(bool longPress)
         if (longPress)
         {
             // Long press while not in edit mode : enter edit mode
-            editMode     = true;
-            editPosition = 0;
+            selectionMode     = true;
+            selectionPosition = 0;
             action       = PAGE_ACTION_REFRESH;
         }
         else

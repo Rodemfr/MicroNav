@@ -61,7 +61,6 @@ void PrintByte(uint8_t data);
 void PrintInt(uint32_t data);
 void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us);
 void PrintNetworkMap(NetworkMap_t *networkMap);
-void PrintMessageFifo(MicronetMessageFifo &messageFifo);
 
 void MenuAbout();
 void MenuConvertToNmea();
@@ -75,11 +74,8 @@ void MenuDebug2();
 
 bool firstLoop;
 
-MenuEntry_t mainMenu[] = {{"MicroNav", nullptr},
-                          {"Start NMEA conversion", MenuConvertToNmea},
-                          {"Debug 1", MenuDebug1},
-                          {"Debug 2", MenuDebug2},
-                          {nullptr, nullptr}};
+MenuEntry_t mainMenu[] = {
+    {"MicroNav", nullptr}, {"Start NMEA conversion", MenuConvertToNmea}, {"Debug 1", MenuDebug1}, {"Debug 2", MenuDebug2}, {nullptr, nullptr}};
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -264,6 +260,9 @@ void PrintNetworkMap(NetworkMap_t *networkMap)
     CONSOLE.print(" : 0x");
     PrintInt(networkMap->masterDevice);
     CONSOLE.println("");
+    CONSOLE.print("First slot : ");
+    CONSOLE.print(networkMap->firstSlot);
+    CONSOLE.println("");
 
     for (uint32_t i = 0; i < networkMap->nbSyncSlots; i++)
     {
@@ -308,26 +307,6 @@ void PrintNetworkMap(NetworkMap_t *networkMap)
         CONSOLE.println(networkMap->ackSlot[i].length_us);
     }
     CONSOLE.println("");
-}
-
-void PrintMessageFifo(MicronetMessageFifo &messageFifo)
-{
-    if (messageFifo.GetNbMessages() > 0)
-    {
-        for (int i = 0; i < messageFifo.GetNbMessages(); i++)
-        {
-            MicronetMessage_t *message = messageFifo.Peek(i);
-            CONSOLE.print("MSG ");
-            CONSOLE.print(i);
-            CONSOLE.print(" : ");
-            CONSOLE.print(message->startTime_us);
-            CONSOLE.print("/");
-            CONSOLE.print(message->len);
-            CONSOLE.print(" ");
-            CONSOLE.println(message->action);
-        }
-        CONSOLE.println("");
-    }
 }
 
 void MenuConvertToNmea()
@@ -423,12 +402,8 @@ void MenuConvertToNmea()
 
 void MenuDebug1()
 {
-    CONSOLE.println("Off");
-    gPanelDriver.LowPower(true);
 }
 
 void MenuDebug2()
 {
-    CONSOLE.println("On");
-    gPanelDriver.LowPower(false);
 }

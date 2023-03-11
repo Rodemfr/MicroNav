@@ -72,9 +72,14 @@ void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
     PageHandler::display = display;
 }
 
-PageAction_t PageHandler::OnButtonPressed(bool longPress)
+PageAction_t PageHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
-    return (longPress ? PAGE_ACTION_NONE : PAGE_ACTION_EXIT);
+    if ((buttonId == BUTTON_ID_0) && !longPress)
+    {
+        return PAGE_ACTION_EXIT;
+    }
+
+    return PAGE_ACTION_NONE;
 }
 
 void PageHandler::PrintCentered(int32_t yPos, String const &text)

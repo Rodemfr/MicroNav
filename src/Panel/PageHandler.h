@@ -51,6 +51,12 @@ typedef enum
     PAGE_ACTION_REFRESH
 } PageAction_t;
 
+typedef enum
+{
+  BUTTON_ID_0 = 0,
+  BUTTON_ID_1
+} ButtonId_t;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -63,7 +69,7 @@ class PageHandler
 
     static void          SetDisplay(Adafruit_SSD1306 *display);
     virtual void         Draw(bool force) = 0;
-    virtual PageAction_t OnButtonPressed(bool longPress);
+    virtual PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
     static void          SetNetworkStatus(DeviceInfo_t &deviceInfo);
 
   protected:

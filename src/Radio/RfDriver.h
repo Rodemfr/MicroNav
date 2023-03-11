@@ -87,18 +87,18 @@ class RfDriver
     SX1276MnetDriver     sx1276Driver;
     MicronetMessageFifo *messageFifo;
     MicronetMessage_t    transmitList[TRANSMIT_LIST_SIZE];
-    volatile int         nextTransmitIndex;
-    volatile int         messageBytesSent;
+    volatile int32_t     nextTransmitIndex;
+    volatile int32_t     messageBytesSent;
     uint32_t             freqTrackingNID;
-    hw_timer_t *         txTimer;
+    hw_timer_t          *txTimer;
     portMUX_TYPE         timerMux;
 
     static const uint8_t preambleAndSync[MICRONET_RF_PREAMBLE_LENGTH];
 
-    void ScheduleTransmit();
-    int  GetNextTransmitIndex();
-    int  GetFreeTransmitSlot();
-    void TransmitCallback();
+    void    ScheduleTransmit();
+    int32_t GetNextTransmitIndex();
+    int32_t GetFreeTransmitSlot();
+    void    TransmitCallback();
 
     static void      TimerHandler();
     static RfDriver *rfDriver;

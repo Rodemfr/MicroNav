@@ -11,7 +11,9 @@
         "functional": "cpp",
         "tuple": "cpp",
         "type_traits": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "*.tpp": "cpp",
+        "limits": "cpp"
     },
     "editor.defaultFormatter": "xaver.clang-format",
     "[cpp]": {

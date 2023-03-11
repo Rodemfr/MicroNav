@@ -480,7 +480,7 @@ void IRAM_ATTR SX1276MnetDriver::Dio1Isr()
     driverObject->IsrProcessing(ISR_EVENT_DIO1);
 }
 
-void IRAM_ATTR SX1276MnetDriver::IsrProcessing(uint32_t flags)
+void SX1276MnetDriver::IsrProcessing(uint32_t flags)
 {
     uint32_t isrTime = micros();
 
