@@ -55,7 +55,7 @@ class TopicHandler : public PageHandler
     TopicHandler(std::string topicName);
     virtual ~TopicHandler();
     void AddPage(PageHandler *pageHandler);
-    virtual void Draw(bool force, bool flushDisplay = true);
+    virtual bool Draw(bool force, bool flushDisplay = true);
     virtual PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   protected:

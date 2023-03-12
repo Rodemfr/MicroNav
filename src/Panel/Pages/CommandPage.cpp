@@ -78,7 +78,7 @@ CommandPage::~CommandPage()
   Draw the page on display
   @param force Force redraw, even if the content did not change
 */
-void CommandPage::Draw(bool force, bool flushDisplay)
+bool CommandPage::Draw(bool force, bool flushDisplay)
 {
     char     lineStr[22];
     int16_t  xStr, yStr;
@@ -149,6 +149,8 @@ void CommandPage::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return true;
 }
 
 // @brief Function called by PanelManager when the button is pressed

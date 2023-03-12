@@ -52,7 +52,7 @@ class ClockPage : public PageHandler
     ClockPage();
     virtual ~ClockPage();
 
-    void Draw(bool force, bool flushDisplay = true);
+    bool Draw(bool force, bool flushDisplay = true);
     void SetNavData(NavigationData *navData);
 
   private:

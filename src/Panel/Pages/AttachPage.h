@@ -52,7 +52,7 @@ class AttachPage : public PageHandler
     AttachPage();
     virtual ~AttachPage();
 
-    void         Draw(bool force, bool flushDisplay = true);
+    bool         Draw(bool force, bool flushDisplay = true);
     PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:

@@ -52,7 +52,7 @@ class CommandPage : public PageHandler
     CommandPage();
     virtual ~CommandPage();
 
-    void         Draw(bool force, bool flushDisplay = true);
+    bool         Draw(bool force, bool flushDisplay = true);
     PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:

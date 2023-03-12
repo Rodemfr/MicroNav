@@ -69,7 +69,7 @@ class PageHandler
     virtual ~PageHandler() = 0;
 
     static void          SetDisplay(Adafruit_SSD1306 *display);
-    virtual void         Draw(bool force, bool flushDisplay = true) = 0;
+    virtual bool         Draw(bool force, bool flushDisplay = true) = 0;
     virtual PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
     static void          SetNetworkStatus(DeviceInfo_t &deviceInfo);
 

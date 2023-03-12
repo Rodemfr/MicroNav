@@ -51,7 +51,7 @@ class InfoPageSensors : public PageHandler
     InfoPageSensors();
     virtual ~InfoPageSensors();
 
-    void         Draw(bool force, bool flushDisplay = true);
+    bool         Draw(bool force, bool flushDisplay = true);
     PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 };
 

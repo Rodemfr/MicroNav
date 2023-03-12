@@ -52,7 +52,7 @@ class NetworkPage : public PageHandler
     NetworkPage();
     virtual ~NetworkPage();
 
-    void Draw(bool force, bool flushDisplay = true);
+    bool Draw(bool force, bool flushDisplay = true);
 
   private:
     void                 DrawDeviceIcon(uint8_t const *icon, uint32_t position, uint32_t localRadioLevel, uint32_t remoteRadioLevel);

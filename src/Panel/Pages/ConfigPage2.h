@@ -51,7 +51,7 @@ class ConfigPage2 : public PageHandler
     ConfigPage2();
     virtual ~ConfigPage2();
 
-    void         Draw(bool force, bool flushDisplay = true);
+    bool         Draw(bool force, bool flushDisplay = true);
     PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:

@@ -72,15 +72,17 @@ void LogoPage::SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint
     this->swPatchVersion = swPatchVersion;
 }
 
-void LogoPage::Draw(bool force, bool flushDisplay)
+bool LogoPage::Draw(bool force, bool flushDisplay)
 {
     char     versionStr[10];
     char     networkIdStr[9];
     int16_t  xVersion, yVersion;
     uint16_t wVersion, hVersion;
+    bool drawed = false;
 
     if (display != nullptr)
     {
+        drawed = true;
         display->clearDisplay();
         display->drawBitmap(0, 0, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, 1);
 
@@ -96,4 +98,6 @@ void LogoPage::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return drawed;
 }

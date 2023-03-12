@@ -69,7 +69,7 @@ InfoPageMicronet::~InfoPageMicronet()
   Draw the page on display
   @param force Force redraw, even if the content did not change
 */
-void InfoPageMicronet::Draw(bool force, bool flushDisplay)
+bool InfoPageMicronet::Draw(bool force, bool flushDisplay)
 {
     display->clearDisplay();
 
@@ -128,6 +128,8 @@ void InfoPageMicronet::Draw(bool force, bool flushDisplay)
     {
         display->display();
     }
+
+    return true;
 }
 
 // @brief Function called by PanelManager when the button is pressed

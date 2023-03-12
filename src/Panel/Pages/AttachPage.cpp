@@ -69,7 +69,7 @@ AttachPage::~AttachPage()
     Draw the page on display
     @param force Force redraw, even if the content did not change
 */
-void AttachPage::Draw(bool force, bool flushDisplay)
+bool AttachPage::Draw(bool force, bool flushDisplay)
 {
     char     lineStr[22];
     int16_t  xStr, yStr;
@@ -127,6 +127,8 @@ void AttachPage::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return true;
 }
 
 /*

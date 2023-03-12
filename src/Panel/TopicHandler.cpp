@@ -57,7 +57,7 @@
 TopicHandler::TopicHandler(std::string topicName)
 {
     this->topicName = topicName;
-    pageIndex = 0;
+    pageIndex       = 0;
 }
 
 /*
@@ -71,26 +71,32 @@ TopicHandler::~TopicHandler()
     Draw the page on display panel
     @param force Force complete redraw of the page, even if there are no changes.
 */
-void TopicHandler::Draw(bool force, bool flushDisplay)
+bool TopicHandler::Draw(bool force, bool flushDisplay)
 {
     char lineStr[22];
     int  listSize = pageList.size();
     int  i;
+    bool drawed = false;
 
     if (listSize > pageIndex)
     {
-        pageList.at(pageIndex)->Draw(force, false);
+        drawed = pageList.at(pageIndex)->Draw(force, false);
     }
 
-    display->setTextSize(1);
-    display->setFont(nullptr);
-    display->setTextColor(SSD1306_WHITE);
-    snprintf(lineStr, sizeof(lineStr), "%s %d/%d", topicName.c_str(), pageIndex + 1, listSize);
-    PrintLeft(56, lineStr);
-    if (flushDisplay)
+    if (drawed)
     {
-        display->display();
+        display->setTextSize(1);
+        display->setFont(nullptr);
+        display->setTextColor(SSD1306_WHITE);
+        snprintf(lineStr, sizeof(lineStr), "%s %d/%d", topicName.c_str(), pageIndex + 1, listSize);
+        PrintLeft(56, lineStr);
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
+
+    return drawed;
 }
 
 void TopicHandler::AddPage(PageHandler *pageHandler)

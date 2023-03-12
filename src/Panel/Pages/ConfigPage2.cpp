@@ -73,7 +73,7 @@ ConfigPage2::~ConfigPage2()
 
 // @brief Draw the page on display
 // @param force Force redraw, even if the content did not change
-void ConfigPage2::Draw(bool force, bool flushDisplay)
+bool ConfigPage2::Draw(bool force, bool flushDisplay)
 {
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
@@ -193,6 +193,8 @@ void ConfigPage2::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return true;
 }
 
 // @brief Function called by PanelManager when the button is pressed

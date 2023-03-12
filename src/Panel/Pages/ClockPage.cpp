@@ -66,7 +66,7 @@ ClockPage::~ClockPage()
 {
 }
 
-void ClockPage::Draw(bool force, bool flushDisplay)
+bool ClockPage::Draw(bool force, bool flushDisplay)
 {
     char     timeStr[] = "--:--";
     char     dateStr[] = "--/--/----";
@@ -207,6 +207,8 @@ void ClockPage::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return updateDisplay;
 }
 
 void ClockPage::SetNavData(NavigationData *navData)

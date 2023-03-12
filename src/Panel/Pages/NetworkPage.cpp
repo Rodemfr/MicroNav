@@ -79,7 +79,7 @@ NetworkPage::~NetworkPage()
   Draw the page on display panel
   @param force Force complete redraw of the page, even if there are no changes.
 */
-void NetworkPage::Draw(bool force, bool flushDisplay)
+bool NetworkPage::Draw(bool force, bool flushDisplay)
 {
     static const char noNetStr[] = "No Network";
     int16_t           xStr, yStr;
@@ -87,9 +87,11 @@ void NetworkPage::Draw(bool force, bool flushDisplay)
     uint32_t          localRadioLevel;
     uint32_t          remoteRadioLevel;
     char              lineStr[32];
+    bool              drawed = false;
 
     if (display != nullptr)
     {
+        drawed = true;
         // Clear the display
         display->clearDisplay();
         // Check if the network is connected
@@ -125,6 +127,8 @@ void NetworkPage::Draw(bool force, bool flushDisplay)
             display->display();
         }
     }
+
+    return drawed;
 }
 
 /*
