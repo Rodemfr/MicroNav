@@ -103,22 +103,22 @@ void AttachPage::Draw(bool force, bool flushDisplay)
             // Panel to be display when a network is detected
             PrintCentered(0 * 8, "Nearest network");
             snprintf(lineStr, sizeof(lineStr), "%0x", nearestNetworkId);
-            PrintCentered(1 * 8, lineStr);
+            PrintCentered(2 * 8, lineStr);
             display->setTextColor(SSD1306_WHITE);
-            display->fillRect(0 + (menuSelection * SCREEN_WIDTH / 2), 7 * 8, SCREEN_WIDTH / 2, 8, SSD1306_WHITE);
+            display->fillRect(SCREEN_WIDTH - 6 * 6, 5 * 8 + (menuSelection * 8), 6 * 6, 8, SSD1306_WHITE);
             display->setTextColor((menuSelection == 0) ? SSD1306_BLACK : SSD1306_WHITE);
-            PrintCentered(SCREEN_WIDTH / 4, 6 * 8, "Attach");
+            PrintRight(5 * 8, "Attach");
             display->setTextColor((menuSelection == 1) ? SSD1306_BLACK : SSD1306_WHITE);
-            PrintCentered(3 * SCREEN_WIDTH / 4, 6 * 8, "Exit");
+            PrintRight(6 * 8, "Exit");
         }
         else
         {
             // Panel to be displayed when no network is detected
-            PrintCentered(0 * 8, "No network detected");
+            PrintCentered(0 * 5, "No network detected");
             display->setTextColor(SSD1306_WHITE);
-            display->fillRect(SCREEN_WIDTH / 4, 7 * 8, SCREEN_WIDTH / 2, 8, SSD1306_WHITE);
+            display->fillRect(128 - 6 * 4, 6 * 8, 6 * 4, 8, SSD1306_WHITE);
             display->setTextColor(SSD1306_BLACK);
-            PrintCentered(SCREEN_WIDTH / 2, 7 * 8, "Exit");
+            PrintRight(7 * 8, "Exit");
         }
         display->setTextColor(SSD1306_WHITE);
 
@@ -143,7 +143,7 @@ PageAction_t AttachPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
     if (!longPress)
     {
         // On a button 1, we execute the currently selected menu
-        if (buttonId == BUTTON_ID_1)
+        if (buttonId == BUTTON_ID_0)
         {
             if ((menuSelection == 0) && (nearestNetworkId != 0))
             {
@@ -151,10 +151,14 @@ PageAction_t AttachPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
                 gConfiguration.eeprom.networkId = nearestNetworkId;
                 gConfiguration.SetModifiedFlag();
             }
+            else
+            {
+                action = PAGE_ACTION_EXIT_PAGE;
+            }
         }
         else
         {
-            // Button 1 : cycle through menu items
+            // Button 0 : cycle through menu items
             menuSelection = (menuSelection + 1) & 0x01;
             action        = PAGE_ACTION_REFRESH;
         }

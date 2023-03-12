@@ -86,7 +86,7 @@ void CommandPage::Draw(bool force, bool flushDisplay)
 
     if (subPage != nullptr)
     {
-        subPage->Draw(force);
+        subPage->Draw(force, flushDisplay);
     }
     else if (display != nullptr)
     {
@@ -134,14 +134,14 @@ void CommandPage::Draw(bool force, bool flushDisplay)
         {
             if (selectionPosition == COMMAND_POSITION_EXIT)
             {
-                display->fillRect(0, 64 - 16, SCREEN_WIDTH, 8, SSD1306_WHITE);
+                display->fillRect(128 - 6 * 4, 64 - 16, 6 * 4, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
             }
             else
             {
                 display->setTextColor(SSD1306_WHITE);
             }
-            PrintCentered(64 - 16, "Exit");
+            PrintRight(64 - 16, "Exit");
         }
 
         if (flushDisplay)
@@ -176,7 +176,7 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
     if (selectionMode)
     {
         // In selection mode, the button is used to cycle through the command items
-        if ((buttonId == BUTTON_ID_0) && (longPress))
+        if ((buttonId == BUTTON_ID_0) && (!longPress))
         {
             if (selectionPosition == COMMAND_POSITION_EXIT)
             {
@@ -198,7 +198,7 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
             }
             action = PAGE_ACTION_REFRESH;
         }
-        else
+        else if ((buttonId == BUTTON_ID_1) && (!longPress))
         {
             // Short press : cycle through configuration items
             selectionPosition = (selectionPosition + 1) % (COMMAND_POSITION_EXIT + 1);
@@ -207,17 +207,20 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
     }
     else
     {
-        if ((buttonId == BUTTON_ID_0) && (longPress))
+        if ((buttonId == BUTTON_ID_1) && (longPress))
         {
             // Long press while not in edit mode : enter edit mode
             selectionMode     = true;
             selectionPosition = 0;
             action            = PAGE_ACTION_REFRESH;
         }
-        else if (!longPress)
+        else if ((buttonId == BUTTON_ID_0) && !longPress)
         {
-            // Short press while not in edit mode : cycle to next page
-            action = (buttonId == BUTTON_ID_0) ? PAGE_ACTION_EXIT_TOPIC : PAGE_ACTION_EXIT_PAGE;
+            action = PAGE_ACTION_EXIT_TOPIC;
+        }
+        else if ((buttonId == BUTTON_ID_1) && !longPress)
+        {
+            action = PAGE_ACTION_EXIT_PAGE;
         }
     }
 

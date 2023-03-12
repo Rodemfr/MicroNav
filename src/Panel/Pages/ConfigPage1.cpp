@@ -28,7 +28,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "ConfigPage2.h"
+#include "ConfigPage1.h"
 #include "Globals.h"
 #include "MicronetDevice.h"
 #include "PanelResources.h"
@@ -42,7 +42,7 @@
 /***************************************************************************/
 
 // @brief Number of configuration items on this page
-#define NUMBER_OF_CONFIG_ITEMS 5
+#define NUMBER_OF_CONFIG_ITEMS 4
 // @brief Horizontal position of configuration values on display
 #define SELECTION_X_POSITION 72
 
@@ -62,82 +62,29 @@
 /*                              Functions                                  */
 /***************************************************************************/
 
-ConfigPage2::ConfigPage2()
-    : editMode(false), editPosition(0), configCompassSel(0), configGnssSel(0), configWindSel(0), configDepthSel(0), configSpeedSel(0)
+ConfigPage1::ConfigPage1()
+    : editMode(false), editPosition(0), configFreqSel(0), configNmeaSel(0), configRmbWorkaround(false), configWindRepeater(false)
 {
 }
 
-ConfigPage2::~ConfigPage2()
+ConfigPage1::~ConfigPage1()
 {
 }
 
 // @brief Draw the page on display
 // @param force Force redraw, even if the content did not change
-void ConfigPage2::Draw(bool force, bool flushDisplay)
+void ConfigPage1::Draw(bool force, bool flushDisplay)
 {
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
 
     // Forced draw occurs when user enters the page : load configuration locally
-    if (force)
+    if (force && !editMode)
     {
-        // Convert compass enum
-        switch (gConfiguration.eeprom.compassSource)
-        {
-        case LINK_MICRONET:
-            configCompassSel = 0;
-            break;
-        case LINK_COMPASS:
-            configCompassSel = 1;
-            break;
-        case LINK_NMEA_EXT:
-            configCompassSel = 2;
-            break;
-        }
-
-        // Convert GNSS enum
-        switch (gConfiguration.eeprom.gnssSource)
-        {
-        case LINK_NMEA_GNSS:
-            configGnssSel = 0;
-            break;
-        case LINK_NMEA_EXT:
-            configGnssSel = 1;
-            break;
-        }
-
-        // Convert wind enum
-        switch (gConfiguration.eeprom.windSource)
-        {
-        case LINK_MICRONET:
-            configWindSel = 0;
-            break;
-        case LINK_NMEA_EXT:
-            configWindSel = 1;
-            break;
-        }
-
-        // Convert depth enum
-        switch (gConfiguration.eeprom.depthSource)
-        {
-        case LINK_MICRONET:
-            configDepthSel = 0;
-            break;
-        case LINK_NMEA_EXT:
-            configDepthSel = 1;
-            break;
-        }
-
-        // Convert speed enum
-        switch (gConfiguration.eeprom.speedSource)
-        {
-        case LINK_MICRONET:
-            configSpeedSel = 0;
-            break;
-        case LINK_NMEA_EXT:
-            configSpeedSel = 1;
-            break;
-        }
+        configFreqSel       = (uint32_t)gConfiguration.eeprom.freqSystem;
+        configNmeaSel       = (uint32_t)gConfiguration.eeprom.nmeaLink;
+        configRmbWorkaround = gConfiguration.eeprom.rmbWorkaround;
+        configWindRepeater  = gConfiguration.eeprom.windRepeater;
     }
 
     if (display != nullptr)
@@ -149,11 +96,10 @@ void ConfigPage2::Draw(bool force, bool flushDisplay)
         display->setTextSize(1);
         display->setFont(nullptr);
         display->setCursor(0, 0);
-        display->println("Compass");
-        display->println("GNSS");
-        display->println("Wind");
-        display->println("Depth");
-        display->println("Speed");
+        display->println("Frequency");
+        display->println("NMEA link");
+        display->println("RMB bugfix");
+        display->println("Wind Repeat");
 
         // Config values
         for (int i = 0; i < NUMBER_OF_CONFIG_ITEMS; i++)
@@ -173,18 +119,19 @@ void ConfigPage2::Draw(bool force, bool flushDisplay)
             display->print(ConfigString(i));
         }
 
+        // Save & exit
         if (editMode)
         {
             if (editPosition == NUMBER_OF_CONFIG_ITEMS)
             {
-                display->fillRect(52, 64 - 16, 4 * 6, 8, SSD1306_WHITE);
+                display->fillRect(104, 64 - 16, 4 * 6, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
             }
             else
             {
                 display->setTextColor(SSD1306_WHITE);
             }
-            display->setCursor(52, 64 - 16);
+            display->setCursor(104, 64 - 16);
             display->print("Save");
         }
 
@@ -198,30 +145,30 @@ void ConfigPage2::Draw(bool force, bool flushDisplay)
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t ConfigPage2::OnButtonPressed(ButtonId_t buttonId, bool longPress)
+PageAction_t ConfigPage1::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
     PageAction_t action = PAGE_ACTION_NONE;
 
     if (editMode)
     {
-        // In edit mode, the button is used to cycle through the configuration items
-        if ((buttonId == BUTTON_ID_1) && !longPress)
+        // In edit mode, the power button is used to cycle through the configuration items
+        if ((buttonId == BUTTON_ID_0) && !longPress)
         {
             if (editPosition == NUMBER_OF_CONFIG_ITEMS)
             {
-                // Long press on "Save & Exit"
+                // Long press on "Save"
                 editMode = false;
                 // Apply configuration
                 DeployConfiguration();
             }
             else
             {
-                // Long press on a configuration item : cycle its value
+                // Press on a configuration item : cycle its value
                 ConfigCycle(editPosition);
             }
             action = PAGE_ACTION_REFRESH;
         }
-        else if ((buttonId == BUTTON_ID_0) && !longPress)
+        else if ((buttonId == BUTTON_ID_1) && !longPress)
         {
             // Short press : cycle through configuration items
             editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
@@ -230,7 +177,7 @@ PageAction_t ConfigPage2::OnButtonPressed(ButtonId_t buttonId, bool longPress)
     }
     else
     {
-        if ((buttonId == BUTTON_ID_0) && longPress)
+        if ((buttonId == BUTTON_ID_1) && longPress)
         {
             editMode     = true;
             editPosition = 0;
@@ -252,239 +199,131 @@ PageAction_t ConfigPage2::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 // @brief Return the string of a given configuration item
 // @param index Configuration item
 // @return String naming the value of the configuration item
-char const *ConfigPage2::ConfigString(uint32_t index)
+char const *ConfigPage1::ConfigString(uint32_t index)
 {
     switch (index)
     {
     case 0:
-        return ConfigCompassString();
+        return ConfigFreqString();
     case 1:
-        return ConfigGnssString();
+        return ConfigNmeaString();
     case 2:
-        return ConfigWindString();
+        return ConfigRmbWorkaroundString();
     case 3:
-        return ConfigDepthString();
-    case 4:
-        return ConfigSpeedString();
+        return ConfigWindRepeaterString();
     }
 
     return "---";
 }
 
-// @brief Return the string of a the compass configuration item
-// @return String naming the value of the compass source
-char const *ConfigPage2::ConfigCompassString()
+// @brief Return the string of a the frequency system configuration item
+// @return String naming the value of the frequency
+char const *ConfigPage1::ConfigFreqString()
 {
-    switch (configCompassSel)
+    switch (configFreqSel)
     {
     case 0:
-        return "Micronet";
+        return "868Mhz";
     case 1:
-        return "LSM303";
-    case 2:
-        return "NMEA";
+        return "915Mhz";
     }
 
     return "---";
 }
 
-// Return the string of a the GNSS configuration item
-// @return String naming the value of the GNSS source
-char const *ConfigPage2::ConfigGnssString()
+// Return the string of a the NMEA link configuration item
+// @return String naming the value of the NMEA link
+char const *ConfigPage1::ConfigNmeaString()
 {
-    switch (configGnssSel)
+    switch (configNmeaSel)
     {
     case 0:
-        return "NEO-6M";
+        return "USB";
     case 1:
-        return "NMEA";
+        return "Bluetooth";
+    case 3:
+        return "WiFi";
     }
 
     return "---";
 }
 
-// Return the string of a the Wind configuration item
-// @return String naming the value of the Wind source
-char const *ConfigPage2::ConfigWindString()
+// Return the string of a the RMB Workaround configuration item
+// @return String naming the value of the RMB Workaround
+char const *ConfigPage1::ConfigRmbWorkaroundString()
 {
-    switch (configWindSel)
+    if (configRmbWorkaround)
     {
-    case 0:
-        return "Micronet";
-    case 1:
-        return "NMEA";
+        return "Yes";
     }
-
-    return "---";
+    return "No";
 }
 
-// Return the string of a the depth configuration item
-// @return String naming the value of the depth source
-char const *ConfigPage2::ConfigDepthString()
+// Return the string of a the Wind Repeater configuration item
+// @return String naming the value of Wind Repeater
+char const *ConfigPage1::ConfigWindRepeaterString()
 {
-    switch (configDepthSel)
+    if (configWindRepeater)
     {
-    case 0:
-        return "Micronet";
-    case 1:
-        return "NMEA";
+        return "Yes";
     }
-
-    return "---";
-}
-
-// Return the string of a the speed configuration item
-// @return String naming the value of the speed source
-char const *ConfigPage2::ConfigSpeedString()
-{
-    switch (configSpeedSel)
-    {
-    case 0:
-        return "Micronet";
-    case 1:
-        return "NMEA";
-    }
-
-    return "---";
+    return "No";
 }
 
 // @brief Cycle the value of a given configuration item
 // @param index Configuration item
-void ConfigPage2::ConfigCycle(uint32_t index)
+void ConfigPage1::ConfigCycle(uint32_t index)
 {
     switch (index)
     {
     case 0:
-        ConfigCompassCycle();
+        ConfigFreqCycle();
         break;
     case 1:
-        ConfigGnssCycle();
+        ConfigNmeaCycle();
         break;
     case 2:
-        ConfigWindCycle();
+        ConfigRmbWorkaroundCycle();
         break;
     case 3:
-        ConfigDepthCycle();
-        break;
-    case 4:
-        ConfigSpeedCycle();
+        ConfigWindRepeaterCycle();
         break;
     }
 }
 
-// @brief Cycle the value of the compass configuration item
-void ConfigPage2::ConfigCompassCycle()
+// @brief Cycle the value of the frequency system configuration item
+void ConfigPage1::ConfigFreqCycle()
 {
-    configCompassSel = (configCompassSel + 1) % 3;
+    configFreqSel = (configFreqSel + 1) % 2;
 }
 
-// @brief Cycle the value of the GNSS configuration item
-void ConfigPage2::ConfigGnssCycle()
+// @brief Cycle the value of the NMEA Link configuration item
+void ConfigPage1::ConfigNmeaCycle()
 {
-    configGnssSel = (configGnssSel + 1) % 2;
+    configNmeaSel = (configNmeaSel + 1) % 2;
 }
 
-// @brief Cycle the value of the wind configuration item
-void ConfigPage2::ConfigWindCycle()
+// @brief Cycle the value of the RMB Workaround configuration item
+void ConfigPage1::ConfigRmbWorkaroundCycle()
 {
-    configWindSel = (configWindSel + 1) % 2;
+    configRmbWorkaround = !configRmbWorkaround;
 }
 
-// @brief Cycle the value of the depth configuration item
-void ConfigPage2::ConfigDepthCycle()
+// @brief Cycle the value of the Wind Repeater configuration item
+void ConfigPage1::ConfigWindRepeaterCycle()
 {
-    configDepthSel = (configDepthSel + 1) % 2;
-}
-
-// @brief Cycle the value of the speed configuration item
-void ConfigPage2::ConfigSpeedCycle()
-{
-    configSpeedSel = (configSpeedSel + 1) % 2;
+    configWindRepeater = !configWindRepeater;
 }
 
 // @brief Deploy the local configuration to the overall system and save it to
 // EEPROM
-void ConfigPage2::DeployConfiguration()
+void ConfigPage1::DeployConfiguration()
 {
-    DeployCompass();
-    DeployGnss();
-    DeployWind();
-    DeployDepth();
-    DeploySpeed();
+    gConfiguration.eeprom.freqSystem    = (FreqSystem_t)configFreqSel;
+    gConfiguration.eeprom.nmeaLink      = (SerialType_t)configNmeaSel;
+    gConfiguration.eeprom.rmbWorkaround = configRmbWorkaround;
+    gConfiguration.eeprom.windRepeater  = configWindRepeater;
 
     gConfiguration.DeployConfiguration(&gMicronetDevice);
     gConfiguration.SaveToEeprom();
-}
-
-// @brief Deploy compass configuration to the overall system
-void ConfigPage2::DeployCompass()
-{
-    switch (configCompassSel)
-    {
-    case 0:
-        gConfiguration.eeprom.compassSource = LINK_MICRONET;
-        break;
-    case 1:
-        gConfiguration.eeprom.compassSource = LINK_COMPASS;
-        break;
-    case 2:
-        gConfiguration.eeprom.compassSource = LINK_NMEA_EXT;
-        break;
-    }
-}
-
-// @brief Deploy GNSS configuration to the overall system
-void ConfigPage2::DeployGnss()
-{
-    switch (configGnssSel)
-    {
-    case 0:
-        gConfiguration.eeprom.gnssSource = LINK_NMEA_GNSS;
-        break;
-    case 1:
-        gConfiguration.eeprom.gnssSource = LINK_NMEA_EXT;
-        break;
-    }
-}
-
-// @brief Deploy wind configuration to the overall system
-void ConfigPage2::DeployWind()
-{
-    switch (configWindSel)
-    {
-    case 0:
-        gConfiguration.eeprom.windSource = LINK_MICRONET;
-        break;
-    case 1:
-        gConfiguration.eeprom.windSource = LINK_NMEA_EXT;
-        break;
-    }
-}
-
-// @brief Deploy depth configuration to the overall system
-void ConfigPage2::DeployDepth()
-{
-    switch (configDepthSel)
-    {
-    case 0:
-        gConfiguration.eeprom.depthSource = LINK_MICRONET;
-        break;
-    case 1:
-        gConfiguration.eeprom.depthSource = LINK_NMEA_EXT;
-        break;
-    }
-}
-
-// @brief Deploy speed configuration to the overall system
-void ConfigPage2::DeploySpeed()
-{
-    switch (configSpeedSel)
-    {
-    case 0:
-        gConfiguration.eeprom.speedSource = LINK_MICRONET;
-        break;
-    case 1:
-        gConfiguration.eeprom.speedSource = LINK_NMEA_EXT;
-        break;
-    }
 }

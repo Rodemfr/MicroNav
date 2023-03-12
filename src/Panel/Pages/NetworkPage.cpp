@@ -43,7 +43,7 @@
 
 #define DEVICE_ICON_WIDTH  32 // Width of device icons
 #define DEVICE_ICON_HEIGHT 21 // Height of device icons
-#define NB_ICONS_PER_PAGE  12 // Maximum number of icons that can be displayed on a page
+#define NB_ICONS_PER_PAGE  8  // Maximum number of icons that can be displayed on a page
 
 /***************************************************************************/
 /*                             Local types                                 */
