@@ -608,17 +608,27 @@ void NmeaBridge::DecodeDPTSentence(char *sentence)
 void NmeaBridge::DecodeVHWSentence(char *sentence)
 {
     float value;
-    bool  hasMagHeading = false;
-    bool  hasSpd        = false;
+    float trueHeading;
+    bool  hasMagHeading  = false;
+    bool  hasTrueHeading = false;
+    bool  hasSpd         = false;
 
     sentence += 7;
 
-    for (int i = 0; i < 2; i++)
+    if (sscanf(sentence, "%f", &trueHeading) == 1)
     {
-        if ((sentence = strchr(sentence, ',')) == nullptr)
-            return;
-        sentence++;
+        hasTrueHeading = true;
     }
+    if ((sentence = strchr(sentence, ',')) == nullptr)
+        return;
+    sentence++;
+    if (sentence[0] != 'T')
+    {
+        hasTrueHeading = false;
+    }
+    if ((sentence = strchr(sentence, ',')) == nullptr)
+        return;
+    sentence++;
     if (sscanf(sentence, "%f", &value) == 1)
     {
         hasMagHeading = true;
@@ -626,6 +636,11 @@ void NmeaBridge::DecodeVHWSentence(char *sentence)
     if ((sentence = strchr(sentence, ',')) == nullptr)
         return;
     sentence++;
+    if (!hasMagHeading && hasTrueHeading)
+    {
+        value = trueHeading - micronetCodec->navData.magneticVariation_deg;
+        hasMagHeading = true;
+    }
     if ((sentence[0] == 'M') && hasMagHeading)
     {
         if (value < 0)
