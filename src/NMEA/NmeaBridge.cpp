@@ -83,7 +83,7 @@ NmeaBridge::~NmeaBridge()
 void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
 {
     char *nmeaBuffer     = nullptr;
-    int * nmeaWriteIndex = 0;
+    int  *nmeaWriteIndex = 0;
 
     switch (sourceLink)
     {
@@ -114,7 +114,6 @@ void NmeaBridge::PushNmeaChar(char c, LinkId_t sourceLink)
         {
             if (IsSentenceValid(nmeaBuffer))
             {
-
                 NmeaId_t sId = SentenceId(nmeaBuffer);
 
                 switch (sId)
@@ -609,6 +608,8 @@ void NmeaBridge::DecodeDPTSentence(char *sentence)
 void NmeaBridge::DecodeVHWSentence(char *sentence)
 {
     float value;
+    bool  hasMagHeading = false;
+    bool  hasSpd        = false;
 
     sentence += 7;
 
@@ -618,12 +619,14 @@ void NmeaBridge::DecodeVHWSentence(char *sentence)
             return;
         sentence++;
     }
-    if (sscanf(sentence, "%f", &value) != 1)
-        return;
+    if (sscanf(sentence, "%f", &value) == 1)
+    {
+        hasMagHeading = true;
+    }
     if ((sentence = strchr(sentence, ',')) == nullptr)
         return;
     sentence++;
-    if (sentence[0] == 'M')
+    if ((sentence[0] == 'M') && hasMagHeading)
     {
         if (value < 0)
             value += 360.0f;
@@ -867,7 +870,7 @@ uint8_t NmeaBridge::AddNmeaChecksum(char *sentence)
 {
     uint8_t crc = 0;
     char    crcString[8];
-    char *  pChar = sentence + 1;
+    char   *pChar = sentence + 1;
 
     while (*pChar != 0)
     {
