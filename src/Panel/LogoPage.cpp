@@ -72,7 +72,7 @@ void LogoPage::SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint
     this->swPatchVersion = swPatchVersion;
 }
 
-void LogoPage::Draw(bool force)
+void LogoPage::Draw(bool force, bool flushDisplay)
 {
     char     versionStr[10];
     char     networkIdStr[9];
@@ -91,7 +91,9 @@ void LogoPage::Draw(bool force)
         display->getTextBounds(String(versionStr), 0, 0, &xVersion, &yVersion, &wVersion, &hVersion);
         display->setCursor(SCREEN_WIDTH - wVersion, LOGO_HEIGHT - yVersion + 2);
         display->print(versionStr);
-
-        display->display();
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
 }

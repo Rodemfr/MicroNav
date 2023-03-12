@@ -66,7 +66,7 @@ ClockPage::~ClockPage()
 {
 }
 
-void ClockPage::Draw(bool force)
+void ClockPage::Draw(bool force, bool flushDisplay)
 {
     char     timeStr[] = "--:--";
     char     dateStr[] = "--/--/----";
@@ -196,13 +196,16 @@ void ClockPage::Draw(bool force)
         display->getTextBounds(dateStr, 0, 0, &xDate, &yDate, &wDate, &hDate);
 
         display->setFont(&FreeSansBold18pt);
-        display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+        display->setCursor((SCREEN_WIDTH - wTime) / 2, - yTime - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
         display->println(timeStr);
 
         display->setFont(&FreeSansBold9pt);
-        display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 + (SCREEN_HEIGHT + yTime + yDate - 6) / 2);
+        display->setCursor((SCREEN_WIDTH - wDate) / 2, - yTime - yDate + 6 - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
         display->println(dateStr);
-        display->display();
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
 }
 

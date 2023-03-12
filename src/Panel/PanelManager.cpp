@@ -80,7 +80,9 @@ PanelManager    *PanelManager::objectPtr;
 /*
   Constructor of the PanelManager class instance
 */
-PanelManager::PanelManager() : displayAvailable(false), pageNumber(0), currentPage((PageHandler *)&logoPage)
+PanelManager::PanelManager()
+    : displayAvailable(false), topicIndex(0), statusTopic("Status"), infoTopic("Info"), configTopic("Config"), commandTopic("Command"),
+      currentTopic(nullptr)
 {
     memset(&networkStatus, 0, sizeof(networkStatus));
 }
@@ -107,13 +109,34 @@ bool PanelManager::Init()
         PageHandler::SetDisplay(&display);
         logoPage.SetSwversion(SW_MAJOR_VERSION, SW_MINOR_VERSION, SW_PATCH_VERSION);
 
-        pageNumber = 0;
+        topicIndex = 0;
 
         commandMutex      = portMUX_INITIALIZER_UNLOCKED;
         buttonMutex       = portMUX_INITIALIZER_UNLOCKED;
         commandEventGroup = xEventGroupCreate();
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
+
+    statusTopic.AddPage(&logoPage);
+    statusTopic.AddPage(&networkPage);
+    statusTopic.AddPage(&clockPage);
+    topicList.push_back(&statusTopic);
+
+    infoTopic.AddPage(&infoPageMicronet);
+    infoTopic.AddPage(&infoPageSensors);
+    infoTopic.AddPage(&infoPagePower);
+    infoTopic.AddPage(&infoPageCompass);
+    topicList.push_back(&infoTopic);
+
+    configTopic.AddPage(&configPage1);
+    configTopic.AddPage(&configPage2);
+    topicList.push_back(&configTopic);
+
+    commandTopic.AddPage(&commandPage);
+    topicList.push_back(&commandTopic);
+
+    currentTopic = &statusTopic;
+    topicIndex   = 0;
 
     // Register button's ISR
     pinMode(BUTTON_PIN, INPUT);
@@ -126,34 +149,6 @@ bool PanelManager::Init()
     DrawPage();
 
     return displayAvailable;
-}
-
-/*
-  Set the page to be displayed
-  @param pageNumber Index of the page as per PanelPages_t enum definition
-*/
-void PanelManager::SetPage(uint32_t pageNumber)
-{
-    if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
-    {
-        portENTER_CRITICAL(&commandMutex);
-        this->pageNumber = pageNumber;
-        portEXIT_CRITICAL(&commandMutex);
-    }
-}
-
-/*
-  Set the page to be displayed (callable from ISR)
-  @param pageNumber Index of the page as per PanelPages_t enum definition
-*/
-void PanelManager::SetPageISR(uint32_t pageNumber)
-{
-    if ((pageNumber >= 0) && (pageNumber < PAGE_MAX_PAGES))
-    {
-        portENTER_CRITICAL_ISR(&commandMutex);
-        this->pageNumber = pageNumber;
-        portEXIT_CRITICAL_ISR(&commandMutex);
-    }
 }
 
 /*
@@ -178,20 +173,20 @@ void PanelManager::DrawPageISR()
 /*
   Request change of the current page
 */
-void PanelManager::NextPage()
+void PanelManager::NextTopic()
 {
     portENTER_CRITICAL(&commandMutex);
-    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    this->topicIndex = (topicIndex + 1) < topicList.size() ? topicIndex + 1 : 0;
     portEXIT_CRITICAL(&commandMutex);
 }
 
 /*
   Request change of the current page (callable from ISR)
 */
-void PanelManager::NextPageISR()
+void PanelManager::NextTopicISR()
 {
     portENTER_CRITICAL_ISR(&commandMutex);
-    this->pageNumber = (pageNumber + 1) < PAGE_MAX_PAGES ? pageNumber + 1 : 0;
+    this->topicIndex = (topicIndex + 1) < topicList.size() ? topicIndex + 1 : 0;
     portEXIT_CRITICAL_ISR(&commandMutex);
 }
 
@@ -261,11 +256,12 @@ void PanelManager::CommandCallback()
             // Button is pressed for more than the long press time : handle long press processing
             longPress = true;
             // Request action to the currently displayed page
-            switch (currentPage->OnButtonPressed(BUTTON_ID_1, true))
+            switch (currentTopic->OnButtonPressed(BUTTON_ID_1, true))
             {
-            case PAGE_ACTION_EXIT:
+            case PAGE_ACTION_EXIT_TOPIC:
+            case PAGE_ACTION_EXIT_PAGE:
                 // Go to next page
-                NextPage();
+                NextTopic();
                 commandFlags |= COMMAND_EVENT_NEW_PAGE;
                 break;
             case PAGE_ACTION_REFRESH:
@@ -289,11 +285,12 @@ void PanelManager::CommandCallback()
             {
                 // Yes : we have a short press
                 // Request action to the currently displayed page
-                switch (currentPage->OnButtonPressed(BUTTON_ID_1, false))
+                switch (currentTopic->OnButtonPressed(BUTTON_ID_1, false))
                 {
-                case PAGE_ACTION_EXIT:
+                case PAGE_ACTION_EXIT_TOPIC:
+                case PAGE_ACTION_EXIT_PAGE:
                     // Go to next page
-                    NextPage();
+                    NextTopic();
                     commandFlags |= COMMAND_EVENT_NEW_PAGE;
                     break;
                 case PAGE_ACTION_REFRESH:
@@ -309,11 +306,11 @@ void PanelManager::CommandCallback()
         {
             // Yes : we have a short press
             // Request action to the currently displayed page
-            switch (currentPage->OnButtonPressed(BUTTON_ID_0, commandFlags & COMMAND_EVENT_POWER_BUTTON_LONG))
+            switch (currentTopic->OnButtonPressed(BUTTON_ID_0, commandFlags & COMMAND_EVENT_POWER_BUTTON_LONG))
             {
-            case PAGE_ACTION_EXIT:
+            case PAGE_ACTION_EXIT_TOPIC:
                 // Go to next page
-                NextPage();
+                NextTopic();
                 commandFlags |= COMMAND_EVENT_NEW_PAGE;
                 break;
             case PAGE_ACTION_REFRESH:
@@ -328,33 +325,10 @@ void PanelManager::CommandCallback()
         {
             lastPageUpdate = now;
             portENTER_CRITICAL(&commandMutex);
-            switch (pageNumber)
-            {
-            case PAGE_LOGO:
-                currentPage = (PageHandler *)&logoPage;
-                break;
-            case PAGE_NETWORK:
-                currentPage = (PageHandler *)&networkPage;
-                break;
-            case PAGE_INFO:
-                currentPage = (PageHandler *)&infoPage;
-                break;
-            case PAGE_CLOCK:
-                currentPage = (PageHandler *)&clockPage;
-                break;
-            case PAGE_CONFIG1:
-                currentPage = (PageHandler *)&configPage1;
-                break;
-            case PAGE_CONFIG2:
-                currentPage = (PageHandler *)&configPage2;
-                break;
-            case PAGE_COMMAND:
-                currentPage = (PageHandler *)&commandPage;
-                break;
-            }
+            currentTopic = topicList.at(topicIndex);
             portEXIT_CRITICAL(&commandMutex);
 
-            currentPage->Draw(commandFlags & COMMAND_EVENT_NEW_PAGE);
+            currentTopic->Draw(commandFlags & (COMMAND_EVENT_NEW_PAGE | COMMAND_EVENT_REFRESH));
         }
     }
 }

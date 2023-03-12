@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Info page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,7 +28,8 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "PageHandler.h"
+#include "InfoPagePower.h"
+#include "Globals.h"
 #include "MicronetDevice.h"
 #include "PanelResources.h"
 
@@ -52,78 +53,92 @@
 /*                           Static & Globals                              */
 /***************************************************************************/
 
-Adafruit_SSD1306 *PageHandler::display;
-DeviceInfo_t      PageHandler::deviceInfo;
-
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-PageHandler::PageHandler()
+InfoPagePower::InfoPagePower()
 {
 }
 
-PageHandler::~PageHandler()
+InfoPagePower::~InfoPagePower()
 {
-}
-
-void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
-{
-    PageHandler::display = display;
-}
-
-PageAction_t PageHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
-{
-    if ((buttonId == BUTTON_ID_0) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_TOPIC;
-    }
-
-    if ((buttonId == BUTTON_ID_1) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_PAGE;
-    }
-
-    return PAGE_ACTION_NONE;
-}
-
-void PageHandler::PrintCentered(int32_t yPos, String const &text)
-{
-    PrintCentered(SCREEN_WIDTH / 2, yPos, text);
-}
-
-void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(xPos - (wStr / 2), yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintLeft(int32_t yPos, String const &text)
-{
-    display->setCursor(0, yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintRight(int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(SCREEN_WIDTH - wStr, yPos);
-    display->println(text);
 }
 
 /*
-  Set the latest network status.
-  @param deviceInfo Structure
+  Draw the page on display
+  @param force Force redraw, even if the content did not change
 */
-void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
+void InfoPagePower::Draw(bool force, bool flushDisplay)
 {
-    // Copy it in a static local variable so that every child of PageHandler class will be able to access it
-    PageHandler::deviceInfo = deviceInfo;
+    char lineStr[22];
+
+    display->clearDisplay();
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    PowerStatus_t powerStatus = gPower.GetStatus();
+
+    PrintLeft(0, "BAT level");
+    PrintLeft(8, "BAT");
+    if (powerStatus.batteryConnected != 0)
+    {
+        if (powerStatus.batteryCharging)
+        {
+            snprintf(lineStr, sizeof(lineStr), "%c%d%%", 0x18, powerStatus.batteryLevel_per);
+        }
+        else
+        {
+            snprintf(lineStr, sizeof(lineStr), "%d%%", powerStatus.batteryLevel_per);
+        }
+        PrintRight(0, lineStr);
+        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.batteryVoltage_V, powerStatus.batteryCurrent_mA);
+        PrintRight(8, lineStr);
+    }
+    else
+    {
+        PrintRight(0, "---");
+        PrintRight(8, "--/--");
+    }
+
+    PrintLeft(16, "USB");
+    if (powerStatus.usbConnected != 0)
+    {
+        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.usbVoltage_V, powerStatus.usbCurrent_mA);
+        PrintRight(16, lineStr);
+    }
+    else
+    {
+        PrintRight(16, "--/--");
+    }
+
+    PrintLeft(24, "Temp");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%cC", powerStatus.temperature_C, 247);
+    PrintRight(24, lineStr);
+
+    if (flushDisplay)
+    {
+        display->display();
+    }
+}
+
+// @brief Function called by PanelManager when the button is pressed
+// @param longPress true if a long press was detected
+// @return Action to be executed by PanelManager
+PageAction_t InfoPagePower::OnButtonPressed(ButtonId_t buttonId, bool longPress)
+{
+    PageAction_t action = PAGE_ACTION_NONE;
+
+    if ((buttonId == BUTTON_ID_1) && !longPress)
+    {
+        action = PAGE_ACTION_EXIT_PAGE;
+    }
+    else if ((buttonId == BUTTON_ID_0) && !longPress)
+    {
+        action = PAGE_ACTION_EXIT_TOPIC;
+    }
+
+    return action;
 }

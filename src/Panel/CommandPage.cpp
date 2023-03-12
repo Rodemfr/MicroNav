@@ -78,7 +78,7 @@ CommandPage::~CommandPage()
   Draw the page on display
   @param force Force redraw, even if the content did not change
 */
-void CommandPage::Draw(bool force)
+void CommandPage::Draw(bool force, bool flushDisplay)
 {
     char     lineStr[22];
     int16_t  xStr, yStr;
@@ -134,22 +134,20 @@ void CommandPage::Draw(bool force)
         {
             if (selectionPosition == COMMAND_POSITION_EXIT)
             {
-                display->fillRect(0, 64 - 8, SCREEN_WIDTH, 8, SSD1306_WHITE);
+                display->fillRect(0, 64 - 16, SCREEN_WIDTH, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
             }
             else
             {
                 display->setTextColor(SSD1306_WHITE);
             }
-            PrintCentered(64 - 8, "Exit");
-        }
-        else
-        {
-            display->setTextColor(SSD1306_WHITE);
-            PrintCentered(64 - 8, "Commands");
+            PrintCentered(64 - 16, "Exit");
         }
 
-        display->display();
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
 }
 
@@ -163,7 +161,7 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
     {
         // Yes : does the page request exit ?
         PageAction_t subAction = subPage->OnButtonPressed(buttonId, longPress);
-        if (subAction == PAGE_ACTION_EXIT)
+        if ((subAction == PAGE_ACTION_EXIT_PAGE) || (subAction == PAGE_ACTION_EXIT_TOPIC))
         {
             // Yes : leave sub page mode and request a refresh of the page
             subPage = nullptr;
@@ -173,12 +171,12 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
         return subAction;
     }
 
-    PageAction_t action = PAGE_ACTION_EXIT;
+    PageAction_t action = PAGE_ACTION_EXIT_TOPIC;
 
     if (selectionMode)
     {
         // In selection mode, the button is used to cycle through the command items
-        if (longPress)
+        if ((buttonId == BUTTON_ID_0) && (longPress))
         {
             if (selectionPosition == COMMAND_POSITION_EXIT)
             {
@@ -204,22 +202,22 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
         {
             // Short press : cycle through configuration items
             selectionPosition = (selectionPosition + 1) % (COMMAND_POSITION_EXIT + 1);
-            action       = PAGE_ACTION_REFRESH;
+            action            = PAGE_ACTION_REFRESH;
         }
     }
     else
     {
-        if (longPress)
+        if ((buttonId == BUTTON_ID_0) && (longPress))
         {
             // Long press while not in edit mode : enter edit mode
             selectionMode     = true;
             selectionPosition = 0;
-            action       = PAGE_ACTION_REFRESH;
+            action            = PAGE_ACTION_REFRESH;
         }
-        else
+        else if (!longPress)
         {
             // Short press while not in edit mode : cycle to next page
-            action = PAGE_ACTION_EXIT;
+            action = (buttonId == BUTTON_ID_0) ? PAGE_ACTION_EXIT_TOPIC : PAGE_ACTION_EXIT_PAGE;
         }
     }
 

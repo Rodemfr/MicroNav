@@ -52,7 +52,7 @@ class LogoPage : public PageHandler
     virtual ~LogoPage();
 
     void SetSwversion(uint8_t swMajorVersion, uint8_t swMinorVersion, uint32_t swPatchVersion);
-    void Draw(bool force);
+    void Draw(bool force, bool flushDisplay = true);
 
   private:
     uint8_t  swMajorVersion, swMinorVersion;

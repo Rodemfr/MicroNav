@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Network page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,12 +28,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "PageHandler.h"
-#include "MicronetDevice.h"
-#include "PanelResources.h"
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "TopicHandler.h"
 #include <Arduino.h>
 
 /***************************************************************************/
@@ -52,78 +47,75 @@
 /*                           Static & Globals                              */
 /***************************************************************************/
 
-Adafruit_SSD1306 *PageHandler::display;
-DeviceInfo_t      PageHandler::deviceInfo;
-
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-PageHandler::PageHandler()
+/*
+    Class constructor
+*/
+TopicHandler::TopicHandler(std::string topicName)
 {
-}
-
-PageHandler::~PageHandler()
-{
-}
-
-void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
-{
-    PageHandler::display = display;
-}
-
-PageAction_t PageHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
-{
-    if ((buttonId == BUTTON_ID_0) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_TOPIC;
-    }
-
-    if ((buttonId == BUTTON_ID_1) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_PAGE;
-    }
-
-    return PAGE_ACTION_NONE;
-}
-
-void PageHandler::PrintCentered(int32_t yPos, String const &text)
-{
-    PrintCentered(SCREEN_WIDTH / 2, yPos, text);
-}
-
-void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(xPos - (wStr / 2), yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintLeft(int32_t yPos, String const &text)
-{
-    display->setCursor(0, yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintRight(int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(SCREEN_WIDTH - wStr, yPos);
-    display->println(text);
+    this->topicName = topicName;
+    pageIndex = 0;
 }
 
 /*
-  Set the latest network status.
-  @param deviceInfo Structure
+    Class destructor
 */
-void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
+TopicHandler::~TopicHandler()
 {
-    // Copy it in a static local variable so that every child of PageHandler class will be able to access it
-    PageHandler::deviceInfo = deviceInfo;
+}
+
+/*
+    Draw the page on display panel
+    @param force Force complete redraw of the page, even if there are no changes.
+*/
+void TopicHandler::Draw(bool force, bool flushDisplay)
+{
+    char lineStr[22];
+    int  listSize = pageList.size();
+    int  i;
+
+    if (listSize > pageIndex)
+    {
+        pageList.at(pageIndex)->Draw(force, false);
+    }
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+    snprintf(lineStr, sizeof(lineStr), "%s %d/%d", topicName.c_str(), pageIndex + 1, listSize);
+    PrintLeft(56, lineStr);
+    if (flushDisplay)
+    {
+        display->display();
+    }
+}
+
+void TopicHandler::AddPage(PageHandler *pageHandler)
+{
+    pageList.push_back(pageHandler);
+}
+
+PageAction_t TopicHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
+{
+    PageAction_t action = PAGE_ACTION_EXIT_TOPIC;
+
+    if (pageList.size() >= pageIndex)
+    {
+        action = pageList.at(pageIndex)->OnButtonPressed(buttonId, longPress);
+    }
+
+    if (action == PAGE_ACTION_EXIT_PAGE)
+    {
+        pageIndex = (pageIndex + 1);
+        if (pageIndex >= pageList.size())
+        {
+            pageIndex = 0;
+        }
+        action = PAGE_ACTION_REFRESH;
+    }
+
+    return action;
 }

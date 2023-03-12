@@ -66,10 +66,10 @@ AttachPage::~AttachPage()
 }
 
 /*
-  Draw the page on display
-  @param force Force redraw, even if the content did not change
+    Draw the page on display
+    @param force Force redraw, even if the content did not change
 */
-void AttachPage::Draw(bool force)
+void AttachPage::Draw(bool force, bool flushDisplay)
 {
     char     lineStr[22];
     int16_t  xStr, yStr;
@@ -107,9 +107,9 @@ void AttachPage::Draw(bool force)
             display->setTextColor(SSD1306_WHITE);
             display->fillRect(0 + (menuSelection * SCREEN_WIDTH / 2), 7 * 8, SCREEN_WIDTH / 2, 8, SSD1306_WHITE);
             display->setTextColor((menuSelection == 0) ? SSD1306_BLACK : SSD1306_WHITE);
-            PrintCentered(SCREEN_WIDTH / 4, 7 * 8, "Attach");
+            PrintCentered(SCREEN_WIDTH / 4, 6 * 8, "Attach");
             display->setTextColor((menuSelection == 1) ? SSD1306_BLACK : SSD1306_WHITE);
-            PrintCentered(3 * SCREEN_WIDTH / 4, 7 * 8, "Exit");
+            PrintCentered(3 * SCREEN_WIDTH / 4, 6 * 8, "Exit");
         }
         else
         {
@@ -122,7 +122,10 @@ void AttachPage::Draw(bool force)
         }
         display->setTextColor(SSD1306_WHITE);
 
-        display->display();
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
 }
 
@@ -132,25 +135,29 @@ void AttachPage::Draw(bool force)
   @param longPress true if a long press was detected
   @return Action to be executed by PanelManager
 */
-PageAction_t AttachPage::OnButtonPressed(bool longPress)
+PageAction_t AttachPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
-    PageAction_t action = PAGE_ACTION_EXIT;
+    PageAction_t action = PAGE_ACTION_NONE;
 
-    // On a long press, we execute the currently selected menu
-    if (longPress)
+    // Long press has not effect on this page
+    if (!longPress)
     {
-        if ((menuSelection == 0) && (nearestNetworkId != 0))
+        // On a button 1, we execute the currently selected menu
+        if (buttonId == BUTTON_ID_1)
         {
-            // Long press on "Attach"
-            gConfiguration.eeprom.networkId = nearestNetworkId;
-            gConfiguration.SetModifiedFlag();
+            if ((menuSelection == 0) && (nearestNetworkId != 0))
+            {
+                // "Attach" menu
+                gConfiguration.eeprom.networkId = nearestNetworkId;
+                gConfiguration.SetModifiedFlag();
+            }
         }
-    }
-    else
-    {
-        // Short press : cycle through menu items
-        menuSelection = (menuSelection + 1) & 0x01;
-        action        = PAGE_ACTION_REFRESH;
+        else
+        {
+            // Button 1 : cycle through menu items
+            menuSelection = (menuSelection + 1) & 0x01;
+            action        = PAGE_ACTION_REFRESH;
+        }
     }
 
     return action;

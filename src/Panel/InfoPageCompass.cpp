@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Info page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -28,7 +28,8 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "PageHandler.h"
+#include "InfoPageCompass.h"
+#include "Globals.h"
 #include "MicronetDevice.h"
 #include "PanelResources.h"
 
@@ -52,78 +53,79 @@
 /*                           Static & Globals                              */
 /***************************************************************************/
 
-Adafruit_SSD1306 *PageHandler::display;
-DeviceInfo_t      PageHandler::deviceInfo;
-
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-PageHandler::PageHandler()
+InfoPageCompass::InfoPageCompass()
 {
 }
 
-PageHandler::~PageHandler()
+InfoPageCompass::~InfoPageCompass()
 {
-}
-
-void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
-{
-    PageHandler::display = display;
-}
-
-PageAction_t PageHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
-{
-    if ((buttonId == BUTTON_ID_0) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_TOPIC;
-    }
-
-    if ((buttonId == BUTTON_ID_1) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_PAGE;
-    }
-
-    return PAGE_ACTION_NONE;
-}
-
-void PageHandler::PrintCentered(int32_t yPos, String const &text)
-{
-    PrintCentered(SCREEN_WIDTH / 2, yPos, text);
-}
-
-void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(xPos - (wStr / 2), yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintLeft(int32_t yPos, String const &text)
-{
-    display->setCursor(0, yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintRight(int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(SCREEN_WIDTH - wStr, yPos);
-    display->println(text);
 }
 
 /*
-  Set the latest network status.
-  @param deviceInfo Structure
+  Draw the page on display
+  @param force Force redraw, even if the content did not change
 */
-void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
+void InfoPageCompass::Draw(bool force, bool flushDisplay)
 {
-    // Copy it in a static local variable so that every child of PageHandler class will be able to access it
-    PageHandler::deviceInfo = deviceInfo;
+    char lineStr[22];
+
+    display->clearDisplay();
+
+    display->setTextSize(1);
+    display->setFont(nullptr);
+    display->setTextColor(SSD1306_WHITE);
+
+    // Compass connected ?
+    PrintLeft(0, "NavCompass");
+    if (gConfiguration.ram.navCompassAvailable != 0)
+    {
+        PrintRight(0, "LSM303");
+    }
+    else
+    {
+        PrintRight(0, "No");
+    }
+
+    // X axis offset
+    PrintLeft(8, "X offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.xMagOffset);
+    PrintRight(8, lineStr);
+
+    // Y axis offset
+    PrintLeft(16, "Y offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.yMagOffset);
+    PrintRight(16, lineStr);
+
+    // Z axis offset
+    PrintLeft(24, "Z offset");
+    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.zMagOffset);
+    PrintRight(24, lineStr);
+
+    if (flushDisplay)
+    {
+        display->display();
+    }
+}
+
+// @brief Function called by PanelManager when the button is pressed
+// @param longPress true if a long press was detected
+// @return Action to be executed by PanelManager
+PageAction_t InfoPageCompass::OnButtonPressed(ButtonId_t buttonId, bool longPress)
+{
+    PageAction_t action = PAGE_ACTION_NONE;
+
+    if ((buttonId == BUTTON_ID_1) && !longPress)
+    {
+        action = PAGE_ACTION_EXIT_PAGE;
+    }
+    else if ((buttonId == BUTTON_ID_0) && !longPress)
+    {
+        action = PAGE_ACTION_EXIT_TOPIC;
+    }
+
+    return action;
 }

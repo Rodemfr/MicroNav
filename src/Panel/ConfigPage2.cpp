@@ -73,7 +73,7 @@ ConfigPage2::~ConfigPage2()
 
 // @brief Draw the page on display
 // @param force Force redraw, even if the content did not change
-void ConfigPage2::Draw(bool force)
+void ConfigPage2::Draw(bool force, bool flushDisplay)
 {
     int16_t  xStr, yStr;
     uint16_t wStr, hStr;
@@ -177,22 +177,21 @@ void ConfigPage2::Draw(bool force)
         {
             if (editPosition == NUMBER_OF_CONFIG_ITEMS)
             {
-                display->fillRect(52, 64 - 8, 4 * 6, 8, SSD1306_WHITE);
+                display->fillRect(52, 64 - 16, 4 * 6, 8, SSD1306_WHITE);
                 display->setTextColor(SSD1306_BLACK);
             }
             else
             {
                 display->setTextColor(SSD1306_WHITE);
             }
-            display->setCursor(52, 64 - 8);
+            display->setCursor(52, 64 - 16);
             display->print("Save");
         }
-        else
+
+        if (flushDisplay)
         {
-            display->setCursor((SCREEN_WIDTH - (6 * 8)) / 2, 64 - 8);
-            display->print("Config 2");
+            display->display();
         }
-        display->display();
     }
 }
 
@@ -239,7 +238,11 @@ PageAction_t ConfigPage2::OnButtonPressed(ButtonId_t buttonId, bool longPress)
         }
         else if ((buttonId == BUTTON_ID_0) && !longPress)
         {
-            action = PAGE_ACTION_EXIT;
+            action = PAGE_ACTION_EXIT_TOPIC;
+        }
+        else if ((buttonId == BUTTON_ID_1) && !longPress)
+        {
+            action = PAGE_ACTION_EXIT_PAGE;
         }
     }
 

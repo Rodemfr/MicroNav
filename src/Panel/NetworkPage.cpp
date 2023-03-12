@@ -79,7 +79,7 @@ NetworkPage::~NetworkPage()
   Draw the page on display panel
   @param force Force complete redraw of the page, even if there are no changes.
 */
-void NetworkPage::Draw(bool force)
+void NetworkPage::Draw(bool force, bool flushDisplay)
 {
     static const char noNetStr[] = "No Network";
     int16_t           xStr, yStr;
@@ -115,12 +115,15 @@ void NetworkPage::Draw(bool force)
             display->setTextSize(1);
             display->setFont(&FreeSansBold9pt);
             display->getTextBounds(String(noNetStr), 0, 0, &xStr, &yStr, &wStr, &hStr);
-            display->setCursor((SCREEN_WIDTH - wStr) / 2, (SCREEN_HEIGHT - yStr) / 2);
+            display->setCursor((SCREEN_WIDTH - wStr) / 2, (SCREEN_HEIGHT - 8 - yStr) / 2 - 8);
             display->println(noNetStr);
         }
 
         // Send rendered buffer to display
-        display->display();
+        if (flushDisplay)
+        {
+            display->display();
+        }
     }
 }
 

@@ -35,30 +35,23 @@
 #include "CommandPage.h"
 #include "ConfigPage1.h"
 #include "ConfigPage2.h"
-#include "InfoPage.h"
+#include "InfoPageCompass.h"
+#include "InfoPageMicronet.h"
+#include "InfoPagePower.h"
+#include "InfoPageSensors.h"
 #include "LogoPage.h"
 #include "MicronetDevice.h"
 #include "NavigationData.h"
 #include "NetworkPage.h"
 #include "PageHandler.h"
+#include "TopicHandler.h"
 
 #include <Arduino.h>
+#include <vector>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
-
-enum
-{
-    PAGE_LOGO = 0,
-    PAGE_CLOCK,
-    PAGE_NETWORK,
-    PAGE_INFO,
-    PAGE_CONFIG1,
-    PAGE_CONFIG2,
-    PAGE_COMMAND,
-    PAGE_MAX_PAGES
-} PanelPages_t;
 
 /***************************************************************************/
 /*                                Types                                    */
@@ -75,36 +68,44 @@ class PanelManager
     ~PanelManager();
 
     bool Init();
-    void SetPage(uint32_t pageNumber);
-    void SetPageISR(uint32_t pageNumber);
     void DrawPage();
     void DrawPageISR();
-    void NextPage();
-    void NextPageISR();
+    void NextTopic();
+    void NextTopicISR();
     void SetNavigationData(NavigationData *navData);
     void SetNetworkStatus(DeviceInfo_t &networkStatus);
     void LowPower(bool enable);
 
   private:
-    bool               displayAvailable;
-    uint32_t           pageNumber;
-    PageHandler       *currentPage;
-    TaskHandle_t       commandTaskHandle;
-    EventGroupHandle_t commandEventGroup;
-    LogoPage           logoPage;
-    ClockPage          clockPage;
-    NetworkPage        networkPage;
-    InfoPage           infoPage;
-    ConfigPage1        configPage1;
-    ConfigPage2        configPage2;
-    CommandPage        commandPage;
-    portMUX_TYPE       commandMutex;
-    portMUX_TYPE       buttonMutex;
+    bool                        displayAvailable;
+    uint32_t                    topicIndex;
+    TopicHandler               *currentTopic;
+    std::vector<TopicHandler *> topicList;
+    TopicHandler                statusTopic;
+    TopicHandler                infoTopic;
+    TopicHandler                configTopic;
+    TopicHandler                commandTopic;
+
+    LogoPage         logoPage;
+    ClockPage        clockPage;
+    NetworkPage      networkPage;
+    InfoPageMicronet infoPageMicronet;
+    InfoPageSensors  infoPageSensors;
+    InfoPagePower    infoPagePower;
+    InfoPageCompass  infoPageCompass;
+    ConfigPage1      configPage1;
+    ConfigPage2      configPage2;
+    CommandPage      commandPage;
+
     NavigationData    *navData;
     DeviceInfo_t       networkStatus;
     uint32_t           lastRelease   = 0;
     uint32_t           lastPress     = 0;
     bool               buttonPressed = false;
+    portMUX_TYPE       commandMutex;
+    portMUX_TYPE       buttonMutex;
+    TaskHandle_t       commandTaskHandle;
+    EventGroupHandle_t commandEventGroup;
 
     static PanelManager *objectPtr;
     static void          CommandProcessingTask(void *callingObject);

@@ -52,8 +52,8 @@ class AttachPage : public PageHandler
     AttachPage();
     virtual ~AttachPage();
 
-    void         Draw(bool force);
-    PageAction_t OnButtonPressed(bool longPress);
+    void         Draw(bool force, bool flushDisplay = true);
+    PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
   private:
     uint32_t      menuSelection;

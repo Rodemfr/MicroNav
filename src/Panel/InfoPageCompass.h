@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Page Handler abstract class                                   *
+ * Purpose:  Handler of the Info page                                   *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,106 +24,35 @@
  ***************************************************************************
  */
 
+#ifndef INFOPAGECOMPASS_H_
+#define INFOPAGECOMPASS_H_
+
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
 #include "PageHandler.h"
-#include "MicronetDevice.h"
-#include "PanelResources.h"
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include <Arduino.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                             Local types                                 */
+/*                                Types                                    */
 /***************************************************************************/
 
 /***************************************************************************/
-/*                           Local prototypes                              */
+/*                               Classes                                   */
 /***************************************************************************/
 
-/***************************************************************************/
-/*                           Static & Globals                              */
-/***************************************************************************/
-
-Adafruit_SSD1306 *PageHandler::display;
-DeviceInfo_t      PageHandler::deviceInfo;
-
-/***************************************************************************/
-/*                              Functions                                  */
-/***************************************************************************/
-
-PageHandler::PageHandler()
+class InfoPageCompass : public PageHandler
 {
-}
+  public:
+    InfoPageCompass();
+    virtual ~InfoPageCompass();
 
-PageHandler::~PageHandler()
-{
-}
+    void         Draw(bool force, bool flushDisplay = true);
+    PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
+};
 
-void PageHandler::SetDisplay(Adafruit_SSD1306 *display)
-{
-    PageHandler::display = display;
-}
-
-PageAction_t PageHandler::OnButtonPressed(ButtonId_t buttonId, bool longPress)
-{
-    if ((buttonId == BUTTON_ID_0) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_TOPIC;
-    }
-
-    if ((buttonId == BUTTON_ID_1) && !longPress)
-    {
-        return PAGE_ACTION_EXIT_PAGE;
-    }
-
-    return PAGE_ACTION_NONE;
-}
-
-void PageHandler::PrintCentered(int32_t yPos, String const &text)
-{
-    PrintCentered(SCREEN_WIDTH / 2, yPos, text);
-}
-
-void PageHandler::PrintCentered(int32_t xPos, int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(xPos - (wStr / 2), yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintLeft(int32_t yPos, String const &text)
-{
-    display->setCursor(0, yPos);
-    display->println(text);
-}
-
-void PageHandler::PrintRight(int32_t yPos, String const &text)
-{
-    int16_t  xStr, yStr;
-    uint16_t wStr, hStr;
-
-    display->getTextBounds(text, 0, 0, &xStr, &yStr, &wStr, &hStr);
-    display->setCursor(SCREEN_WIDTH - wStr, yPos);
-    display->println(text);
-}
-
-/*
-  Set the latest network status.
-  @param deviceInfo Structure
-*/
-void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
-{
-    // Copy it in a static local variable so that every child of PageHandler class will be able to access it
-    PageHandler::deviceInfo = deviceInfo;
-}
+#endif

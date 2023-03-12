@@ -28,7 +28,7 @@
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include "InfoPage.h"
+#include "InfoPageSensors.h"
 #include "Globals.h"
 #include "MicronetDevice.h"
 #include "PanelResources.h"
@@ -40,15 +40,6 @@
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
-
-typedef enum
-{
-    INFO_SUBPAGE_NETWORK = 0,
-    INFO_SUBPAGE_CALIBRATION,
-    INFO_SUBPAGE_COMPASS,
-    INFO_SUBPAGE_BATTERY,
-    INFO_SUBPAGE_NB_SUBPAGES
-} InfoSubPage_t;
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -66,11 +57,11 @@ typedef enum
 /*                              Functions                                  */
 /***************************************************************************/
 
-InfoPage::InfoPage() : subPageIndex(0)
+InfoPageSensors::InfoPageSensors()
 {
 }
 
-InfoPage::~InfoPage()
+InfoPageSensors::~InfoPageSensors()
 {
 }
 
@@ -78,38 +69,11 @@ InfoPage::~InfoPage()
   Draw the page on display
   @param force Force redraw, even if the content did not change
 */
-void InfoPage::Draw(bool force)
+void InfoPageSensors::Draw(bool force, bool flushDisplay)
 {
     char lineStr[22];
 
     display->clearDisplay();
-
-    // Draw selected sub info page
-    switch (subPageIndex)
-    {
-    case INFO_SUBPAGE_NETWORK:
-        DrawNetworkInfoPage();
-        break;
-    case INFO_SUBPAGE_CALIBRATION:
-        DrawCalibrationInfoPage();
-        break;
-    case INFO_SUBPAGE_COMPASS:
-        DrawCompassInfoPage();
-        break;
-    case INFO_SUBPAGE_BATTERY:
-        DrawBatteryInfoPage();
-        break;
-    }
-
-    snprintf(lineStr, sizeof(lineStr), "Info %d/%d", subPageIndex + 1, INFO_SUBPAGE_NB_SUBPAGES);
-    PrintCentered(56, lineStr);
-
-    display->display();
-}
-
-void InfoPage::DrawCalibrationInfoPage()
-{
-    char lineStr[22];
 
     display->setTextSize(1);
     display->setFont(nullptr);
@@ -141,167 +105,27 @@ void InfoPage::DrawCalibrationInfoPage()
     PrintLeft(32, "MagVar");
     snprintf(lineStr, sizeof(lineStr), "%.0f%c", gConfiguration.eeprom.magneticVariation_deg, 247);
     PrintRight(32, lineStr);
-}
 
-void InfoPage::DrawNetworkInfoPage()
-{
-    char lineStr[22];
-
-    display->setTextSize(1);
-    display->setFont(nullptr);
-    display->setTextColor(SSD1306_WHITE);
-
-    // NetworkID
-    PrintLeft(0, "NetworkID");
-    if (gConfiguration.eeprom.networkId != 0)
+    if (flushDisplay)
     {
-        snprintf(lineStr, sizeof(lineStr), "%08x", gConfiguration.eeprom.networkId);
-        PrintRight(0, lineStr);
+        display->display();
     }
-    else
-    {
-        PrintRight(0, "---");
-    }
-
-    // DeviceID
-    PrintLeft(8, "DeviceID");
-    snprintf(lineStr, sizeof(lineStr), "%08x", gConfiguration.eeprom.deviceId);
-    PrintRight(8, lineStr);
-
-    // Network status
-    PrintLeft(16, "Connected");
-    if (deviceInfo.state == DEVICE_STATE_ACTIVE)
-    {
-        PrintRight(16, "YES");
-    }
-    else
-    {
-        PrintRight(16, "NO");
-    }
-
-    // Number of devices
-    PrintLeft(24, "Nb devices");
-    if (deviceInfo.state == DEVICE_STATE_ACTIVE)
-    {
-        snprintf(lineStr, sizeof(lineStr), "%d", deviceInfo.nbDevicesInRange);
-        PrintRight(24, lineStr);
-    }
-    else
-    {
-        PrintRight(24, "---");
-    }
-
-    // Other networks in range
-    PrintLeft(32, "Networks in range");
-    snprintf(lineStr, sizeof(lineStr), "%d", deviceInfo.nbNetworksInRange);
-    PrintRight(32, lineStr);
-}
-
-void InfoPage::DrawCompassInfoPage()
-{
-    char lineStr[22];
-
-    display->setTextSize(1);
-    display->setFont(nullptr);
-    display->setTextColor(SSD1306_WHITE);
-
-    // Compass connected ?
-    PrintLeft(0, "NavCompass");
-    if (gConfiguration.ram.navCompassAvailable != 0)
-    {
-        PrintRight(0, "LSM303");
-    }
-    else
-    {
-        PrintRight(0, "No");
-    }
-
-    // X axis offset
-    PrintLeft(8, "X offset");
-    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.xMagOffset);
-    PrintRight(8, lineStr);
-
-    // Y axis offset
-    PrintLeft(16, "Y offset");
-    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.yMagOffset);
-    PrintRight(16, lineStr);
-
-    // Z axis offset
-    PrintLeft(24, "Z offset");
-    snprintf(lineStr, sizeof(lineStr), "%.1f%", gConfiguration.eeprom.zMagOffset);
-    PrintRight(24, lineStr);
-}
-
-void InfoPage::DrawBatteryInfoPage()
-{
-    char lineStr[22];
-
-    display->setTextSize(1);
-    display->setFont(nullptr);
-    display->setTextColor(SSD1306_WHITE);
-
-    PowerStatus_t powerStatus = gPower.GetStatus();
-
-    PrintLeft(0, "BAT level");
-    PrintLeft(8, "BAT");
-    if (powerStatus.batteryConnected != 0)
-    {
-        if (powerStatus.batteryCharging)
-        {
-            snprintf(lineStr, sizeof(lineStr), "%c%d%%", 0x18, powerStatus.batteryLevel_per);
-        }
-        else
-        {
-            snprintf(lineStr, sizeof(lineStr), "%d%%", powerStatus.batteryLevel_per);
-        }
-        PrintRight(0, lineStr);
-        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.batteryVoltage_V, powerStatus.batteryCurrent_mA);
-        PrintRight(8, lineStr);
-    }
-    else
-    {
-        PrintRight(0, "---");
-        PrintRight(8, "--/--");
-    }
-
-    PrintLeft(16, "USB");
-    if (powerStatus.usbConnected != 0)
-    {
-        snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.usbVoltage_V, powerStatus.usbCurrent_mA);
-        PrintRight(16, lineStr);
-    }
-    else
-    {
-        PrintRight(16, "--/--");
-    }
-
-    PrintLeft(24, "Temp");
-    snprintf(lineStr, sizeof(lineStr), "%.1f%cC", powerStatus.temperature_C, 247);
-    PrintRight(24, lineStr);
 }
 
 // @brief Function called by PanelManager when the button is pressed
 // @param longPress true if a long press was detected
 // @return Action to be executed by PanelManager
-PageAction_t InfoPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
+PageAction_t InfoPageSensors::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 {
     PageAction_t action = PAGE_ACTION_NONE;
 
     if ((buttonId == BUTTON_ID_1) && !longPress)
     {
-        // Long press : do nothing
-        subPageIndex++;
-        if (subPageIndex >= INFO_SUBPAGE_NB_SUBPAGES)
-        {
-            subPageIndex = 0;
-        }
-        action = PAGE_ACTION_REFRESH;
+        action = PAGE_ACTION_EXIT_PAGE;
     }
     else if ((buttonId == BUTTON_ID_0) && !longPress)
-
     {
-        // Short press : cycle to next page
-        action = PAGE_ACTION_EXIT;
+        action = PAGE_ACTION_EXIT_TOPIC;
     }
 
     return action;

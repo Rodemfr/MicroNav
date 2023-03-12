@@ -24,8 +24,8 @@
  ***************************************************************************
  */
 
-#ifndef INFOPAGE_H_
-#define INFOPAGE_H_
+#ifndef INFOPAGESENSORS_H_
+#define INFOPAGESENSORS_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
@@ -45,22 +45,14 @@
 /*                               Classes                                   */
 /***************************************************************************/
 
-class InfoPage : public PageHandler
+class InfoPageSensors : public PageHandler
 {
   public:
-    InfoPage();
-    virtual ~InfoPage();
+    InfoPageSensors();
+    virtual ~InfoPageSensors();
 
-    void         Draw(bool force);
+    void         Draw(bool force, bool flushDisplay = true);
     PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
-  
-  private:
-    uint32_t subPageIndex;
-
-    void DrawCalibrationInfoPage();
-    void DrawNetworkInfoPage();
-    void DrawCompassInfoPage();
-    void DrawBatteryInfoPage();
 };
 
 #endif
