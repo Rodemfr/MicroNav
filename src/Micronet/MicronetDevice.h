@@ -84,6 +84,13 @@ typedef struct
     NetworkInfo_t    networksInRange[MAX_NETWORK_TO_SCAN];
 } DeviceInfo_t;
 
+typedef struct
+{
+    bool     batteryPresent;
+    bool     batteryCharging;
+    uint32_t batteryLevel;
+} SystemInfo_t;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -100,12 +107,14 @@ class MicronetDevice
     void          AddDataFields(uint32_t dataMask);
     void          ProcessMessage(MicronetMessage_t *message, MicronetMessageFifo *messageFifo);
     DeviceInfo_t &GetDeviceInfo();
+    void          SetSystemInfo(SystemInfo_t &systemInfo);
     void          Yield();
 
   private:
     MicronetCodec *micronetCodec;
     uint8_t        lastMasterSignalStrength;
     DeviceInfo_t   deviceInfo;
+    SystemInfo_t   systemInfo;
     uint32_t       pingTimeStamp;
     uint32_t       nextAsyncSlot;
 

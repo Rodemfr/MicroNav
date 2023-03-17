@@ -117,22 +117,22 @@ bool PanelManager::Init()
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
 
-    statusTopic.AddPage(&logoPage);
-    statusTopic.AddPage(&networkPage);
-    statusTopic.AddPage(&clockPage);
+    statusTopic.AddPage(&logoPage, "Status 1");
+    statusTopic.AddPage(&clockPage, "Status 2");
+    statusTopic.AddPage(&networkPage, "Status 3");
     topicList.push_back(&statusTopic);
 
-    infoTopic.AddPage(&infoPageMicronet);
-    infoTopic.AddPage(&infoPageSensors);
-    infoTopic.AddPage(&infoPagePower);
-    infoTopic.AddPage(&infoPageCompass);
+    infoTopic.AddPage(&infoPageMicronet, "Info 1");
+    infoTopic.AddPage(&infoPageSensors, "Info 2");
+    infoTopic.AddPage(&infoPagePower, "Info 3");
+    infoTopic.AddPage(&infoPageCompass, "Info 4");
     topicList.push_back(&infoTopic);
 
-    configTopic.AddPage(&configPage1);
-    configTopic.AddPage(&configPage2);
+    configTopic.AddPage(&configPage1, "Config 1");
+    configTopic.AddPage(&configPage2, "Config 2");
     topicList.push_back(&configTopic);
 
-    commandTopic.AddPage(&commandPage);
+    commandTopic.AddPage(&commandPage, "Command");
     topicList.push_back(&commandTopic);
 
     currentTopic = &statusTopic;

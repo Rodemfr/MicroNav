@@ -45,24 +45,31 @@
 /*                                Types                                    */
 /***************************************************************************/
 
+typedef struct
+{
+    PageHandler *handler;
+    std::string name;
+} PageRef_t;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
 
 class TopicHandler : public PageHandler
 {
-  public:
-    TopicHandler(std::string topicName);
-    virtual ~TopicHandler();
-    void AddPage(PageHandler *pageHandler);
-    virtual bool Draw(bool force, bool flushDisplay = true);
-    virtual PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
+    public:
+        TopicHandler(std::string topicName);
+        virtual ~TopicHandler();
+        void AddPage(PageHandler *pageHandler, std::string pageName);
+        virtual bool Draw(bool force, bool flushDisplay = true);
+        virtual PageAction_t OnButtonPressed(ButtonId_t buttonId, bool longPress);
 
-  protected:
-    std::string topicName;
-    uint32_t pageIndex;
-    std::vector<PageHandler *> pageList;
+    protected:
+        std::string topicName;
+        uint32_t pageIndex;
+        std::vector<PageRef_t> pageList;
 
+        void DrawBatteryStatus(uint32_t x, uint32_t y, uint32_t level);
 };
 
 #endif

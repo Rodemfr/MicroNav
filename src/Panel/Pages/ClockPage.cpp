@@ -196,11 +196,11 @@ bool ClockPage::Draw(bool force, bool flushDisplay)
         display->getTextBounds(dateStr, 0, 0, &xDate, &yDate, &wDate, &hDate);
 
         display->setFont(&FreeSansBold18pt);
-        display->setCursor((SCREEN_WIDTH - wTime) / 2, - yTime - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
+        display->setCursor((SCREEN_WIDTH - wTime) / 2, -yTime - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
         display->println(timeStr);
 
         display->setFont(&FreeSansBold9pt);
-        display->setCursor((SCREEN_WIDTH - wDate) / 2, - yTime - yDate + 6 - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
+        display->setCursor((SCREEN_WIDTH - wDate) / 2, -yTime - yDate + 6 - 4 + (SCREEN_HEIGHT - 8 + yTime + yDate - 6) / 2);
         display->println(dateStr);
         if (flushDisplay)
         {
@@ -208,7 +208,7 @@ bool ClockPage::Draw(bool force, bool flushDisplay)
         }
     }
 
-    return updateDisplay;
+    return (updateDisplay || force);
 }
 
 void ClockPage::SetNavData(NavigationData *navData)

@@ -286,9 +286,23 @@ uint8_t MicronetDevice::GetShortestDevice()
     return minDeviceIndex;
 }
 
+/*
+    Get the latest status of the Micronet network (devices connected, link quality, etc.)
+    @return DeviceInfo_t structure filled with latest network status
+*/
 DeviceInfo_t &MicronetDevice::GetDeviceInfo()
 {
     return deviceInfo;
+}
+
+/*
+    Set the latest status of the system.
+    This status will be sent to Micronet network when requested (e.g. Device Info data).
+    @param systemInfo SytemInfo_t structure filled with latest system status
+*/
+void MicronetDevice::SetSystemInfo(SystemInfo_t &systemInfo)
+{
+    this->systemInfo = systemInfo;
 }
 
 /*
