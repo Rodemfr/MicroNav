@@ -84,13 +84,6 @@ typedef struct
     NetworkInfo_t    networksInRange[MAX_NETWORK_TO_SCAN];
 } DeviceInfo_t;
 
-typedef struct
-{
-    bool     batteryPresent;
-    bool     batteryCharging;
-    uint32_t batteryLevel;
-} SystemInfo_t;
-
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/

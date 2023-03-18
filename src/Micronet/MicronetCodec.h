@@ -89,6 +89,14 @@ struct NetworkMap_t
     TxSlotDesc_t ackSlot[MAX_DEVICES_PER_NETWORK];
 };
 
+typedef struct
+{
+    bool     batteryPresent;
+    bool     batteryCharging;
+    bool     powerConnected;
+    uint16_t batteryLevel;
+} SystemInfo_t;
+
 /***************************************************************************/
 /*                               Classes                                   */
 /***************************************************************************/
@@ -132,9 +140,12 @@ class MicronetCodec
     uint8_t EncodePingMessage(MicronetMessage_t *message, uint8_t signalStrength, uint32_t networkId, uint32_t deviceId);
     void    CalculateTrueWind();
 
+    void SetSystemInfo(SystemInfo_t &systemInfo);
+
   private:
-    uint8_t swMajorVersion;
-    uint8_t swMinorVersion;
+    uint8_t      swMajorVersion;
+    uint8_t      swMinorVersion;
+    SystemInfo_t systemInfo;
 
     void    DecodeSendDataMessage(MicronetMessage_t *message);
     void    DecodeSetParameterMessage(MicronetMessage_t *message);

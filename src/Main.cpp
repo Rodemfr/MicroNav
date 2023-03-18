@@ -62,9 +62,7 @@ void PrintInt(uint32_t data);
 void PrintRawMessage(MicronetMessage_t *message, uint32_t lastMasterRequest_us);
 void PrintNetworkMap(NetworkMap_t *networkMap);
 
-void MenuAbout();
-void MenuConvertToNmea();
-void MenuCalibrateMagnetoMeter();
+void ConversionLoop();
 void MenuDebug1();
 void MenuDebug2();
 
@@ -75,7 +73,7 @@ void MenuDebug2();
 bool firstLoop;
 
 MenuEntry_t mainMenu[] = {
-    {"MicroNav", nullptr}, {"Start NMEA conversion", MenuConvertToNmea}, {"Debug 1", MenuDebug1}, {"Debug 2", MenuDebug2}, {nullptr, nullptr}};
+    {"MicroNav", nullptr}, {"Start NMEA conversion", ConversionLoop}, {"Debug 1", MenuDebug1}, {"Debug 2", MenuDebug2}, {nullptr, nullptr}};
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -172,7 +170,7 @@ void loop()
     // Micronet network. if yes, We directly jump to NMEA conversion mode.
     if (firstLoop)
     {
-        MenuConvertToNmea();
+        ConversionLoop();
         gMenuManager.PrintMenu();
     }
 
@@ -309,7 +307,7 @@ void PrintNetworkMap(NetworkMap_t *networkMap)
     CONSOLE.println("");
 }
 
-void MenuConvertToNmea()
+void ConversionLoop()
 {
     bool                exitNmeaLoop = false;
     MicronetMessage_t  *rxMessage;
@@ -318,6 +316,7 @@ void MenuConvertToNmea()
 
     CONSOLE.println("Starting MicroNav...");
 
+    // TODO : Move LoadCalibration & DeployConfiguration to Main.cpp
     // Load sensor calibration data into Micronet codec
     gConfiguration.LoadCalibration(&gMicronetCodec);
 
@@ -331,15 +330,28 @@ void MenuConvertToNmea()
 
     do
     {
+        // Collect system information and give it to MicronetDevice class
+        SystemInfo_t systemInfo;
+        systemInfo.batteryCharging = gPower.GetStatus().batteryCharging;
+        systemInfo.powerConnected = gPower.GetStatus().usbConnected;
+        systemInfo.batteryLevel = gPower.GetStatus().batteryLevel_per;
+        systemInfo.batteryPresent = gPower.GetStatus().batteryConnected;
+        gMicronetDevice.SetSystemInfo(systemInfo);
+
+        // Process any incoming Micronet message from RF
         if ((rxMessage = gRxMessageFifo.Peek()) != nullptr)
         {
+            // Let MicronetDevice decode and process the message
             gMicronetDevice.ProcessMessage(rxMessage, &txMessageFifo);
+            // Give any outgoing message from MicronetDevice to RF driver
             gRfDriver.Transmit(&txMessageFifo);
-
+            // If Micronet's data have been updated, let DataBridge check changes and emit corresponding NMEA sentences
             gDataBridge.UpdateMicronetData();
 
+            // Check if Micronet's calibration data have been updated
             if ((gMicronetCodec.navData.calibrationUpdated) || (gConfiguration.GetModifiedFlag()))
             {
+                // Yes : save new data to EEPROM and deploy the configuration
                 gMicronetCodec.navData.calibrationUpdated = false;
                 gConfiguration.SaveCalibration(gMicronetCodec);
                 gConfiguration.DeployConfiguration(&gMicronetDevice);
@@ -348,28 +360,31 @@ void MenuConvertToNmea()
             gRxMessageFifo.DeleteMessage();
         }
 
+        // Transmit any incoming data from GNSS link to DataBridge for decoding
         while (GNSS_SERIAL.available() > 0)
         {
             gDataBridge.PushNmeaChar(GNSS_SERIAL.read(), LINK_NMEA_GNSS);
         }
 
-        char c;
+        // Transmit any incoming char from NMEA_EXT link to DataBridge for decoding
         while (gConfiguration.ram.nmeaLink->available() > 0)
         {
-            c = gConfiguration.ram.nmeaLink->read();
+            char c = gConfiguration.ram.nmeaLink->read();
+            // if NMEA_EXT share the same link than the console : check for ESC key
             if (((void *)(&CONSOLE) == (void *)(gConfiguration.ram.nmeaLink)) && (c == 0x1b))
             {
+                // ESC key pressed, exit conversion loop and return to upper menu
                 CONSOLE.println("ESC key pressed, stopping conversion.");
                 exitNmeaLoop = true;
             }
+            // Not ESC key : transmit to DataBridge
             gDataBridge.PushNmeaChar(c, LINK_NMEA_EXT);
         }
 
         // Only execute magnetic heading code if navigation compass is available
         if (gConfiguration.ram.navCompassAvailable == true)
         {
-            // Handle magnetic compass
-            // Only request new reading if previous is at least 100ms old
+            // Handle magnetic compass : only request new reading if previous is at least 100ms old
             if ((millis() - lastHeadingTime) > 100)
             {
                 lastHeadingTime = millis();
@@ -377,6 +392,7 @@ void MenuConvertToNmea()
             }
         }
 
+        // if console is not on the same link than NMEA_EXT : check for ESC key
         if ((void *)(&CONSOLE) != (void *)(gConfiguration.ram.nmeaLink))
         {
             while (CONSOLE.available() > 0)
@@ -389,10 +405,16 @@ void MenuConvertToNmea()
             }
         }
 
+        // Update validity of Micronet's navigation data
         gMicronetCodec.navData.UpdateValidity();
 
+        // Let MicronetDevice device process all its time related status
         gMicronetDevice.Yield();
+
+        // Give PanelDriver the latest network status
         gPanelDriver.SetNetworkStatus(gMicronetDevice.GetDeviceInfo());
+
+        // Give hand to OS before next loop
         yield();
 
     } while (!exitNmeaLoop);

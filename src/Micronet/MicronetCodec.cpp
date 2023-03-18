@@ -591,7 +591,21 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     }
     if ((dataFields & DATA_FIELD_NODE_INFO))
     {
-        offset += AddQuad8bitField(message->data + offset, MICRONET_FIELD_ID_NODE_INFO, swMinorVersion, swMajorVersion, 0x33, signalStrength);
+        uint8_t batStatus;
+
+        if (systemInfo.batteryPresent)
+        {
+            batStatus = (systemInfo.batteryLevel / 26) & 0x03;
+            if (systemInfo.powerConnected)
+            {
+                batStatus |= 0x30;
+            }
+        }
+        else
+        {
+            batStatus = 0x30;
+        }
+        offset += AddQuad8bitField(message->data + offset, MICRONET_FIELD_ID_NODE_INFO, swMinorVersion, swMajorVersion, batStatus, signalStrength);
     }
     if ((dataFields & DATA_FIELD_DPT) && ((navData.dpt_m.valid)))
     {
@@ -1208,4 +1222,14 @@ float MicronetCodec::CalculateSignalFloatStrength(MicronetMessage_t *message)
         strength = 0;
 
     return strength;
+}
+
+/*
+    Set the latest status of the system.
+    This status will be sent to Micronet network when requested (e.g. Device Info data).
+    @param systemInfo SytemInfo_t structure filled with latest system status
+*/
+void MicronetCodec::SetSystemInfo(SystemInfo_t &systemInfo)
+{
+    this->systemInfo = systemInfo;
 }

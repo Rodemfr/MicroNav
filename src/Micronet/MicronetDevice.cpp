@@ -303,6 +303,7 @@ DeviceInfo_t &MicronetDevice::GetDeviceInfo()
 void MicronetDevice::SetSystemInfo(SystemInfo_t &systemInfo)
 {
     this->systemInfo = systemInfo;
+    micronetCodec->SetSystemInfo(systemInfo);
 }
 
 /*
