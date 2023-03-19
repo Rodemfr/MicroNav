@@ -39,15 +39,24 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+// Command masks for IRQ/Task communication
 #define POWER_EVENT_SHUTDOWN 0x00000001
 #define POWER_EVENT_IRQ      0x00000002
 #define POWER_EVENT_ALL      0x00000003
 
-#define TASK_WAKEUP_PERIOD_MS 100 // Wake-up period of the processing task in milliseconds
+// Wake-up period of the power processing task in milliseconds
+#define TASK_WAKEUP_PERIOD_MS 100
 
-#define VOLTAGE_FILTERING_FACTOR     0.8f
-#define CURRENT_FILTERING_FACTOR     0.96f
-#define TEMPERATURE_FILTERING_FACTOR 0.98f
+// Those are the filtering factors for various battery indicators.
+// Filtering them avoids current/voltage bursts to propagates
+// noise to other values.
+#define VOLTAGE_FILTERING_FACTOR       0.80f
+#define CURRENT_FILTERING_FACTOR       0.80f
+#define BATTERY_LEVEL_FILTERING_FACTOR 0.99f
+#define TEMPERATURE_FILTERING_FACTOR   0.98f
+
+// Estimated internal resistance of battery.
+#define BATTERY_INTERNAL_RESISTANCE_OHM 0.150f
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -61,16 +70,19 @@
 /*                               Globals                                   */
 /***************************************************************************/
 
+// Pointer to the class instance. Used by static IRQ callback to pass data to the object instance.
 Power *Power::objectPtr;
 
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
 
-Power::Power() : buttonCallback(nullptr)
+// Class constructor
+Power::Power() : buttonCallback(nullptr), firstBatteryQuery(true)
 {
 }
 
+// Class destructor
 Power::~Power()
 {
 }
@@ -82,9 +94,10 @@ bool Power::Init()
         return false;
     }
 
-    objectPtr = this;
+    objectPtr         = this;
+    firstBatteryQuery = true;
 
-    AXPDriver.setSysPowerDownVoltage(2700);
+    AXPDriver.setSysPowerDownVoltage(2900);
     AXPDriver.setVbusVoltageLimit(XPOWERS_AXP192_VBUS_VOL_LIM_4V5);
     AXPDriver.setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
     AXPDriver.setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
@@ -170,7 +183,7 @@ void Power::ProcessingTask()
         if (commandFlags & POWER_EVENT_IRQ)
         {
             AXPDriver.getIrqStatus();
-            
+
             if (buttonCallback != nullptr)
             {
                 if (AXPDriver.isPekeyShortPressIrq())
@@ -200,23 +213,62 @@ void IRAM_ATTR Power::StaticIrqCallback()
 
 void Power::UpdateStatus()
 {
+    float batVoltage_V  = AXPDriver.getBattVoltage() / 1000.0f;
+    float batCurrent_mA = AXPDriver.getBatteryChargeCurrent() - AXPDriver.getBattDischargeCurrent();
+
     powerStatus.batteryConnected = AXPDriver.isBatteryConnect();
     powerStatus.batteryCharging  = AXPDriver.isCharging();
-    powerStatus.batteryLevel_per = AXPDriver.getBatteryPercent();
-    powerStatus.batteryVoltage_V =
-        (VOLTAGE_FILTERING_FACTOR * powerStatus.batteryVoltage_V) + ((1.0f - VOLTAGE_FILTERING_FACTOR) * AXPDriver.getBattVoltage() / 1000.0f);
-    powerStatus.batteryCurrent_mA =
-        (CURRENT_FILTERING_FACTOR * powerStatus.batteryCurrent_mA) + ((1.0f - CURRENT_FILTERING_FACTOR) * AXPDriver.getBattDischargeCurrent());
-    powerStatus.usbConnected = AXPDriver.isVbusIn();
-    powerStatus.usbVoltage_V =
-        (VOLTAGE_FILTERING_FACTOR * powerStatus.usbVoltage_V) + ((1.0f - VOLTAGE_FILTERING_FACTOR) * AXPDriver.getVbusVoltage() / 1000.0f);
-    powerStatus.usbCurrent_mA =
-        (CURRENT_FILTERING_FACTOR * powerStatus.usbCurrent_mA) + ((1.0f - CURRENT_FILTERING_FACTOR) * AXPDriver.getVbusCurrent());
-    powerStatus.temperature_C =
-        (TEMPERATURE_FILTERING_FACTOR * powerStatus.temperature_C) + ((1.0f - TEMPERATURE_FILTERING_FACTOR) * AXPDriver.getTemperature());
+    powerStatus.usbConnected     = AXPDriver.isVbusIn();
+
+    if (firstBatteryQuery)
+    {
+        firstBatteryQuery             = false;
+        powerStatus.batteryVoltage_V  = batVoltage_V;
+        powerStatus.batteryCurrent_mA = batCurrent_mA;
+        powerStatus.batteryLevel_per  = GetBatteryLevel(batVoltage_V, batCurrent_mA);
+        powerStatus.usbVoltage_V      = AXPDriver.getVbusVoltage();
+        powerStatus.usbCurrent_mA     = AXPDriver.getVbusCurrent();
+        powerStatus.temperature_C     = AXPDriver.getTemperature();
+        Serial.print("Init : ");
+        Serial.println(powerStatus.batteryLevel_per);
+    }
+    else
+    {
+        powerStatus.batteryVoltage_V = (VOLTAGE_FILTERING_FACTOR * powerStatus.batteryVoltage_V) + ((1.0f - VOLTAGE_FILTERING_FACTOR) * batVoltage_V);
+        powerStatus.batteryCurrent_mA =
+            (CURRENT_FILTERING_FACTOR * powerStatus.batteryCurrent_mA) + ((1.0f - CURRENT_FILTERING_FACTOR) * batCurrent_mA);
+        powerStatus.usbVoltage_V =
+            (VOLTAGE_FILTERING_FACTOR * powerStatus.usbVoltage_V) + ((1.0f - VOLTAGE_FILTERING_FACTOR) * AXPDriver.getVbusVoltage() / 1000.0f);
+        powerStatus.usbCurrent_mA =
+            (CURRENT_FILTERING_FACTOR * powerStatus.usbCurrent_mA) + ((1.0f - CURRENT_FILTERING_FACTOR) * AXPDriver.getVbusCurrent());
+        powerStatus.temperature_C =
+            (TEMPERATURE_FILTERING_FACTOR * powerStatus.temperature_C) + ((1.0f - TEMPERATURE_FILTERING_FACTOR) * AXPDriver.getTemperature());
+        powerStatus.batteryLevel_per =
+            BATTERY_LEVEL_FILTERING_FACTOR * powerStatus.batteryLevel_per +
+            (1.0f - BATTERY_LEVEL_FILTERING_FACTOR) * GetBatteryLevel(powerStatus.batteryVoltage_V, powerStatus.batteryCurrent_mA);
+    }
 }
 
 void Power::CommandShutdown()
 {
     AXPDriver.shutdown();
+}
+
+uint16_t Power::GetBatteryLevel(float voltage_V, float current_mA)
+{
+    if (!AXPDriver.isBatteryConnect())
+    {
+        return -1;
+    }
+    const static int table[11]           = {3000, 3650, 3700, 3740, 3760, 3795, 3840, 3910, 3980, 4070, 4150};
+    uint16_t         correctedVoltage_mV = voltage_V * 1000.0f - BATTERY_INTERNAL_RESISTANCE_OHM * current_mA;
+
+    if (correctedVoltage_mV < table[0])
+        return 0;
+    for (int i = 1; i < 11; i++)
+    {
+        if (correctedVoltage_mV < table[i])
+            return i * 10 - (10UL * (int)(table[i] - correctedVoltage_mV)) / (int)(table[i] - table[i - 1]);
+    }
+    return 100;
 }

@@ -81,17 +81,16 @@ bool InfoPagePower::Draw(bool force, bool flushDisplay)
 
     PowerStatus_t powerStatus = gPower.GetStatus();
 
-    PrintLeft(0, "BAT level");
-    PrintLeft(8, "BAT");
+    PrintLeft(0, "BAT");
     if (powerStatus.batteryConnected != 0)
     {
         if (powerStatus.batteryCharging)
         {
-            snprintf(lineStr, sizeof(lineStr), "%c%d%%", 0x18, powerStatus.batteryLevel_per);
+            snprintf(lineStr, sizeof(lineStr), "%c%.0f%%", 0x18, powerStatus.batteryLevel_per);
         }
         else
         {
-            snprintf(lineStr, sizeof(lineStr), "%d%%", powerStatus.batteryLevel_per);
+            snprintf(lineStr, sizeof(lineStr), "%.0f%%", powerStatus.batteryLevel_per);
         }
         PrintRight(0, lineStr);
         snprintf(lineStr, sizeof(lineStr), "%.2fV/%.0fmA", powerStatus.batteryVoltage_V, powerStatus.batteryCurrent_mA);

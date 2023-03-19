@@ -81,10 +81,6 @@ MenuEntry_t mainMenu[] = {
 
 void setup()
 {
-    // Configure power supply
-    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
-    gPower.Init();
-
     // Load configuration from EEPROM
     gConfiguration.Init();
     gConfiguration.LoadFromEeprom();
@@ -98,6 +94,10 @@ void setup()
     CONSOLE.print(SW_MINOR_VERSION);
     CONSOLE.print(".");
     CONSOLE.println(SW_PATCH_VERSION);
+
+    // Configure power supply
+    Wire.begin(PMU_I2C_SDA, PMU_I2C_SCL);
+    gPower.Init();
 
     // Init GNSS NMEA serial link
     GNSS_SERIAL.begin(GNSS_BAUDRATE, SERIAL_8N1, GNSS_RX_PIN, GNSS_TX_PIN);

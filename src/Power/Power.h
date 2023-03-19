@@ -47,15 +47,15 @@
 
 typedef struct
 {
-    bool    batteryConnected;
-    bool    batteryCharging;
-    int16_t batteryLevel_per;
-    float   batteryVoltage_V;
-    float   batteryCurrent_mA;
-    bool    usbConnected;
-    float   usbVoltage_V;
-    float   usbCurrent_mA;
-    float   temperature_C;
+    bool  batteryConnected;
+    bool  batteryCharging;
+    float batteryLevel_per;
+    float batteryVoltage_V;
+    float batteryCurrent_mA;
+    bool  usbConnected;
+    float usbVoltage_V;
+    float usbCurrent_mA;
+    float temperature_C;
 } PowerStatus_t;
 
 typedef void (*ButtonCallback_t)(bool);
@@ -82,12 +82,14 @@ class Power
     EventGroupHandle_t powerEventGroup;
     static Power      *objectPtr;
     ButtonCallback_t   buttonCallback;
+    bool               firstBatteryQuery;
 
     static void StaticProcessingTask(void *callingObject);
     void        ProcessingTask();
     static void StaticIrqCallback();
     void        UpdateStatus();
     void        CommandShutdown();
+    uint16_t    GetBatteryLevel(float voltage_V, float current_mA);
 };
 
 /***************************************************************************/

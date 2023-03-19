@@ -595,7 +595,7 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
 
         if (systemInfo.batteryPresent)
         {
-            batStatus = (systemInfo.batteryLevel / 26) & 0x03;
+            batStatus = ((uint8_t)(systemInfo.batteryLevel / 26.0f)) & 0x03;
             if (systemInfo.powerConnected)
             {
                 batStatus |= 0x30;

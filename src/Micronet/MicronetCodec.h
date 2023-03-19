@@ -91,10 +91,10 @@ struct NetworkMap_t
 
 typedef struct
 {
-    bool     batteryPresent;
-    bool     batteryCharging;
-    bool     powerConnected;
-    uint16_t batteryLevel;
+    bool  batteryPresent;
+    bool  batteryCharging;
+    bool  powerConnected;
+    float batteryLevel;
 } SystemInfo_t;
 
 /***************************************************************************/
