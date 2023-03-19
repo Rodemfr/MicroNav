@@ -119,22 +119,6 @@ bool ConfigPage1::Draw(bool force, bool flushDisplay)
             display->print(ConfigString(i));
         }
 
-        // Save & exit
-        if (editMode)
-        {
-            if (editPosition == NUMBER_OF_CONFIG_ITEMS)
-            {
-                display->fillRect(104, 64 - 16, 4 * 6, 8, SSD1306_WHITE);
-                display->setTextColor(SSD1306_BLACK);
-            }
-            else
-            {
-                display->setTextColor(SSD1306_WHITE);
-            }
-            display->setCursor(104, 64 - 16);
-            display->print("Save");
-        }
-
         if (flushDisplay)
         {
             display->display();
@@ -153,28 +137,28 @@ PageAction_t ConfigPage1::OnButtonPressed(ButtonId_t buttonId, bool longPress)
 
     if (editMode)
     {
-        // In edit mode, the power button is used to cycle through the configuration items
-        if ((buttonId == BUTTON_ID_0) && !longPress)
+        // Short press on power button
+        if ((buttonId == BUTTON_ID_0) && (!longPress))
         {
-            if (editPosition == NUMBER_OF_CONFIG_ITEMS)
+            // Cycle configuration item values
+            ConfigCycle(editPosition);
+            action = PAGE_ACTION_REFRESH;
+        }
+        // App button
+        else if (buttonId == BUTTON_ID_1)
+        {
+            if (longPress)
             {
-                // Long press on "Save"
-                editMode = false;
-                // Apply configuration
+                // Long press : deploy configuration ans exit edit mode
                 DeployConfiguration();
+                editMode = false;
             }
             else
             {
-                // Press on a configuration item : cycle its value
-                ConfigCycle(editPosition);
+                // Short press : cycle through configuration items
+                editPosition = (editPosition + 1) % NUMBER_OF_CONFIG_ITEMS;
+                action       = PAGE_ACTION_REFRESH;
             }
-            action = PAGE_ACTION_REFRESH;
-        }
-        else if ((buttonId == BUTTON_ID_1) && !longPress)
-        {
-            // Short press : cycle through configuration items
-            editPosition = (editPosition + 1) % (NUMBER_OF_CONFIG_ITEMS + 1);
-            action       = PAGE_ACTION_REFRESH;
         }
     }
     else
