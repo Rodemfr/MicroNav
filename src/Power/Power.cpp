@@ -73,6 +73,9 @@
 // Pointer to the class instance. Used by static IRQ callback to pass data to the object instance.
 Power *Power::objectPtr;
 
+// Voltage table used to estimate battery charge level
+const int32_t Power::voltageTable[VOLTAGE_TABLE_ENTRIES] = {3000, 3650, 3700, 3740, 3760, 3795, 3840, 3910, 3980, 4070, 4150};
+
 /***************************************************************************/
 /*                              Functions                                  */
 /***************************************************************************/
@@ -229,8 +232,6 @@ void Power::UpdateStatus()
         powerStatus.usbVoltage_V      = AXPDriver.getVbusVoltage();
         powerStatus.usbCurrent_mA     = AXPDriver.getVbusCurrent();
         powerStatus.temperature_C     = AXPDriver.getTemperature();
-        Serial.print("Init : ");
-        Serial.println(powerStatus.batteryLevel_per);
     }
     else
     {
@@ -260,15 +261,17 @@ uint16_t Power::GetBatteryLevel(float voltage_V, float current_mA)
     {
         return -1;
     }
-    const static int table[11]           = {3000, 3650, 3700, 3740, 3760, 3795, 3840, 3910, 3980, 4070, 4150};
-    uint16_t         correctedVoltage_mV = voltage_V * 1000.0f - BATTERY_INTERNAL_RESISTANCE_OHM * current_mA;
+    
+    int32_t correctedVoltage_mV = voltage_V * 1000.0f - BATTERY_INTERNAL_RESISTANCE_OHM * current_mA;
 
-    if (correctedVoltage_mV < table[0])
+    if (correctedVoltage_mV < voltageTable[0])
         return 0;
-    for (int i = 1; i < 11; i++)
+    
+    for (int i = 1; i < VOLTAGE_TABLE_ENTRIES; i++)
     {
-        if (correctedVoltage_mV < table[i])
-            return i * 10 - (10UL * (int)(table[i] - correctedVoltage_mV)) / (int)(table[i] - table[i - 1]);
+        if (correctedVoltage_mV < voltageTable[i])
+            return i * (100 / (VOLTAGE_TABLE_ENTRIES - 1)) - ((VOLTAGE_TABLE_ENTRIES - 1) * (voltageTable[i] - correctedVoltage_mV)) / (voltageTable[i] - voltageTable[i - 1]);
     }
+
     return 100;
 }

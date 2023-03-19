@@ -41,6 +41,8 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
+#define VOLTAGE_TABLE_ENTRIES 11
+
 /***************************************************************************/
 /*                                Types                                    */
 /***************************************************************************/
@@ -83,6 +85,7 @@ class Power
     static Power      *objectPtr;
     ButtonCallback_t   buttonCallback;
     bool               firstBatteryQuery;
+    const static int32_t voltageTable[VOLTAGE_TABLE_ENTRIES];
 
     static void StaticProcessingTask(void *callingObject);
     void        ProcessingTask();
