@@ -47,7 +47,7 @@ typedef enum
     COMMAND_POSITION_SHUTDOWN = 0,
     COMMAND_POSITION_ATTACH,
     COMMAND_POSITION_CALCOMPASS,
-    COMMAND_POSITION_EXIT
+    COMMAND_POSITION_NBPOSITIONS
 } CmdPos_t;
 
 /***************************************************************************/
@@ -130,20 +130,6 @@ bool CommandPage::Draw(bool force, bool flushDisplay)
         }
         PrintCentered(2 * 8, "Calibrate compass");
 
-        if (selectionMode)
-        {
-            if (selectionPosition == COMMAND_POSITION_EXIT)
-            {
-                display->fillRect(128 - 6 * 4, 64 - 16, 6 * 4, 8, SSD1306_WHITE);
-                display->setTextColor(SSD1306_BLACK);
-            }
-            else
-            {
-                display->setTextColor(SSD1306_WHITE);
-            }
-            PrintRight(64 - 16, "Exit");
-        }
-
         if (flushDisplay)
         {
             display->display();
@@ -173,38 +159,37 @@ PageAction_t CommandPage::OnButtonPressed(ButtonId_t buttonId, bool longPress)
         return subAction;
     }
 
-    PageAction_t action = PAGE_ACTION_EXIT_TOPIC;
+    PageAction_t action = PAGE_ACTION_NONE;
 
     if (selectionMode)
     {
         // In selection mode, the button is used to cycle through the command items
         if ((buttonId == BUTTON_ID_0) && (!longPress))
         {
-            if (selectionPosition == COMMAND_POSITION_EXIT)
+            // Long press on a command
+            switch (selectionPosition)
             {
-                // Long press on "Exit"
+            case 0:
+                gPower.Shutdown();
+                break;
+            case 1:
+                subPage = &attachPage;
+                break;
+            }
+            action = PAGE_ACTION_REFRESH;
+        }
+        else if (buttonId == BUTTON_ID_1)
+        {
+            if (longPress)
+            {
                 selectionMode = false;
             }
             else
             {
-                // Long press on a command
-                switch (selectionPosition)
-                {
-                case 0:
-                    gPower.Shutdown();
-                    break;
-                case 1:
-                    subPage = &attachPage;
-                    break;
-                }
+                // Short press : cycle through configuration items
+                selectionPosition = (selectionPosition + 1) % COMMAND_POSITION_NBPOSITIONS;
             }
             action = PAGE_ACTION_REFRESH;
-        }
-        else if ((buttonId == BUTTON_ID_1) && (!longPress))
-        {
-            // Short press : cycle through configuration items
-            selectionPosition = (selectionPosition + 1) % (COMMAND_POSITION_EXIT + 1);
-            action            = PAGE_ACTION_REFRESH;
         }
     }
     else
