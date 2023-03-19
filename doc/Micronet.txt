@@ -399,7 +399,7 @@ Example : Speed filtering level MED
 |    NID    |    DID    |MI|DF|SS|CS|LE|CS|PA|PI|PL|VA|VE|CS|
 |83 03 77 37|81 03 70 82|06|09|09|C2|12|12|FF|04|01|20|0E|32|
 
-Example : set time zone
+Example : Set time zone
 |             MESSAGE HEADER              |    CORRECTION   |
 |    NID    |    DID    |MI|DF|SS|CS|LE|CS|PA|PI|PL|VA|VE|CS|
 |83 09 2C 36|81 03 70 82|06|09|00|73|12|12|FF|10|01|01|02|13|
@@ -408,7 +408,6 @@ Example : Set Display backlight to off
 |             MESSAGE HEADER              |  DISPLAY  |
 |    NID    |    DID    |MI|DF|SS|CS|LE|CS|PA|VA|VE|CS|
 |88 0B 29 06|88 0B C9 44|06|01|09|72|10|10|E5|00|01|E6|
-
 
 PL Parameter Length - Number of bytes on wich VA is coded.
 
