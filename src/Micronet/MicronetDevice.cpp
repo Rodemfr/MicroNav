@@ -215,7 +215,7 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                     }
                 }
 
-                // Dcrease the Async sot availability counter at each network cycle
+                // Decrease the Async slot availability counter at each network cycle
                 if (nextAsyncSlot > 0)
                 {
                     nextAsyncSlot--;

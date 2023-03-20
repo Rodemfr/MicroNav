@@ -138,6 +138,7 @@ class MicronetCodec
     uint8_t EncodeResetMessage(MicronetMessage_t *message, uint8_t signalStrength, uint32_t networkId, uint32_t deviceId);
     uint8_t EncodeAckParamMessage(MicronetMessage_t *message, uint8_t signalStrength, uint32_t networkId, uint32_t deviceId);
     uint8_t EncodePingMessage(MicronetMessage_t *message, uint8_t signalStrength, uint32_t networkId, uint32_t deviceId);
+    uint8_t EncodeAlertMessage(MicronetMessage_t *message, uint8_t signalStrength, uint32_t networkId, uint32_t deviceId, uint8_t alertID);
     void    CalculateTrueWind();
 
     void SetSystemInfo(SystemInfo_t &systemInfo);
