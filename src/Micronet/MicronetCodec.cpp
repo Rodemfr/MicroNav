@@ -150,8 +150,8 @@ bool MicronetCodec::DecodeMessage(MicronetMessage_t *message)
     case MICRONET_MESSAGE_ID_SEND_DATA:
         DecodeSendDataMessage(message);
         break;
-    case MICRONET_MESSAGE_ID_SET_PARAMETER:
-        DecodeSetParameterMessage(message);
+    case MICRONET_MESSAGE_ID_SEND_COMMAND:
+        DecodeSendCommandMessage(message);
         ackRequested = true;
         break;
     }
@@ -173,7 +173,7 @@ void MicronetCodec::DecodeSendDataMessage(MicronetMessage_t *message)
     CalculateTrueWind();
 }
 
-void MicronetCodec::DecodeSetParameterMessage(MicronetMessage_t *message)
+void MicronetCodec::DecodeSendCommandMessage(MicronetMessage_t *message)
 {
     uint8_t crc = 0;
     for (int i = MICRONET_PAYLOAD_OFFSET; i < message->len - 1; i++)
@@ -185,14 +185,14 @@ void MicronetCodec::DecodeSetParameterMessage(MicronetMessage_t *message)
     {
         switch (message->data[MICRONET_PAYLOAD_OFFSET])
         {
-        case 0xff:
-            DecodePageFF(message);
+        case MICRONET_COMMAND_SET_CONFIG_PARAMETER:
+            DecodeSetConfigParameter(message);
             break;
         }
     }
 }
 
-void MicronetCodec::DecodePageFF(MicronetMessage_t *message)
+void MicronetCodec::DecodeSetConfigParameter(MicronetMessage_t *message)
 {
     switch (message->data[MICRONET_PAYLOAD_OFFSET + 1])
     {
@@ -721,7 +721,7 @@ uint8_t MicronetCodec::EncodeResetMessage(MicronetMessage_t *message, uint8_t si
     message->data[offset++] = (deviceId >> 8) & 0xff;
     message->data[offset++] = deviceId & 0xff;
     // Message info
-    message->data[offset++] = MICRONET_MESSAGE_ID_SET_PARAMETER;
+    message->data[offset++] = MICRONET_MESSAGE_ID_SEND_COMMAND;
     message->data[offset++] = 0x09;
     message->data[offset++] = signalStrength;
     // Header CRC
@@ -765,7 +765,7 @@ uint8_t MicronetCodec::EncodeAckParamMessage(MicronetMessage_t *message, uint8_t
     message->data[offset++] = (deviceId >> 8) & 0xff;
     message->data[offset++] = deviceId & 0xff;
     // Message info
-    message->data[offset++] = MICRONET_MESSAGE_ID_ACK_PARAMETER;
+    message->data[offset++] = MICRONET_MESSAGE_ID_ACK_COMMAND;
     message->data[offset++] = 0x01;
     message->data[offset++] = signalStrength;
     // Header CRC
@@ -835,7 +835,7 @@ uint8_t MicronetCodec::EncodeAlertMessage(MicronetMessage_t *message, uint8_t si
     message->data[offset++] = (deviceId >> 8) & 0xff;
     message->data[offset++] = deviceId & 0xff;
     // Message info
-    message->data[offset++] = MICRONET_MESSAGE_ID_SET_PARAMETER;
+    message->data[offset++] = MICRONET_MESSAGE_ID_SEND_COMMAND;
     message->data[offset++] = 0x09;
     message->data[offset++] = signalStrength;
     // Header CRC
