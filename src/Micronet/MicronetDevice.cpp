@@ -40,6 +40,8 @@
 #define DEVICE_LOST_TIME_MS 60000
 // If we don't receive a request from a network for this time, we consider the network lost
 #define NETWORK_LOST_TIME_MS 5000
+// Battery low level in percent
+#define BATTERY_LOW_LEVEL 10
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -60,10 +62,12 @@
 /*
   Class constructor
 */
-MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0), nextAsyncSlot(0)
+MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0), nextAsyncSlot(0), batteryAlertSent(false)
 {
     memset(&deviceInfo, 0, sizeof(deviceInfo));
-    this->micronetCodec = micronetCodec;
+    memset(&systemInfo, 0, sizeof(systemInfo));
+    this->micronetCodec     = micronetCodec;
+    systemInfo.batteryLevel = 100;
 }
 
 /*
@@ -160,6 +164,9 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                 // device to monitor the quality of the reception. It is used in the HEALTH page of Micronet displays.
                 lastMasterSignalStrength = micronetCodec->CalculateSignalStrength(message);
 
+                // Check for battery status and send an alarm message if it is low
+                CheckBatteryStatus(messageFifo);
+
                 // For each virtual slave device...
                 for (int i = 0; i < NUMBER_OF_VIRTUAL_DEVICES; i++)
                 {
@@ -173,13 +180,8 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                         // Check that the sync slot is big enough for the encoded message
                         if (txSlot.payloadBytes < payloadLength)
                         {
-                            // Sync slot is but too small : request slot resize
-                            txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-                            micronetCodec->EncodeSlotUpdateMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
-                                                                   deviceInfo.deviceId + i, payloadLength);
-                            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                            txMessage.startTime_us = txSlot.start_us;
-                            messageFifo->Push(txMessage);
+                            // Sync slot is too small : request slot resize
+                            SendResizeRequest(messageFifo, deviceInfo.deviceId + i, payloadLength);
                         }
                         else
                         {
@@ -192,26 +194,16 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                             if (i == NUMBER_OF_VIRTUAL_DEVICES - 1)
                             {
                                 // Only the last virtual device will ping the network
-                                // PingNetwork function will ensure that we will not flood the network with ping requests by enforcing a minimum delay
-                                // wetween each ping
-                                PingNetwork(messageFifo);
+                                // SendNetworkPing function will ensure that we will not flood the network with ping requests by enforcing a minimum
+                                // delay wetween each ping
+                                SendNetworkPing(messageFifo);
                             }
                         }
                     }
                     else
                     {
-                        // Check if the Async slot is available
-                        if (RequestAsyncSlot())
-                        {
-                            // No synchronous slot available : request a slot
-                            txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
-                            micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId,
-                                                                    deviceInfo.deviceId + i,
-                                                                    micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
-                            txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
-                            txMessage.startTime_us = txSlot.start_us;
-                            messageFifo->Push(txMessage);
-                        }
+                        // No synchronous slot available : request a slot
+                        SendSlotRequest(messageFifo, deviceInfo.deviceId + i, micronetCodec->GetDataMessageLength(deviceInfo.splitDataFields[i]));
                     }
                 }
 
@@ -460,10 +452,29 @@ void MicronetDevice::RemoveLostNetworks()
 }
 
 /*
-    Create a PING message.
+    Check if the battery level and send a alert message if the level is low.
     @param messageFifo Pointer to the outgoing message FIFO
 */
-void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
+void MicronetDevice::CheckBatteryStatus(MicronetMessageFifo *messageFifo)
+{
+    if ((systemInfo.batteryLevel <= BATTERY_LOW_LEVEL) && (!systemInfo.batteryCharging))
+    {
+        if (!batteryAlertSent)
+        {
+            batteryAlertSent = SendAlert(messageFifo, deviceInfo.deviceId, MICRONET_ALERT_ID_NMEA_LOW_BAT);
+        }
+    }
+    else
+    {
+        batteryAlertSent = false;
+    }
+}
+
+/*
+    Send a PING message.
+    @param messageFifo Pointer to the outgoing message FIFO
+*/
+bool MicronetDevice::SendNetworkPing(MicronetMessageFifo *messageFifo)
 {
     TxSlotDesc_t      txSlot;
     MicronetMessage_t txMessage;
@@ -472,7 +483,7 @@ void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
     // Only send the ping message every NETWORK_PING_PERIOD_MS to avoid flooding asynchronous slot
     if (now - pingTimeStamp > NETWORK_PING_PERIOD_MS)
     {
-        if (RequestAsyncSlot())
+        if (isAsyncSlotAvailable())
         {
             pingTimeStamp = now;
             txSlot        = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
@@ -480,17 +491,96 @@ void MicronetDevice::PingNetwork(MicronetMessageFifo *messageFifo)
             txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
             txMessage.startTime_us = txSlot.start_us;
             messageFifo->Push(txMessage);
+
+            return true;
         }
     }
+
+    return false;
 }
 
-bool MicronetDevice::RequestAsyncSlot()
+/*
+    Request a resize of the synchronous window
+    @param messageFifo Pointer to the outgoing message FIFO
+    @param deviceId ID of the device to resize the slot for
+    @param newSize New size of the slot to request
+*/
+bool MicronetDevice::SendResizeRequest(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint8_t newSize)
+{
+    TxSlotDesc_t      txSlot;
+    MicronetMessage_t txMessage;
+    uint32_t          now = millis();
+
+    if (isAsyncSlotAvailable())
+    {
+        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+        micronetCodec->EncodeSlotUpdateMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceId, newSize);
+        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+        txMessage.startTime_us = txSlot.start_us;
+        messageFifo->Push(txMessage);
+        return true;
+    }
+
+    return false;
+}
+
+/*
+    Request a synchronous window
+    @param messageFifo Pointer to the outgoing message FIFO
+    @param deviceId ID of the device to resize the slot for
+    @param newSize New size of the slot to request
+*/
+bool MicronetDevice::SendSlotRequest(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint8_t slotSize)
+{
+    TxSlotDesc_t      txSlot;
+    MicronetMessage_t txMessage;
+    uint32_t          now = millis();
+
+    if (isAsyncSlotAvailable())
+    {
+        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+        micronetCodec->EncodeSlotRequestMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceId, slotSize);
+        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+        txMessage.startTime_us = txSlot.start_us;
+        messageFifo->Push(txMessage);
+        return true;
+    }
+
+    return false;
+}
+
+/*
+    Send an alert on Micronet network
+    @param messageFifo Pointer to the outgoing message FIFO
+    @param deviceId ID of the device to resize the slot for
+    @param alertId ID of the alert to send
+*/
+bool MicronetDevice::SendAlert(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint32_t alertId)
+{
+    TxSlotDesc_t      txSlot;
+    MicronetMessage_t txMessage;
+    uint32_t          now = millis();
+
+    if (isAsyncSlotAvailable())
+    {
+        txSlot = micronetCodec->GetAsyncTransmissionSlot(&deviceInfo.networkMap);
+        micronetCodec->EncodeAlertMessage(&txMessage, lastMasterSignalStrength, deviceInfo.networkId, deviceId, alertId);
+        txMessage.action       = MICRONET_ACTION_RF_TRANSMIT;
+        txMessage.startTime_us = txSlot.start_us;
+        messageFifo->Push(txMessage);
+        return true;
+    }
+
+    return false;
+}
+
+bool MicronetDevice::isAsyncSlotAvailable()
 {
     bool asyncSlotAvailable = false;
 
     if (nextAsyncSlot == 0)
     {
-        nextAsyncSlot      = 3 + (esp_random() & 0x00000003);
+        nextAsyncSlot      = 2 + (esp_random() & 0x00000003);
         asyncSlotAvailable = true;
     }
 

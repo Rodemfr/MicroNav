@@ -110,6 +110,7 @@ class MicronetDevice
     SystemInfo_t   systemInfo;
     uint32_t       pingTimeStamp;
     uint32_t       nextAsyncSlot;
+    bool           batteryAlertSent;
 
     void    SplitDataFields();
     uint8_t GetShortestDevice();
@@ -117,8 +118,12 @@ class MicronetDevice
     void    UpdateNetworkScan(MicronetMessage_t *message);
     void    RemoveLostDevices();
     void    RemoveLostNetworks();
-    void    PingNetwork(MicronetMessageFifo *messageFifo);
-    bool    RequestAsyncSlot();
+    void    CheckBatteryStatus(MicronetMessageFifo *messageFifo);
+    bool    SendNetworkPing(MicronetMessageFifo *messageFifo);
+    bool    SendResizeRequest(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint8_t newSize);
+    bool    SendSlotRequest(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint8_t slotSize);
+    bool    SendAlert(MicronetMessageFifo *messageFifo, uint32_t deviceId, uint32_t alertId);
+    bool    isAsyncSlotAvailable();
 };
 
 #endif /* MICRONETDEVICE_H_ */
