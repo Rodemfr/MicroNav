@@ -56,7 +56,7 @@
 #define TASK_WAKEUP_PERIOD_MS   200  // Wake-up period of the command task in milliseconds
 #define DISPLAY_UPDATE_PERIOD   1000 // Display update/refresh period in milliseconds
 #define BUTTON_LONG_PRESS_DELAY 1000 // Minimum time required to trigger a long button press
-#define BUTTON_SHORT_PRESS_MIN  200  // Minimum time to trigger a short button press
+#define BUTTON_SHORT_PRESS_MIN  60   // Minimum time to trigger a short button press
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -117,22 +117,22 @@ bool PanelManager::Init()
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
 
-    statusTopic.AddPage(&logoPage, "Status 1");
-    statusTopic.AddPage(&clockPage, "Status 2");
-    statusTopic.AddPage(&networkPage, "Status 3");
+    statusTopic.AddPage(&logoPage, "Data: Depth");
+    statusTopic.AddPage(&clockPage, "Data: Time");
+    statusTopic.AddPage(&networkPage, "Data: RF");
     topicList.push_back(&statusTopic);
 
-    infoTopic.AddPage(&infoPageMicronet, "Info 1");
-    infoTopic.AddPage(&infoPageSensors, "Info 2");
-    infoTopic.AddPage(&infoPagePower, "Info 3");
-    infoTopic.AddPage(&infoPageCompass, "Info 4");
+    infoTopic.AddPage(&infoPagePower, "Info: Battery");
+    infoTopic.AddPage(&infoPageMicronet, "Info: Micronet");
+    infoTopic.AddPage(&infoPageSensors, "Info: Sensors");
+    infoTopic.AddPage(&infoPageCompass, "Info: Compass");
     topicList.push_back(&infoTopic);
 
-    configTopic.AddPage(&configPage1, "Config 1");
-    configTopic.AddPage(&configPage2, "Config 2");
+    configTopic.AddPage(&configPage1, "Config: General");
+    configTopic.AddPage(&configPage2, "Config: Links");
     topicList.push_back(&configTopic);
 
-    commandTopic.AddPage(&commandPage, "Command");
+    commandTopic.AddPage(&commandPage, "Commands");
     topicList.push_back(&commandTopic);
 
     currentTopic = &statusTopic;
@@ -255,6 +255,10 @@ void PanelManager::CommandCallback()
         {
             // Button is pressed for more than the long press time : handle long press processing
             longPress = true;
+            // In case of long press, we consider the button released
+            portENTER_CRITICAL(&buttonMutex);
+            buttonPressed = false;
+            portEXIT_CRITICAL(&buttonMutex);
             // Request action to the currently displayed page
             switch (currentTopic->OnButtonPressed(BUTTON_ID_1, true))
             {
@@ -362,8 +366,11 @@ void PanelManager::ButtonIsr()
     {
         // Button released
         portENTER_CRITICAL_ISR(&buttonMutex);
-        buttonPressed = false;
-        lastRelease   = now;
+        if (now - lastPress > BUTTON_SHORT_PRESS_MIN)
+        {
+            buttonPressed = false;
+            lastRelease   = now;
+        }
         portEXIT_CRITICAL_ISR(&buttonMutex);
 
         xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);
@@ -371,6 +378,10 @@ void PanelManager::ButtonIsr()
     }
 }
 
+/*
+  Function called each time power button status changed
+  @param longPress True if power button has been pressed for a long time (i.e. >=1s)
+*/
 void PanelManager::PowerButtonCallback(bool longPress)
 {
     if (longPress)
