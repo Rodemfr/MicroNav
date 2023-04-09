@@ -53,12 +53,10 @@ class ClockPage : public PageHandler
     virtual ~ClockPage();
 
     bool Draw(bool force, bool flushDisplay = true);
-    void SetNavData(NavigationData *navData);
 
   private:
-    bool            prevNavDataValid, prevTimeValid, prevDateValid;
+    bool            prevTimeValid, prevDateValid;
     uint8_t         prevHour, prevMinute, prevDay, prevMonth, prevYear;
-    NavigationData *navData;
 };
 
 #endif

@@ -32,6 +32,7 @@
 #include <Arduino.h>
 
 #include <Fonts/FreeSansBold18pt7b.h>
+#include <Fonts/FreeSansBold12pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 
 /***************************************************************************/
@@ -39,6 +40,7 @@
 /***************************************************************************/
 
 GFXfont FreeSansBold9pt = {(uint8_t *)FreeSansBold9pt7bBitmaps, (GFXglyph *)FreeSansBold9pt7bGlyphs, 0x20, 0x7E, 22};
+GFXfont FreeSansBold12pt = {(uint8_t *)FreeSansBold12pt7bBitmaps, (GFXglyph *)FreeSansBold12pt7bGlyphs, 0x20, 0x7E, 29};
 GFXfont FreeSansBold18pt = {(uint8_t *)FreeSansBold18pt7bBitmaps, (GFXglyph *)FreeSansBold18pt7bGlyphs, 0x20, 0x7E, 42};
 
 /***************************************************************************/

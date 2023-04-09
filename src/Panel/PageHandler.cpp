@@ -54,6 +54,7 @@
 
 Adafruit_SSD1306 *PageHandler::display;
 DeviceInfo_t      PageHandler::deviceInfo;
+NavigationData    PageHandler::navData;
 
 /***************************************************************************/
 /*                              Functions                                  */
@@ -120,10 +121,19 @@ void PageHandler::PrintRight(int32_t yPos, String const &text)
 
 /*
   Set the latest network status.
-  @param deviceInfo Structure
+  @param deviceInfo DeviceInfo_t structure
 */
 void PageHandler::SetNetworkStatus(DeviceInfo_t &deviceInfo)
 {
     // Copy it in a static local variable so that every child of PageHandler class will be able to access it
     PageHandler::deviceInfo = deviceInfo;
+}
+
+/*
+  Set the latest navigation data
+  @param navData NavigationData structure
+*/
+void PageHandler::SetNavData(NavigationData &navData)
+{
+    PageHandler::navData = navData;
 }

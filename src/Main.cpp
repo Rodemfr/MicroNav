@@ -152,7 +152,7 @@ void setup()
     }
 
     gMicronetCodec.SetSwVersion(SW_MAJOR_VERSION, SW_MINOR_VERSION);
-    gPanelDriver.SetNavigationData(&gMicronetCodec.navData);
+    gPanelDriver.SetNavigationData(gMicronetCodec.navData);
 
     // Start listening
     gRfDriver.Start();
@@ -347,6 +347,9 @@ void ConversionLoop()
             gRfDriver.Transmit(&txMessageFifo);
             // If Micronet's data have been updated, let DataBridge check changes and emit corresponding NMEA sentences
             gDataBridge.UpdateMicronetData();
+            // Transmit to Panel manager the latest version of navigation data
+            gPanelDriver.SetNavigationData(gMicronetCodec.navData);
+
 
             // Check if Micronet's calibration data have been updated
             if ((gMicronetCodec.navData.calibrationUpdated) || (gConfiguration.GetModifiedFlag()))

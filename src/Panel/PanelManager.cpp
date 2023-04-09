@@ -117,15 +117,21 @@ bool PanelManager::Init()
         xTaskCreate(CommandProcessingTask, "DioTask", 16384, (void *)this, 5, &commandTaskHandle);
     }
 
-    statusTopic.AddPage(&logoPage, "Data: Depth");
-    statusTopic.AddPage(&clockPage, "Data: Time");
-    statusTopic.AddPage(&networkPage, "Data: RF");
+    depthPage.SetData(&PageHandler::navData.dpt_m, std::string("m"), true, &PageHandler::navData.stp_degc, std::string("c"), true);
+    speedPage.SetData(&PageHandler::navData.spd_kt, std::string("kt"), true, &PageHandler::navData.vcc_v, std::string("v"), true);
+    trueWindPage.SetData(&PageHandler::navData.tws_kt, std::string("kt"), true, &PageHandler::navData.twa_deg, std::string("o"), false);
+
+    statusTopic.AddPage(&clockPage, "Data: Time, Date");
+    statusTopic.AddPage(&depthPage, "Data: DPT, STP");
+    statusTopic.AddPage(&speedPage, "Data: SPD, VCC");
+    statusTopic.AddPage(&trueWindPage, "Data: TWS, TWA");
     topicList.push_back(&statusTopic);
 
     infoTopic.AddPage(&infoPagePower, "Info: Battery");
     infoTopic.AddPage(&infoPageMicronet, "Info: Micronet");
     infoTopic.AddPage(&infoPageSensors, "Info: Sensors");
     infoTopic.AddPage(&infoPageCompass, "Info: Compass");
+    infoTopic.AddPage(&networkPage, "Info: RF quality");
     topicList.push_back(&infoTopic);
 
     configTopic.AddPage(&configPage1, "Config: General");
@@ -194,11 +200,11 @@ void PanelManager::NextTopicISR()
   Gives PanelManager the latest version of navigation data for pages which needs it
   @param navData Pointer to the latest navigation dataset
 */
-void PanelManager::SetNavigationData(NavigationData *navData)
+void PanelManager::SetNavigationData(NavigationData &navData)
 {
     // FIXME : Work on a copy of data instead of a direct pointer
     portENTER_CRITICAL(&commandMutex);
-    clockPage.SetNavData(navData);
+    PageHandler::SetNavData(navData);
     portEXIT_CRITICAL(&commandMutex);
 }
 

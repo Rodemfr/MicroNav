@@ -35,6 +35,7 @@
 #include "CommandPage.h"
 #include "ConfigPage1.h"
 #include "ConfigPage2.h"
+#include "FloatDataPage.h"
 #include "InfoPageCompass.h"
 #include "InfoPageMicronet.h"
 #include "InfoPagePower.h"
@@ -72,7 +73,7 @@ class PanelManager
     void DrawPageISR();
     void NextTopic();
     void NextTopicISR();
-    void SetNavigationData(NavigationData *navData);
+    void SetNavigationData(NavigationData &navData);
     void SetNetworkStatus(DeviceInfo_t &networkStatus);
     void LowPower(bool enable);
 
@@ -96,6 +97,9 @@ class PanelManager
     ConfigPage1      configPage1;
     ConfigPage2      configPage2;
     CommandPage      commandPage;
+    FloatDataPage    depthPage;
+    FloatDataPage    speedPage;
+    FloatDataPage    trueWindPage;
 
     NavigationData    *navData;
     DeviceInfo_t       networkStatus;

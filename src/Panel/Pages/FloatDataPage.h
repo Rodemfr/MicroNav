@@ -1,7 +1,7 @@
 /***************************************************************************
  *                                                                         *
  * Project:  MicroNav                                                      *
- * Purpose:  Ressources for Panel and Pages                                *
+ * Purpose:  Handler of the Clock page                                     *
  * Author:   Ronan Demoment                                                *
  *                                                                         *
  ***************************************************************************
@@ -24,42 +24,47 @@
  ***************************************************************************
  */
 
-#ifndef PANELRESOURCES_H_
-#define PANELRESOURCES_H_
+#ifndef FLOATDATAPAGE_H_
+#define FLOATDATAPAGE_H_
 
 /***************************************************************************/
 /*                              Includes                                   */
 /***************************************************************************/
 
-#include <Adafruit_GFX.h>
-#include <Arduino.h>
-
-#include "bitmaps/logo.h"
-#include "bitmaps/t000.h"
-#include "bitmaps/t060.h"
-#include "bitmaps/t075.h"
-#include "bitmaps/t110.h"
-#include "bitmaps/t111.h"
-#include "bitmaps/t112.h"
-#include "bitmaps/t113.h"
-#include "bitmaps/t120.h"
-#include "bitmaps/t121.h"
-#include "bitmaps/t210.h"
-#include "bitmaps/t215.h"
+#include "NavigationData.h"
+#include "PageHandler.h"
 
 /***************************************************************************/
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define SCREEN_WIDTH  128
-#define SCREEN_HEIGHT 64
-
 /***************************************************************************/
-/*                              Prototypes                                 */
+/*                                Types                                    */
 /***************************************************************************/
 
-extern GFXfont FreeSansBold9pt;
-extern GFXfont FreeSansBold12pt;
-extern GFXfont FreeSansBold18pt;
+/***************************************************************************/
+/*                               Classes                                   */
+/***************************************************************************/
+
+class FloatDataPage : public PageHandler
+{
+  public:
+    FloatDataPage();
+    virtual ~FloatDataPage();
+
+    bool Draw(bool force, bool flushDisplay = true);
+    void SetData(FloatValue_t *value, std::string unit, bool fracDigit);
+    void SetData(FloatValue_t *value1, std::string unit1, bool fracDigit1, FloatValue_t *value2, std::string unit2, bool fracDigit2);
+
+  private:
+    FloatValue_t *value1;
+    FloatValue_t *value2;
+    std::string unit1;
+    std::string unit2;
+    bool fracDigit1;
+    bool fracDigit2;
+    int32_t prevValue1, prevValue2;
+    bool prevValue1Valid, prevValue2Valid;
+};
 
 #endif

@@ -33,6 +33,7 @@
 #include "Globals.h"
 
 #include <Arduino.h>
+#include <cmath>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -91,7 +92,7 @@ bool TopicHandler::Draw(bool force, bool flushDisplay)
         display->setFont(nullptr);
         display->setTextColor(SSD1306_WHITE);
         PrintLeft(56, pageList.at(pageIndex).name.c_str());
-        DrawBatteryStatus(SCREEN_WIDTH - 22, 56, gPower.GetStatus().batteryLevel_per);
+        DrawBatteryStatus(SCREEN_WIDTH - 22, 56, lroundf(gPower.GetStatus().batteryLevel_per));
         if (flushDisplay)
         {
             display->display();
