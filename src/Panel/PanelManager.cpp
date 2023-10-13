@@ -251,9 +251,26 @@ void PanelManager::CommandCallback()
 
         // Collect latest status of press button
         portENTER_CRITICAL(&buttonMutex);
+        // First, we read the actual button IO status
+        int buttonStatus = !digitalRead(BUTTON_PIN);
+        // Then, we read the button status as seen by the ISR
         localLastPress     = lastPress;
         localLastRelease   = lastRelease;
         localButtonPressed = buttonPressed;
+        // If different, it means ISR missed a status change, likely because of a rebound
+        if (localButtonPressed != buttonStatus)
+        {
+            // So we update the status of the button and update the press/release times
+            localButtonPressed = buttonStatus;
+            if (buttonStatus == true)
+            {
+                localLastPress = now;
+            }
+            else
+            {
+                localLastRelease = now;
+            }
+        }
         portEXIT_CRITICAL(&buttonMutex);
 
         // Do we have a long press on the button ?
@@ -291,7 +308,7 @@ void PanelManager::CommandCallback()
                 longPress = false;
             }
             // Short press : is the press time above minimum time (anti rebound) ?
-            else if ((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN)
+            else if (((localLastRelease - lastPageUpdate) > BUTTON_SHORT_PRESS_MIN) && ((localLastRelease - localLastPress) > BUTTON_SHORT_PRESS_MIN))
             {
                 // Yes : we have a short press
                 // Request action to the currently displayed page
@@ -357,10 +374,11 @@ void IRAM_ATTR PanelManager::StaticButtonIsr()
 */
 void PanelManager::ButtonIsr()
 {
+    int        buttonStatus   = !digitalRead(BUTTON_PIN);
     uint32_t   now            = millis();
     BaseType_t scheduleChange = pdFALSE;
 
-    if (!digitalRead(BUTTON_PIN))
+    if (buttonStatus)
     {
         // Button pressed
         portENTER_CRITICAL_ISR(&buttonMutex);
@@ -372,11 +390,8 @@ void PanelManager::ButtonIsr()
     {
         // Button released
         portENTER_CRITICAL_ISR(&buttonMutex);
-        if (now - lastPress > BUTTON_SHORT_PRESS_MIN)
-        {
-            buttonPressed = false;
-            lastRelease   = now;
-        }
+        buttonPressed = false;
+        lastRelease   = now;
         portEXIT_CRITICAL_ISR(&buttonMutex);
 
         xEventGroupSetBitsFromISR(commandEventGroup, COMMAND_EVENT_BUTTON_RELEASED, &scheduleChange);
