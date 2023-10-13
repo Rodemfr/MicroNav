@@ -543,7 +543,7 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     }
     if ((dataFields & DATA_FIELD_SOGCOG) && ((navData.sog_kt.valid) || (navData.cog_deg.valid)))
     {
-        offset += AddDual16bitField(message->data + offset, MICRONET_FIELD_ID_SOGCOG, navData.sog_kt.value * 10.0f, navData.cog_deg.value);
+        offset += AddDual16bitField(message->data + offset, MICRONET_FIELD_ID_SOGCOG, round(navData.sog_kt.value * 10.0f), round(navData.cog_deg.value));
     }
     if ((dataFields & DATA_FIELD_POSITION) && ((navData.latitude_deg.valid) || (navData.longitude_deg.valid)))
     {
@@ -551,7 +551,7 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     }
     if ((dataFields & DATA_FIELD_XTE) && (navData.xte_nm.valid))
     {
-        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_XTE, (short)(navData.xte_nm.value * 100));
+        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_XTE, (short)(round(navData.xte_nm.value * 100)));
     }
     if ((dataFields & DATA_FIELD_DTW) && (navData.dtw_nm.valid))
     {
@@ -559,16 +559,16 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     }
     if ((dataFields & DATA_FIELD_BTW) && ((navData.btw_deg.valid) || (navData.waypoint.valid)))
     {
-        offset += Add16bitAndSix8bitField(message->data + offset, MICRONET_FIELD_ID_BTW, (short)navData.btw_deg.value, navData.waypoint.name,
+        offset += Add16bitAndSix8bitField(message->data + offset, MICRONET_FIELD_ID_BTW, (short)round(navData.btw_deg.value), navData.waypoint.name,
                                           navData.waypoint.nameLength);
     }
     if ((dataFields & DATA_FIELD_VMGWP) && (navData.vmgwp_kt.valid))
     {
-        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_VMGWP, (short)(navData.vmgwp_kt.value * 100));
+        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_VMGWP, (short)round(navData.vmgwp_kt.value * 100));
     }
     if ((dataFields & DATA_FIELD_HDG) && (navData.magHdg_deg.valid))
     {
-        int16_t headingValue = navData.magHdg_deg.value - navData.headingOffset_deg;
+        int16_t headingValue = (int16_t)round(navData.magHdg_deg.value - navData.headingOffset_deg);
         while (headingValue < 0)
             headingValue += 360;
         while (headingValue >= 360)
@@ -578,11 +578,11 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     if ((dataFields & DATA_FIELD_AWS) && ((navData.aws_kt.valid)))
     {
         offset +=
-            Add16bitField(message->data + offset, MICRONET_FIELD_ID_AWS, (uint32_t)(navData.aws_kt.value * 10.0f / navData.windSpeedFactor_per));
+            Add16bitField(message->data + offset, MICRONET_FIELD_ID_AWS, (uint32_t)round(navData.aws_kt.value * 10.0f / navData.windSpeedFactor_per));
     }
     if ((dataFields & DATA_FIELD_AWA) && ((navData.awa_deg.valid)))
     {
-        int16_t awaValue = navData.awa_deg.value - navData.windDirectionOffset_deg;
+        int16_t awaValue = (int16_t)round(navData.awa_deg.value - navData.windDirectionOffset_deg);
         if (awaValue > 180.0f)
             awaValue -= 360.0f;
         if (awaValue < -180.0f)
@@ -609,11 +609,11 @@ uint8_t MicronetCodec::EncodeDataMessage(MicronetMessage_t *message, uint8_t sig
     }
     if ((dataFields & DATA_FIELD_DPT) && ((navData.dpt_m.valid)))
     {
-        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_DPT, (navData.dpt_m.value - navData.depthOffset_m) * 10.0f / 0.3048f);
+        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_DPT, floor((navData.dpt_m.value - navData.depthOffset_m) * 10.0f / 0.3048f));
     }
     if ((dataFields & DATA_FIELD_SPD) && ((navData.spd_kt.valid)))
     {
-        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_SPD, (short)(navData.spd_kt.value * 100.0f / navData.waterSpeedFactor_per));
+        offset += Add16bitField(message->data + offset, MICRONET_FIELD_ID_SPD, (short)round(navData.spd_kt.value * 100.0f / navData.waterSpeedFactor_per));
     }
 
     message->len = offset;
