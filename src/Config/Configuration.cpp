@@ -34,6 +34,7 @@
 #include <Arduino.h>
 #include <CRC32.h>
 #include <EEPROM.h>
+#include <esp_bt.h>
 
 /***************************************************************************/
 /*                              Constants                                  */
@@ -93,6 +94,13 @@ Configuration::Configuration() : configModified(false)
     eeprom.rmbWorkaround        = false;
     eeprom.windRepeater         = true;
     eeprom.compassHdgVector     = COMPASS_HDG_VECTOR_X;
+
+    // Set Bluetooth power to maximum
+    for (int i = 0; i < ESP_BLE_PWR_TYPE_NUM; i++)
+    {
+        esp_ble_tx_power_set((esp_ble_power_type_t)i, ESP_PWR_LVL_P9);
+    }
+    esp_bredr_tx_power_set(ESP_PWR_LVL_P9, ESP_PWR_LVL_P9);
 }
 
 Configuration::~Configuration()
@@ -110,7 +118,7 @@ void Configuration::LoadFromEeprom()
     {
         if (CRC32::calculate(pConfig, sizeof(ConfigBlock_t) - sizeof(uint32_t)) == configBlock.checksum)
         {
-            eeprom                      = configBlock.config;
+            eeprom = configBlock.config;
             DeployConfiguration(nullptr);
         }
     }

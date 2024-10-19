@@ -127,11 +127,11 @@ bool PanelManager::Init()
     statusTopic.AddPage(&trueWindPage, "Data: TWS, TWA");
     topicList.push_back(&statusTopic);
 
+    infoTopic.AddPage(&networkPage, "Info: RF quality");
     infoTopic.AddPage(&infoPagePower, "Info: Battery");
     infoTopic.AddPage(&infoPageMicronet, "Info: Micronet");
     infoTopic.AddPage(&infoPageSensors, "Info: Sensors");
     infoTopic.AddPage(&infoPageCompass, "Info: Compass");
-    infoTopic.AddPage(&networkPage, "Info: RF quality");
     topicList.push_back(&infoTopic);
 
     configTopic.AddPage(&configPage1, "Config: General");

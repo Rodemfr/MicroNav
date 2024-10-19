@@ -40,13 +40,6 @@
 /*                              Constants                                  */
 /***************************************************************************/
 
-#define DEVICE_TYPE_HULL_TRANSMITTER    0x01
-#define DEVICE_TYPE_WIND_TRANSDUCER     0x02
-#define DEVICE_TYPE_DUAL_DISPLAY        0x81
-#define DEVICE_TYPE_ANALOG_WIND_DISPLAY 0x83
-
-#define MAX_DEVICES_PER_NETWORK 32
-
 #define DATA_FIELD_TIME      0x00000001
 #define DATA_FIELD_DATE      0x00000002
 #define DATA_FIELD_SOGCOG    0x00000004
@@ -83,10 +76,10 @@ struct NetworkMap_t
     uint32_t     networkEnd;
     uint32_t     firstSlot;
     uint32_t     nbSyncSlots;
-    TxSlotDesc_t syncSlot[MAX_DEVICES_PER_NETWORK];
+    TxSlotDesc_t syncSlot[MICRONET_MAX_DEVICES_PER_NETWORK];
     TxSlotDesc_t asyncSlot;
     uint32_t     nbAckSlots;
-    TxSlotDesc_t ackSlot[MAX_DEVICES_PER_NETWORK];
+    TxSlotDesc_t ackSlot[MICRONET_MAX_DEVICES_PER_NETWORK];
 };
 
 typedef struct

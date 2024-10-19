@@ -79,7 +79,7 @@ typedef struct
     uint32_t         dataFields;
     uint32_t         splitDataFields[NUMBER_OF_VIRTUAL_DEVICES];
     uint32_t         nbDevicesInRange;
-    ConnectionInfo_t devicesInRange[MAX_DEVICES_PER_NETWORK];
+    ConnectionInfo_t devicesInRange[MICRONET_MAX_DEVICES_PER_NETWORK];
     uint32_t         nbNetworksInRange;
     NetworkInfo_t    networksInRange[MAX_NETWORK_TO_SCAN];
 } DeviceInfo_t;

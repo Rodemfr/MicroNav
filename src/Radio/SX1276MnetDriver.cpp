@@ -528,7 +528,7 @@ void SX1276MnetDriver::IsrProcessing(uint32_t flags)
                 uint8_t checksum = 0;
 
                 // When we reach this point, we know that a packet is under
-                // reception by SX1276 and than we received at least the complete
+                // reception by SX1276 and that we received at least the complete
                 // header. We will begin processing it.
                 SpiBurstReadRegister(SX127X_REG_FIFO, mnetRxMsg.data, HEADER_LENGTH_IN_BYTES);
                 mnetRxMsg.startTime_us = isrTime - PREAMBLE_LENGTH_IN_US - HEADER_LENGTH_IN_US;
@@ -551,7 +551,7 @@ void SX1276MnetDriver::IsrProcessing(uint32_t flags)
                     mnetRxMsg.action = MICRONET_ACTION_RF_TRANSMIT;
                     if (mnetRxMsg.len == HEADER_LENGTH_IN_BYTES)
                     {
-                        mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
+                        mnetRxMsg.endTime_us = mnetRxMsg.startTime_us + PREAMBLE_LENGTH_IN_US + mnetRxMsg.len * BYTE_LENGTH_IN_US + GUARD_TIME_IN_US;
                         messageFifo->Push(mnetRxMsg);
                         RestartRx();
                     }
@@ -581,7 +581,7 @@ void SX1276MnetDriver::IsrProcessing(uint32_t flags)
                 }
                 if (mnetRxMsg.len <= msgDataOffset)
                 {
-                    mnetRxMsg.endTime_us = isrTime + GUARD_TIME_IN_US;
+                    mnetRxMsg.endTime_us = mnetRxMsg.startTime_us + PREAMBLE_LENGTH_IN_US + mnetRxMsg.len * BYTE_LENGTH_IN_US + GUARD_TIME_IN_US;
                     messageFifo->Push(mnetRxMsg);
                     RestartRx();
                 }

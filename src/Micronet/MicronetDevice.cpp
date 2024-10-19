@@ -41,7 +41,7 @@
 // If we don't receive a request from a network for this time, we consider the network lost
 #define NETWORK_LOST_TIME_MS 5000
 // Battery low level in percent
-#define BATTERY_LOW_LEVEL 10
+#define BATTERY_LOW_LEVEL 20
 
 /***************************************************************************/
 /*                             Local types                                 */
@@ -62,7 +62,8 @@
 /*
   Class constructor
 */
-MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec) : lastMasterSignalStrength(0), pingTimeStamp(0), nextAsyncSlot(0), batteryAlertSent(false)
+MicronetDevice::MicronetDevice(MicronetCodec *micronetCodec)
+    : lastMasterSignalStrength(0), pingTimeStamp(0), nextAsyncSlot(0), batteryAlertSent(false)
 {
     memset(&deviceInfo, 0, sizeof(deviceInfo));
     memset(&systemInfo, 0, sizeof(systemInfo));
@@ -147,13 +148,13 @@ void MicronetDevice::ProcessMessage(MicronetMessage_t *message, MicronetMessageF
                 deviceInfo.lastMasterCommMs = millis();
                 micronetCodec->GetNetworkMap(message, &deviceInfo.networkMap);
 
-                // Schedule the low power mode of CC1101 just at the end of the network cycle
+                // Schedule the low power mode of RF transmitter just at the end of the network cycle
                 txMessage.action       = MICRONET_ACTION_RF_LOW_POWER;
                 txMessage.startTime_us = micronetCodec->GetEndOfNetwork(&deviceInfo.networkMap);
                 txMessage.len          = 0;
                 messageFifo->Push(txMessage);
 
-                // Schedule exit of CC1101's low power mode 1ms before actual start of the next network cycle.
+                // Schedule exit of RF transmitter's low power mode 1ms before actual start of the next network cycle.
                 // It will let time for the PLL calibration loop to complete.
                 txMessage.action       = MICRONET_ACTION_RF_ACTIVE_POWER;
                 txMessage.startTime_us = micronetCodec->GetNextStartOfNetwork(&deviceInfo.networkMap) - 1000;
